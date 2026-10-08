@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { GlobalAssistant } from "@/components/assistant/global-assistant";
 import { Explorer } from "@/components/explore/explorer";
 import { ExplorerSkeleton } from "@/components/explore/explorer-skeleton";
 import { Container } from "@/components/shell/states";
@@ -33,6 +34,7 @@ async function ExplorerLoader({
       initialFilters={filters}
       initialNow={requestTime()}
       dataState={dataState}
+      assistant={<GlobalAssistant />}
     />
   );
 }

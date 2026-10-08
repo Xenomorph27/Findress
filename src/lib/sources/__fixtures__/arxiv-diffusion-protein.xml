@@ -1,0 +1,93 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<feed xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/" xmlns:arxiv="http://arxiv.org/schemas/atom" xmlns="http://www.w3.org/2005/Atom">
+  <id>https://arxiv.org/api/WprlMxLCgHEWR+r6H4Nnz8X1/EQ</id>
+  <title>arXiv Query: search_query=all:"diffusion models" AND all:protein&amp;id_list=&amp;start=0&amp;max_results=3</title>
+  <updated>2026-10-08T20:41:48Z</updated>
+  <link href="https://arxiv.org/api/query?search_query=all:%22diffusion+models%22+AND+all:protein&amp;start=0&amp;max_results=3&amp;id_list=" type="application/atom+xml"/>
+  <opensearch:itemsPerPage>3</opensearch:itemsPerPage>
+  <opensearch:totalResults>294</opensearch:totalResults>
+  <opensearch:startIndex>0</opensearch:startIndex>
+  <entry>
+    <id>http://arxiv.org/abs/2610.05808v1</id>
+    <title>DiMOS: Doob-Guided Inference-Time Multi-Objective Search for Scientific Design</title>
+    <updated>2026-10-05T05:01:52Z</updated>
+    <link href="https://arxiv.org/abs/2610.05808v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2610.05808v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Scientific design often requires jointly satisfying multiple objectives and constraints. Pretrained masked diffusion models provide a generative foundation for this task, but fine-tuning them to meet these objectives and constraints incurs additional training costs, motivating inference-time guidance with frozen models. However, such guidance faces two challenges: pass-or-fail constraints and black-box reward models may provide no useful gradients, while jointly satisfying multiple requirements can leave a small feasible region, making feasible designs difficult to find within a limited inference budget. To address these challenges, we introduce DiMOS, a training-free framework for multi-objective scientific design. Using joint rewards from candidate completions, DiMOS performs approximate Doob-guided local resampling without requiring reward gradients. To allocate computation efficiently, it uses budget-efficient trajectory search to focus computation on promising continuations. Across six DNA, protein, and RNA tasks, DiMOS attains the highest joint success rate at comparable generation times, up to $1.98\times$ the strongest baseline on DNA and protein, while maintaining high sequence uniqueness and naturalness.</summary>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-10-05T05:01:52Z</published>
+    <arxiv:primary_category term="cs.AI"/>
+    <author>
+      <name>Ziqing Wang</name>
+    </author>
+    <author>
+      <name>Qijie Zhu</name>
+    </author>
+    <author>
+      <name>Weimin Wu</name>
+    </author>
+    <author>
+      <name>Zeqi Ye</name>
+    </author>
+    <author>
+      <name>Minshuo Chen</name>
+    </author>
+    <author>
+      <name>Han Liu</name>
+    </author>
+    <author>
+      <name>Kaize Ding</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2610.04938v1</id>
+    <title>D-DOIT: Training-free Adaptation of Discrete Diffusion via Doob's h-Transform</title>
+    <updated>2026-10-04T04:34:02Z</updated>
+    <link href="https://arxiv.org/abs/2610.04938v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2610.04938v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>We propose D-DOIT (Discrete Doob-Oriented Inference-time Transformation), a training-free and efficient adaptation method for discrete diffusion models with generic rewards. D-DOIT formulates adaptation as sampling from a reward-tilted target distribution and realizes this transport through Doob's h-transform of the discrete diffusion reverse kernel, using only reward values rather than reward gradients. Unlike continuous diffusion, masked discrete diffusion samples categorical token-reveal transitions rather than continuous state updates. D-DOIT derives the corresponding discrete Doob's h-transform, which guides sampling by reweighting reverse transition probabilities instead of adding a drift correction. To make this transformation practical, D-DOIT avoids expensive future rollouts. At each guided step, D-DOIT samples candidate next states, uses the model prediction head to complete each candidate into a clean sequence, evaluates each completion with the reward oracle, and resamples the next state with probabilities proportional to the rewards. An optional late-stage best-of-K refinement further improves sample quality by branching trajectories only near the end of denoising, avoiding the $K$-fold cost over the full trajectory. Empirically, across regulatory DNA design and protein inverse folding benchmarks, D-DOIT outperforms training-free guidance baselines. It improves enhancer activity and cell-type specificity while preserving sequence naturalness, and achieves the highest success rate in protein inverse folding.</summary>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-10-04T04:34:02Z</published>
+    <arxiv:primary_category term="cs.LG"/>
+    <author>
+      <name>Jieke Wu</name>
+    </author>
+    <author>
+      <name>Qijie Zhu</name>
+    </author>
+    <author>
+      <name>Weimin Wu</name>
+    </author>
+    <author>
+      <name>Zeqi Ye</name>
+    </author>
+    <author>
+      <name>Minshuo Chen</name>
+    </author>
+    <author>
+      <name>Han Liu</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2610.04510v1</id>
+    <title>ManifoldCache: Training-Free Diffusion Acceleration via Constraint Manifold Caching</title>
+    <updated>2026-10-03T13:18:15Z</updated>
+    <link href="https://arxiv.org/abs/2610.04510v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2610.04510v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Diffusion models for structured scientific generation must produce samples satisfying hard geometric constraints imposed by physics, chemistry, or biology, yet inference in these settings is prohibitively slow, demanding hundreds to thousands of neural-function evaluations per sample. We unify eight state-of-the-art models spanning medical volumetrics, molecular conformations, protein backbone design, crystal structure prediction, and multi-view 3D scenes under a single abstraction, Constraint-Manifold Diffusion Models (CMDMs), in which the target distribution is supported on a manifold defined by an externally specified constraint map. All existing acceleration families fail on this class: quantization exhausts memory on high-dimensional volumetric operators; pruning breaks constraint fidelity; fast ODE solvers allow trajectories to drift off the constraint manifold; and feature-caching heuristics are blind to constraint geometry, inducing mode confusion in the high-noise regime. We introduce ManifoldCache, the first training-free, data-free accelerator designed from first principles for CMDMs. The key insight is that the conditional score decomposes orthogonally into a normal component, which enforces constraint satisfaction, and a tangential component, which navigates within the manifold. Exploiting this structure, we prove that the noise-schedule midpoint is a sharp safe-caching boundary: caching before it incurs provably bounded error, while caching after it guarantees a strictly positive fraction of trajectories suffer mode confusion, a gap that persists up to the boundary. We further prove that deeper network blocks admit provably larger certified cache strides within the safe phase, as a consequence of the score decomposition propagating through block Jacobians. The resulting schedule requires no calibration data, along with zero training overhead.</summary>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-10-03T13:18:15Z</published>
+    <arxiv:primary_category term="cs.AI"/>
+    <author>
+      <name>Prashant Pandey</name>
+    </author>
+    <author>
+      <name>Devineni Sri Venkatraya Chowdary</name>
+    </author>
+    <author>
+      <name>Brejesh Lall</name>
+    </author>
+  </entry>
+</feed>

@@ -1,24 +1,41 @@
+"use client";
+
 import { Sparkles } from "lucide-react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { useMediaQuery } from "@/lib/hooks/use-media-query";
+import { AssistantPanel, type AssistantEventRef } from "./assistant-panel";
 
-export interface AssistantEventRef {
-  id: number;
-  slug: string;
-  acronym: string;
-  year: number;
-  hasCfp: boolean;
-}
+export type { AssistantEventRef };
 
-/** Placeholder column for the "Ask FIndress" assistant (wired up in phase 5). */
+/** Docked column on desktop; a floating button + bottom sheet on mobile (SPEC §4.8). */
 export function AssistantSlot({ event }: { event: AssistantEventRef }) {
+  const isDesktop = useMediaQuery("(min-width: 1024px)", true);
+  const [open, setOpen] = useState(false);
+
+  if (isDesktop) {
+    return <AssistantPanel event={event} className="h-[calc(100dvh-7rem)] max-h-[760px]" />;
+  }
   return (
-    <div className="glass border-hairline rounded-2xl border p-5">
-      <div className="flex items-center gap-2">
-        <Sparkles className="text-aurora-ink size-4" aria-hidden />
-        <h2 className="text-sm font-medium">Ask FIndress</h2>
-      </div>
-      <p className="text-muted-foreground mt-2 text-sm">
-        A research assistant grounded in the {event.acronym} {event.year} call for papers.
-      </p>
-    </div>
+    <>
+      <Button
+        onClick={() => setOpen(true)}
+        className="fixed right-4 bottom-4 z-30 h-11 rounded-full px-4 shadow-lg"
+        aria-label={`Ask FIndress about ${event.acronym} ${event.year}`}
+      >
+        <Sparkles /> Ask FIndress
+      </Button>
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetContent
+          side="bottom"
+          className="border-hairline bg-background h-[85dvh] gap-0 p-2"
+          showCloseButton={false}
+        >
+          <SheetTitle className="sr-only">Ask FIndress about {event.acronym}</SheetTitle>
+          <AssistantPanel event={event} className="h-full" autoFocus />
+        </SheetContent>
+      </Sheet>
+    </>
   );
 }

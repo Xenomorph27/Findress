@@ -412,6 +412,7 @@ async function EventContent({ params }: { params: PageProps<"/c/[slug]">["params
               acronym: e.acronym,
               year: e.year,
               hasCfp: Boolean(e.cfpText),
+              cfpUrl: e.cfpUrl ?? e.website,
             }}
           />
         </div>
