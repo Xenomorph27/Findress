@@ -311,3 +311,12 @@ html:not(.dark) .starfield {
     scroll-behavior: auto !important;
   }
 }
+
+/* Shared-element (acronym) view transitions: instant under reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}

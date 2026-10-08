@@ -50,6 +50,7 @@ export function CalendarFeed({ feedUrl }: { feedUrl: string | null }) {
           onClick={async () => {
             await fetch("/api/auth/session", { method: "DELETE" });
             resetOwner();
+            // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- full reload so the client router drops cached auth redirects
             window.location.assign("/");
           }}
         >

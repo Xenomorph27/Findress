@@ -5,7 +5,16 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { useMediaQuery } from "@/lib/hooks/use-media-query";
-import { AssistantPanel, type AssistantEventRef } from "./assistant-panel";
+import dynamic from "next/dynamic";
+import type { AssistantEventRef } from "./assistant-panel";
+
+// Heavy (AI SDK client, markdown, KaTeX): code-split out of the event page's first load.
+const AssistantPanel = dynamic(() => import("./assistant-panel").then((m) => m.AssistantPanel), {
+  ssr: false,
+  loading: () => (
+    <div className="glass border-hairline h-full min-h-80 animate-pulse rounded-2xl border" />
+  ),
+});
 
 export type { AssistantEventRef };
 
@@ -33,7 +42,7 @@ export function AssistantSlot({ event }: { event: AssistantEventRef }) {
           showCloseButton={false}
         >
           <SheetTitle className="sr-only">Ask FIndress about {event.acronym}</SheetTitle>
-          <AssistantPanel event={event} className="h-full" autoFocus />
+          {open && <AssistantPanel event={event} className="h-full" autoFocus />}
         </SheetContent>
       </Sheet>
     </>

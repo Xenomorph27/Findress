@@ -4,7 +4,15 @@ import { Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
-import { AssistantPanel } from "./assistant-panel";
+import dynamic from "next/dynamic";
+
+// The panel pulls in the AI SDK client, markdown and KaTeX: load it only when opened.
+const AssistantPanel = dynamic(() => import("./assistant-panel").then((m) => m.AssistantPanel), {
+  ssr: false,
+  loading: () => (
+    <div className="border-hairline bg-surface/50 h-full animate-pulse rounded-2xl border" />
+  ),
+});
 
 /** Archive-wide assistant on /explore (opened from the button or ?ask= from the command palette). */
 export function GlobalAssistant() {
@@ -35,7 +43,7 @@ export function GlobalAssistant() {
           className="border-hairline bg-background w-full gap-0 p-2 sm:max-w-[480px]"
         >
           <SheetTitle className="sr-only">Ask FIndress about the archive</SheetTitle>
-          <AssistantPanel className="h-full" initialQuestion={question} autoFocus />
+          {open && <AssistantPanel className="h-full" initialQuestion={question} autoFocus />}
         </SheetContent>
       </Sheet>
     </>

@@ -70,7 +70,9 @@ export function Explorer({
   initialNow,
   dataState,
   assistant,
+  scope = "full",
 }: {
+  scope?: "full" | "upcoming";
   rows: ExplorerRow[];
   initialFilters: Filters;
   initialNow: number;
@@ -100,10 +102,25 @@ export function Explorer({
   );
   const selectedIndex = Math.min(selected, Math.max(results.length - 1, 0));
 
-  const patch = useCallback((p: Partial<Filters>) => {
-    setFilters((f) => ({ ...f, ...p }));
-    setSelected(0);
-  }, []);
+  const filtersRef = useRef(filters);
+  const queryRef = useRef(query);
+  useEffect(() => {
+    filtersRef.current = filters;
+    queryRef.current = query;
+  });
+  const patch = useCallback(
+    (p: Partial<Filters>) => {
+      const next = { ...filtersRef.current, ...p };
+      setFilters(next);
+      setSelected(0);
+      // The server sent only upcoming rows: fetch the full set when a filter needs it.
+      if (scope === "upcoming" && (next.showPassed || next.community)) {
+        const qs = serializeFilters({ ...next, q: queryRef.current }).toString();
+        router.replace(`/explore${qs ? `?${qs}` : ""}`, { scroll: false });
+      }
+    },
+    [scope, router],
+  );
 
   // Keep the URL in sync (shareable views) without a server round-trip.
   useEffect(() => {

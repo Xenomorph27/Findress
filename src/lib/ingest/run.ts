@@ -13,6 +13,7 @@ import {
 } from "@/lib/taxonomy";
 import { enrichCfps } from "./enrich-cfp";
 import { geocodeEvents } from "./geocode";
+import { llmTagUntagged } from "./llm-tagging";
 import { PoliteFetcher } from "./http";
 import type { SourceAdapter } from "./types";
 import { mergeEventInputs } from "./merge";
@@ -189,8 +190,19 @@ export async function runIngestion(db: Db, opts: RunOptions = {}): Promise<StepR
       reports.push(
         await recordRun(db, "topics", async () => {
           const n = await retagAll(db);
+          const llm = await llmTagUntagged(db, deadlineMs).catch((err: Error) => ({
+            skipped: err.message,
+            tagged: 0,
+          }));
           await refreshDerivedColumns(db);
-          return { items: n, stats: { retagged: n } };
+          return {
+            items: n,
+            stats: {
+              retagged: n,
+              llmTagged: llm.tagged,
+              ...("skipped" in llm ? { llm: String(llm.skipped) } : {}),
+            },
+          };
         }),
       );
     } else if (step === "geocode") {
