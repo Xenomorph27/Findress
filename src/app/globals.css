@@ -1,0 +1,273 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * FIndress design tokens — "Research Observatory" (docs/DESIGN.md).
+ * Raw tokens (--bg, --surface, --aurora-*, --heat-*) are the source of truth;
+ * shadcn's semantic variables are mapped onto them so every primitive inherits the theme.
+ */
+
+:root,
+.light-scope {
+  /* Light — paper & ink, accents deepened for AA contrast */
+  --bg: #f7f7f4;
+  --surface: #ffffff;
+  --surface-2: #efefea;
+  --hairline: rgba(14, 17, 22, 0.09);
+  --hairline-strong: rgba(14, 17, 22, 0.16);
+  --text: #0e1116;
+  --muted-text: #555e6e;
+
+  --aurora-1: #0d9488;
+  --aurora-2: #0284c7;
+  --aurora-3: #7c3aed;
+  --aurora-ink: #0f766e;
+
+  --heat-calm: #0369a1;
+  --heat-warm: #a85b06;
+  --heat-hot: #c8243d;
+  --heat-passed: #6b7280;
+
+  --glow: rgba(13, 148, 136, 0.12);
+  --star: rgba(14, 17, 22, 0.18);
+
+  --primary: #0e1116;
+  --primary-foreground: #f7f7f4;
+  --popover: var(--surface);
+  --destructive: #c8243d;
+  --chart-4: #94a3b8;
+  --chart-5: #cbd5e1;
+}
+
+.dark {
+  /* Dark — the hero theme: deep ink sky */
+  --bg: #07090f;
+  --surface: #0d1119;
+  --surface-2: #141a24;
+  --hairline: rgba(255, 255, 255, 0.07);
+  --hairline-strong: rgba(255, 255, 255, 0.13);
+  --text: #e8ecf3;
+  --muted-text: #8a94a6;
+
+  --aurora-1: #2ee6c5;
+  --aurora-2: #38bdf8;
+  --aurora-3: #a78bfa;
+  --aurora-ink: #2ee6c5;
+
+  --heat-calm: #38bdf8;
+  --heat-warm: #f5b84b;
+  --heat-hot: #ff5d73;
+  --heat-passed: #4b5563;
+
+  --glow: rgba(46, 230, 197, 0.14);
+  --star: rgba(232, 236, 243, 0.55);
+
+  --primary: #e8ecf3;
+  --primary-foreground: #07090f;
+  --popover: var(--surface-2);
+  --destructive: #ff5d73;
+  --chart-4: #4b5563;
+  --chart-5: #2a3342;
+}
+
+/*
+ * shadcn semantic mapping. Declared on every theme scope so a nested .dark / .light-scope
+ * panel (e.g. on /styleguide) recomputes them from its own raw tokens.
+ */
+:root,
+.dark,
+.light-scope {
+  --background: var(--bg);
+  --foreground: var(--text);
+  --card: var(--surface);
+  --card-foreground: var(--text);
+  --popover-foreground: var(--text);
+  --secondary: var(--surface-2);
+  --secondary-foreground: var(--text);
+  --muted: var(--surface-2);
+  --muted-foreground: var(--muted-text);
+  --accent: var(--surface-2);
+  --accent-foreground: var(--text);
+  --border: var(--hairline);
+  --input: var(--hairline-strong);
+  --ring: var(--aurora-2);
+  --chart-1: var(--aurora-1);
+  --chart-2: var(--aurora-2);
+  --chart-3: var(--aurora-3);
+  --radius: 0.625rem;
+  --sidebar: var(--surface);
+  --sidebar-foreground: var(--text);
+  --sidebar-primary: var(--aurora-ink);
+  --sidebar-primary-foreground: var(--bg);
+  --sidebar-accent: var(--surface-2);
+  --sidebar-accent-foreground: var(--text);
+  --sidebar-border: var(--hairline);
+  --sidebar-ring: var(--aurora-2);
+}
+
+.dark,
+.light-scope {
+  color: var(--text);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-hairline: var(--hairline);
+  --color-hairline-strong: var(--hairline-strong);
+  --color-aurora-1: var(--aurora-1);
+  --color-aurora-2: var(--aurora-2);
+  --color-aurora-3: var(--aurora-3);
+  --color-aurora-ink: var(--aurora-ink);
+  --color-heat-calm: var(--heat-calm);
+  --color-heat-warm: var(--heat-warm);
+  --color-heat-hot: var(--heat-hot);
+  --color-heat-passed: var(--heat-passed);
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
+  --font-display: var(--font-instrument-serif), ui-serif, Georgia, serif;
+  --font-heading: var(--font-display);
+
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+
+  --animate-caret: caret 1s steps(1) infinite;
+  @keyframes caret {
+    50% {
+      opacity: 0;
+    }
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+    color-scheme: light;
+    -webkit-tap-highlight-color: transparent;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  :focus-visible {
+    outline: 2px solid var(--aurora-2);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: color-mix(in oklab, var(--aurora-2) 30%, transparent);
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display);
+    letter-spacing: -0.015em;
+    font-weight: 400;
+  }
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+  .bg-aurora {
+    background: linear-gradient(110deg, var(--aurora-1), var(--aurora-2) 55%, var(--aurora-3));
+  }
+  .glass {
+    background: color-mix(in oklab, var(--surface) 80%, transparent);
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    box-shadow:
+      inset 0 1px 0 0 color-mix(in oklab, var(--text) 6%, transparent),
+      inset 0 0 48px 0 var(--glow);
+  }
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Ambient star-field: static layers of tiny dots, very faint (no animation). */
+.starfield {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.35;
+  background-image:
+    radial-gradient(1px 1px at 12% 18%, var(--star) 50%, transparent 51%),
+    radial-gradient(1px 1px at 72% 34%, var(--star) 50%, transparent 51%),
+    radial-gradient(1px 1px at 38% 76%, var(--star) 50%, transparent 51%),
+    radial-gradient(1px 1px at 88% 82%, var(--star) 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 54% 8%, var(--star) 50%, transparent 51%),
+    radial-gradient(1px 1px at 22% 52%, var(--star) 50%, transparent 51%);
+  background-size:
+    340px 340px,
+    420px 420px,
+    380px 380px,
+    460px 460px,
+    520px 520px,
+    300px 300px;
+}
+html:not(.dark) .starfield {
+  opacity: 0.22;
+}
+
+.katex {
+  font-size: 1.05em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
