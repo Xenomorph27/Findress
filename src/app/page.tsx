@@ -1,18 +1,64 @@
+import { BarChart3, Bot, CalendarClock, Database } from "lucide-react";
 import Link from "next/link";
+import { Hero } from "@/components/landing/hero";
 import { Container } from "@/components/shell/states";
-import { Button } from "@/components/ui/button";
-import { SITE_TAGLINE } from "@/lib/site";
+import { withDbFallback } from "@/lib/data/events";
+import { getLandingData, type LandingData } from "@/lib/data/landing";
 
-export default function HomePage() {
+const EMPTY: LandingData = {
+  next: [],
+  markers: [],
+  stats: { tracked: 0, deadlinesThisMonth: 0, sourcesLive: 0, sourcesTotal: 4, workshops: 0 },
+};
+
+const FEATURES = [
+  {
+    icon: CalendarClock,
+    title: "Deadlines that tick",
+    body: "Every abstract, paper, rebuttal and camera-ready date, converted to your timezone — AoE handled.",
+    href: "/explore",
+  },
+  {
+    icon: BarChart3,
+    title: "The year at a glance",
+    body: "A deadline calendar, venue map, rank mix and acceptance-rate trends — each chart one click from its venues.",
+    href: "/insights",
+  },
+  {
+    icon: Bot,
+    title: "Ask the call for papers",
+    body: "An assistant grounded in each event’s real CFP text: scope, themes, fit, key dates — with citations.",
+    href: "/explore",
+  },
+  {
+    icon: Database,
+    title: "Open sources, shown",
+    body: "ccfddl, Hugging Face ai-deadlines, WikiCFP, OpenReview and official CFP pages — with last-updated times.",
+    href: "/sources",
+  },
+];
+
+export default async function HomePage() {
+  const res = await withDbFallback(EMPTY, getLandingData);
   return (
-    <Container className="py-24">
-      <h1 className="font-display max-w-3xl text-6xl leading-[0.95]">{SITE_TAGLINE}</h1>
-      <p className="text-muted-foreground mt-5 max-w-xl">
-        Every AI/ML conference and workshop, with live deadlines, rankings and a grounded assistant.
-      </p>
-      <Button asChild className="mt-8">
-        <Link href="/explore">Explore venues</Link>
-      </Button>
-    </Container>
+    <>
+      <Hero data={res.data} />
+      <Container className="pt-20">
+        <ul className="border-hairline bg-hairline grid gap-px overflow-hidden rounded-2xl border sm:grid-cols-2 lg:grid-cols-4">
+          {FEATURES.map((f) => (
+            <li key={f.title} className="bg-background">
+              <Link
+                href={f.href}
+                className="group hover:bg-surface/70 flex h-full flex-col gap-3 p-6 transition-colors"
+              >
+                <f.icon className="text-aurora-ink size-5" aria-hidden />
+                <h2 className="font-display text-2xl leading-tight">{f.title}</h2>
+                <p className="text-muted-foreground text-sm">{f.body}</p>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </Container>
+    </>
   );
 }

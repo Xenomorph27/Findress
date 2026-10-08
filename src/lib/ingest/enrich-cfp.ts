@@ -81,6 +81,8 @@ export async function enrichCfps(
         isNotNull(events.website),
         or(isNull(events.cfpFetchedAt), lt(events.cfpFetchedAt, staleBefore)),
         or(isNull(events.endDate), sql`${events.endDate} >= ${recentCutoff}`),
+        // Undated old editions (e.g. "CICAI 2022") are not worth a fetch.
+        sql`${events.year} >= ${new Date().getUTCFullYear() - 1}`,
       ),
     )
     .orderBy(sql`${events.cfpFetchedAt} asc nulls first`, asc(events.nextDeadlineAt));

@@ -113,6 +113,46 @@
   color: var(--text);
 }
 
+/*
+ * Chart tokens — the dataviz reference palette, validated (scripts/validate_palette.js) against
+ * these surfaces: light #ffffff passes all hard gates (3 slots < 3:1 → every multi-series chart
+ * ships a table view); dark #0d1119 passes everything. Fixed slot order, never cycled.
+ * Sequential: one blue ramp, low values recede toward the surface in each mode.
+ */
+:root,
+.light-scope {
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+  --series-5: #e87ba4;
+  --series-6: #008300;
+  --series-7: #4a3aa7;
+  --series-8: #e34948;
+  --series-other: #9a9a94;
+  --seq-1: #cde2fb;
+  --seq-2: #9ec5f4;
+  --seq-3: #6da7ec;
+  --seq-4: #3987e5;
+  --seq-5: #1c5cab;
+}
+.dark {
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --series-4: #c98500;
+  --series-5: #d55181;
+  --series-6: #008300;
+  --series-7: #9085e9;
+  --series-8: #e66767;
+  --series-other: #5b6170;
+  --seq-1: #0d366b;
+  --seq-2: #184f95;
+  --seq-3: #2a78d6;
+  --seq-4: #5598e7;
+  --seq-5: #9ec5f4;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

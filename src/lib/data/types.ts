@@ -25,6 +25,8 @@ export interface ExplorerRow {
   country: string | null;
   countryCode: string | null;
   continent: string | null;
+  lat: number | null;
+  lng: number | null;
   startDate: string | null;
   endDate: string | null;
   deadlines: RowDeadline[];

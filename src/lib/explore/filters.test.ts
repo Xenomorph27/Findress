@@ -30,6 +30,8 @@ function row(p: Partial<ExplorerRow> & { slug: string }): ExplorerRow {
     country: null,
     countryCode: null,
     continent: null,
+    lat: null,
+    lng: null,
     startDate: "2027-06-01",
     endDate: null,
     deadlines: [],
