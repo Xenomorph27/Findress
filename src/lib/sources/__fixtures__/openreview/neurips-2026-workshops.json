@@ -1,0 +1,140 @@
+{
+ "groups": [
+  {
+   "id": "NeurIPS.cc/2026/Workshop/MLForSys",
+   "parent": "NeurIPS.cc/2026/Workshop",
+   "content": {
+    "title": {
+     "value": "Machine Learning for Systems 2026"
+    },
+    "subtitle": {
+     "value": "MLForSys2026"
+    },
+    "website": {
+     "value": "https://mlforsystems.org"
+    },
+    "location": {
+     "value": "Sydney, Australia"
+    },
+    "start_date": {
+     "value": 1796990400000
+    },
+    "date": {
+     "value": ""
+    },
+    "submission_id": {
+     "value": "NeurIPS.cc/2026/Workshop/MLForSys/-/Submission"
+    }
+   }
+  },
+  {
+   "id": "NeurIPS.cc/2026/Workshop/RL4XS",
+   "parent": "NeurIPS.cc/2026/Workshop",
+   "content": {
+    "title": {
+     "value": "Reinforcement Learning for Experimental Sciences Workshop"
+    },
+    "subtitle": {
+     "value": "RL4XS Workshop"
+    },
+    "website": {
+     "value": "https://rl-experimental-sciences-workshop.github.io/"
+    },
+    "location": {
+     "value": "Paris, France"
+    },
+    "start_date": {
+     "value": 1797058800000
+    },
+    "date": {
+     "value": ""
+    },
+    "submission_id": {
+     "value": "NeurIPS.cc/2026/Workshop/RL4XS/-/Submission"
+    }
+   }
+  },
+  {
+   "id": "NeurIPS.cc/2026/Workshop/Simbiochem",
+   "parent": "NeurIPS.cc/2026/Workshop",
+   "content": {
+    "title": {
+     "value": "The 2nd Workshop on Simulations for Biology and Chemistry"
+    },
+    "subtitle": {
+     "value": "Simbiochem 2026"
+    },
+    "website": {
+     "value": "www.simbiochem.com"
+    },
+    "location": {
+     "value": "Sydney, Australia"
+    },
+    "start_date": {
+     "value": "Dec 11 2026"
+    },
+    "date": {
+     "value": "Submission Deadline: Sep 05 2026 11:59AM UTC-0"
+    },
+    "submission_id": {
+     "value": "NeurIPS.cc/2026/Workshop/Simbiochem/-/Submission"
+    }
+   }
+  },
+  {
+   "id": "NeurIPS.cc/2026/Workshop/SaTQuML",
+   "parent": "NeurIPS.cc/2026/Workshop",
+   "content": {
+    "title": {
+     "value": "NeurIPS 2026 Workshop on SaTQuML: Secure and Trustworthy Quantum Machine Learning"
+    },
+    "subtitle": {
+     "value": "NeurIPS 2026 SaTQuML Workshop"
+    },
+    "website": {
+     "value": "https://satquml.github.io/"
+    },
+    "location": {
+     "value": "Atlanta, Georgia, USA."
+    },
+    "start_date": {
+     "value": 1797073200000
+    },
+    "date": {
+     "value": ""
+    },
+    "submission_id": {
+     "value": "NeurIPS.cc/2026/Workshop/SaTQuML/-/Submission"
+    }
+   }
+  },
+  {
+   "id": "NeurIPS.cc/2026/Workshop/OPT",
+   "parent": "NeurIPS.cc/2026/Workshop",
+   "content": {
+    "title": {
+     "value": "OPT 2026: Optimization for Machine Learning (NeurIPS 2026 Workshop)"
+    },
+    "subtitle": {
+     "value": "OPT 2026"
+    },
+    "website": {
+     "value": "https://opt-ml.org/"
+    },
+    "location": {
+     "value": "Sydney, Australia"
+    },
+    "start_date": {
+     "value": 1796983200000
+    },
+    "date": {
+     "value": ""
+    },
+    "submission_id": {
+     "value": "NeurIPS.cc/2026/Workshop/OPT/-/Submission"
+    }
+   }
+  }
+ ],
+ "count": 5
+}

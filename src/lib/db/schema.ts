@@ -76,6 +76,13 @@ export const events = pgTable(
     cfpHash: text("cfp_hash"),
     cfpUrl: text("cfp_url"),
     cfpFetchedAt: timestamp("cfp_fetched_at", { withTimezone: true }),
+    /** "Topics of interest" bullet items extracted from the CFP text. */
+    cfpTopics: text("cfp_topics")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    /** Set when the geocoder has tried this event's location (success or not). */
+    geocodedAt: timestamp("geocoded_at", { withTimezone: true }),
     /** Sources that contributed to this event (denormalized for fast filtering). */
     sources: text("sources")
       .array()
@@ -237,6 +244,26 @@ export const geocodeCache = pgTable("geocode_cache", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+/**
+ * Normalized output of each list source, one row per upstream item. The merge step rebuilds
+ * `events` from all rows, so sources can be refreshed independently without breaking dedupe.
+ */
+export const sourceItems = pgTable(
+  "source_items",
+  {
+    source: text("source").notNull(),
+    sourceId: text("source_id").notNull(),
+    dedupeKey: text("dedupe_key").notNull(),
+    payload: jsonb("payload").notNull(),
+    firstSeenAt: timestamp("first_seen_at", { withTimezone: true }).notNull().defaultNow(),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.source, t.sourceId] }),
+    index("source_items_dedupe_idx").on(t.dedupeKey),
+  ],
+);
+
 /** Polite-fetch cache for scraped pages (WikiCFP event pages, CFP pages). */
 export const httpCache = pgTable("http_cache", {
   url: text("url").primaryKey(),
@@ -252,3 +279,4 @@ export type SourceRunRow = typeof sourceRuns.$inferSelect;
 export type AcceptanceRow = typeof acceptanceStats.$inferSelect;
 export type BookmarkRow = typeof bookmarks.$inferSelect;
 export type NoteRow = typeof notes.$inferSelect;
+export type SourceItemRow = typeof sourceItems.$inferSelect;

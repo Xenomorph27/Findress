@@ -1,0 +1,30 @@
+{
+ "groups": [
+  {
+   "id": "ICLR.cc/2027/Conference",
+   "content": {
+    "title": {
+     "value": "The Fifteenth International Conference on Learning Representations"
+    },
+    "subtitle": {
+     "value": "ICLR 2027"
+    },
+    "website": {
+     "value": "https://iclr.cc/Conferences/2027"
+    },
+    "location": {
+     "value": "San Francisco, CA, USA"
+    },
+    "start_date": {
+     "value": 1808769600000
+    },
+    "date": {
+     "value": ""
+    },
+    "submission_id": {
+     "value": "ICLR.cc/2027/Conference/-/Submission"
+    }
+   }
+  }
+ ]
+}

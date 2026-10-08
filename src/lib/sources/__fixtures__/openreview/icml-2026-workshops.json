@@ -1,0 +1,86 @@
+{
+ "groups": [
+  {
+   "id": "ICML.cc/2026/Workshop/EIML",
+   "parent": "ICML.cc/2026/Workshop",
+   "content": {
+    "title": {
+     "value": "ICML 2026 Workshop: Epistemic Intelligence in Machine Learning"
+    },
+    "subtitle": {
+     "value": "EIML@ICML 2026"
+    },
+    "website": {
+     "value": "https://sites.google.com/view/eimlicml2026/home"
+    },
+    "location": {
+     "value": "Seoul, South Korea"
+    },
+    "start_date": {
+     "value": "Jul 10 2026"
+    },
+    "date": {
+     "value": "Submission Start: Mar 20 2026 12:00PM UTC-0, Submission Deadline: Apr 27 2026 12:00PM UTC-0"
+    },
+    "submission_id": {
+     "value": "ICML.cc/2026/Workshop/EIML/-/Submission"
+    }
+   }
+  },
+  {
+   "id": "ICML.cc/2026/Workshop/TAIGR",
+   "parent": "ICML.cc/2026/Workshop",
+   "content": {
+    "title": {
+     "value": "ICML Workshop on Technical AI Governance Research"
+    },
+    "subtitle": {
+     "value": "ICML 2026 Workshop TAIGR"
+    },
+    "website": {
+     "value": "https://taigr-workshop.com/"
+    },
+    "location": {
+     "value": "Seoul, South Korea"
+    },
+    "start_date": {
+     "value": 1783638000000
+    },
+    "date": {
+     "value": ""
+    },
+    "submission_id": {
+     "value": "ICML.cc/2026/Workshop/TAIGR/-/Submission"
+    }
+   }
+  },
+  {
+   "id": "ICML.cc/2026/Workshop/AI4Law",
+   "parent": "ICML.cc/2026/Workshop",
+   "content": {
+    "title": {
+     "value": "AI for Law Workshop @ ICML 2026"
+    },
+    "subtitle": {
+     "value": "AI4Law"
+    },
+    "website": {
+     "value": "https://sites.google.com/view/ai4law-icml2026"
+    },
+    "location": {
+     "value": "Seoul, South Korea"
+    },
+    "start_date": {
+     "value": "Jul 10 2026"
+    },
+    "date": {
+     "value": "Submission Start: Mar 24 2026 11:59PM UTC-0, Submission Deadline: May 23 2026 04:59PM UTC-0"
+    },
+    "submission_id": {
+     "value": "ICML.cc/2026/Workshop/AI4Law/-/Submission"
+    }
+   }
+  }
+ ],
+ "count": 3
+}

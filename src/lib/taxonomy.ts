@@ -82,7 +82,20 @@ export const CONTINENTS = [
 ] as const;
 export type Continent = (typeof CONTINENTS)[number];
 
-export const SOURCES = ["ccfddl", "huggingface", "wikicfp", "openreview", "cfp", "topics"] as const;
+export const SOURCES = [
+  "ccfddl",
+  "huggingface",
+  "wikicfp",
+  "openreview",
+  "cfp",
+  "topics",
+  "geocode",
+] as const;
+/** Sources that produce events (vs. enrichment steps that improve existing events). */
+export const LIST_SOURCES = ["ccfddl", "huggingface", "wikicfp", "openreview"] as const;
+export type ListSourceName = (typeof LIST_SOURCES)[number];
+export const ENRICHMENT_STEPS = ["cfp", "topics", "geocode"] as const;
+export type EnrichmentStep = (typeof ENRICHMENT_STEPS)[number];
 export type SourceName = (typeof SOURCES)[number];
 export const SOURCE_META: Record<
   SourceName,
@@ -125,6 +138,13 @@ export const SOURCE_META: Record<
     description: "Keyword rules that assign subfields and topic tags.",
     kind: "enrichment",
   },
+  geocode: {
+    label: "Geocoding",
+    url: "https://nominatim.openstreetmap.org",
+    description:
+      "Static country table plus cached OpenStreetMap Nominatim lookups (1 req/s) for venue cities.",
+    kind: "enrichment",
+  },
 };
 
 /** Lower number = more trusted when two sources disagree on a field. */
@@ -135,4 +155,5 @@ export const SOURCE_PRIORITY: Record<SourceName, number> = {
   wikicfp: 4,
   cfp: 5,
   topics: 6,
+  geocode: 7,
 };
