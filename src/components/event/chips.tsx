@@ -106,7 +106,8 @@ export function LocationLabel({
   countryCode: string | null | undefined;
   className?: string;
 }) {
-  const place = [city, country].filter(Boolean).join(", ");
+  // City-states ("Singapore, Singapore", "Macau, Macau") read once.
+  const place = [city, country && country !== city ? country : null].filter(Boolean).join(", ");
   if (!place) {
     return (
       <span className={cn("text-muted-foreground inline-flex items-center gap-1", className)}>

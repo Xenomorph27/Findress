@@ -157,3 +157,23 @@ export const SOURCE_PRIORITY: Record<SourceName, number> = {
   topics: 6,
   geocode: 7,
 };
+
+export const bookmarkStatuses = [
+  "interested",
+  "planning",
+  "writing",
+  "submitted",
+  "accepted",
+  "rejected",
+  "attending",
+] as const;
+export type BookmarkStatus = (typeof bookmarkStatuses)[number];
+export const STATUS_LABEL: Record<BookmarkStatus, string> = {
+  interested: "Interested",
+  planning: "Planning",
+  writing: "Writing",
+  submitted: "Submitted",
+  accepted: "Accepted",
+  rejected: "Rejected",
+  attending: "Attending",
+};

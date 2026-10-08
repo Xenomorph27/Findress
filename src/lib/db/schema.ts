@@ -1,4 +1,5 @@
 import { sql } from "drizzle-orm";
+import { bookmarkStatuses, type BookmarkStatus } from "../taxonomy";
 import {
   boolean,
   customType,
@@ -177,16 +178,7 @@ export const sourceRuns = pgTable(
   (t) => [index("source_runs_source_idx").on(t.source, t.startedAt)],
 );
 
-export const bookmarkStatuses = [
-  "interested",
-  "planning",
-  "writing",
-  "submitted",
-  "accepted",
-  "rejected",
-  "attending",
-] as const;
-export type BookmarkStatus = (typeof bookmarkStatuses)[number];
+export { bookmarkStatuses, type BookmarkStatus };
 
 export const bookmarks = pgTable("bookmarks", {
   eventId: integer("event_id")

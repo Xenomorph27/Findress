@@ -3,7 +3,7 @@
 import { Menu, Search } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useCommandPalette } from "@/components/command/command-palette-provider";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -18,12 +18,75 @@ export const NAV_ITEMS = [
   { href: "/sources", label: "Sources" },
 ] as const;
 
-function isActive(pathname: string, href: string) {
-  return pathname === href || pathname.startsWith(`${href}/`);
+function isActive(pathname: string | null, href: string) {
+  return pathname != null && (pathname === href || pathname.startsWith(`${href}/`));
+}
+
+/** Links with the active marker. Reading the pathname is request data, so it streams in. */
+function DesktopNavLinks({ pathname }: { pathname: string | null }) {
+  return (
+    <>
+      {NAV_ITEMS.map((item) => {
+        const active = isActive(pathname, item.href);
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            aria-current={active ? "page" : undefined}
+            className={cn(
+              "relative rounded-md px-3 py-1.5 text-sm transition-colors",
+              active ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {item.label}
+            {active && (
+              <span aria-hidden className="bg-aurora absolute inset-x-3 -bottom-[11px] h-px" />
+            )}
+          </Link>
+        );
+      })}
+    </>
+  );
+}
+
+function ActiveDesktopNav() {
+  return <DesktopNavLinks pathname={usePathname()} />;
+}
+
+function MobileNavLinks({
+  pathname,
+  onNavigate,
+}: {
+  pathname: string | null;
+  onNavigate: () => void;
+}) {
+  return (
+    <>
+      {NAV_ITEMS.map((item) => (
+        <Link
+          key={item.href}
+          href={item.href}
+          onClick={onNavigate}
+          aria-current={isActive(pathname, item.href) ? "page" : undefined}
+          className={cn(
+            "rounded-md px-3 py-2.5 text-base",
+            isActive(pathname, item.href)
+              ? "bg-surface-2 text-foreground"
+              : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          {item.label}
+        </Link>
+      ))}
+    </>
+  );
+}
+
+function ActiveMobileNav({ onNavigate }: { onNavigate: () => void }) {
+  return <MobileNavLinks pathname={usePathname()} onNavigate={onNavigate} />;
 }
 
 export function SiteHeader() {
-  const pathname = usePathname();
   const { setOpen } = useCommandPalette();
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -32,25 +95,9 @@ export function SiteHeader() {
       <div className="mx-auto flex h-14 max-w-[1280px] items-center gap-6 px-4 md:px-8">
         <Wordmark />
         <nav aria-label="Main" className="hidden items-center gap-1 md:flex">
-          {NAV_ITEMS.map((item) => {
-            const active = isActive(pathname, item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                aria-current={active ? "page" : undefined}
-                className={cn(
-                  "relative rounded-md px-3 py-1.5 text-sm transition-colors",
-                  active ? "text-foreground" : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                {item.label}
-                {active && (
-                  <span aria-hidden className="bg-aurora absolute inset-x-3 -bottom-[11px] h-px" />
-                )}
-              </Link>
-            );
-          })}
+          <Suspense fallback={<DesktopNavLinks pathname={null} />}>
+            <ActiveDesktopNav />
+          </Suspense>
         </nav>
 
         <div className="ml-auto flex items-center gap-1.5">
@@ -91,22 +138,13 @@ export function SiteHeader() {
                 <SheetTitle className="font-display text-2xl font-normal">FIndress</SheetTitle>
               </SheetHeader>
               <nav aria-label="Mobile" className="flex flex-col gap-1 px-4">
-                {NAV_ITEMS.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => setMenuOpen(false)}
-                    aria-current={isActive(pathname, item.href) ? "page" : undefined}
-                    className={cn(
-                      "rounded-md px-3 py-2.5 text-base",
-                      isActive(pathname, item.href)
-                        ? "bg-surface-2 text-foreground"
-                        : "text-muted-foreground hover:text-foreground",
-                    )}
-                  >
-                    {item.label}
-                  </Link>
-                ))}
+                <Suspense
+                  fallback={
+                    <MobileNavLinks pathname={null} onNavigate={() => setMenuOpen(false)} />
+                  }
+                >
+                  <ActiveMobileNav onNavigate={() => setMenuOpen(false)} />
+                </Suspense>
               </nav>
             </SheetContent>
           </Sheet>

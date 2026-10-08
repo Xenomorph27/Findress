@@ -51,8 +51,8 @@ async function main() {
         page.on("console", (m) => {
           if (m.type() === "error") errors.push(m.text());
         });
-        await page.goto(`${BASE}${route}`, { waitUntil: "networkidle", timeout: 60_000 });
-        await page.waitForTimeout(600);
+        await page.goto(`${BASE}${route}`, { waitUntil: "load", timeout: 60_000 });
+        await page.waitForTimeout(Number(process.env.SHOT_WAIT ?? 1500));
         const overflow = await page.evaluate(
           () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
         );
