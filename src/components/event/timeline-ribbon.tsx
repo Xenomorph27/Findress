@@ -158,7 +158,6 @@ export function TimelineRibbon({
                         "flex flex-col items-center px-1 text-center",
                         passed && "opacity-45",
                       )}
-                      title={m.detail ?? undefined}
                     >
                       <span
                         aria-hidden
@@ -172,6 +171,11 @@ export function TimelineRibbon({
                         )}
                       />
                       <span className="mt-3 text-sm font-medium">{m.title}</span>
+                      {m.detail && (
+                        <span className="text-muted-foreground line-clamp-2 text-xs">
+                          {m.detail}
+                        </span>
+                      )}
                       <span className="text-muted-foreground mt-1 font-mono text-xs">{day(m)}</span>
                       {time(m) && (
                         <span className="text-muted-foreground font-mono text-xs">{time(m)}</span>

@@ -33,11 +33,13 @@ export function Hero({ data }: { data: LandingData }) {
             <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
               AI/ML conferences &amp; workshops · live
             </p>
-            <h1 className="font-heading mt-5 text-3xl leading-tight text-balance sm:text-5xl">
+            {/* The product name is the page's main visual title (largest step, tight tracking). */}
+            <h1 className="font-heading mt-5 text-5xl leading-none tracking-tight">FIndress</h1>
+            <p className="font-heading mt-4 text-xl leading-snug text-balance sm:text-3xl">
               {first}.
               <br />
               <span className="text-muted-foreground">{rest.join(". ")}</span>
-            </h1>
+            </p>
             <p className="text-muted-foreground mt-6 max-w-lg text-base">
               Every deadline, ranking and call for papers across machine learning, NLP, vision,
               robotics and beyond — refreshed from open sources, with an assistant that reads each

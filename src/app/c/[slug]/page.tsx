@@ -150,7 +150,7 @@ function CfpSection({ e }: { e: EventDetail }) {
       {(chips.length > 0 || e.subfields.length > 0) && (
         <div className="mb-6 space-y-3" aria-label="Topics of interest">
           <ChipList items={e.subfields.map((s) => SUBFIELD_LABEL[s as SubfieldId] ?? s)} active />
-          <TopicLine items={chips} />
+          <TopicLine items={chips} max={24} />
         </div>
       )}
       {e.cfpText ? (

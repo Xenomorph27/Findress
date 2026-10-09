@@ -52,7 +52,7 @@ export function Globe({ markers, highlight, className }: Props) {
 
     const baseMarkers = markers.map((m) => ({
       location: [m.lat, m.lng] as [number, number],
-      size: 0.05,
+      size: 0.03,
     }));
     baseRef.current = baseMarkers;
     const globe = createGlobe(canvas, {
@@ -71,6 +71,9 @@ export function Globe({ markers, highlight, className }: Props) {
       glowColor: dark ? [0.1, 0.22, 0.26] : [0.86, 0.92, 0.91],
       markers: baseMarkers,
       opacity: dark ? 0.9 : 0.95,
+      // cobe v2 lifts markers 0.05 off the sphere by default, which pushes limb markers past the
+      // globe's edge. Pin them to the surface.
+      markerElevation: 0,
     });
     globeRef.current = globe;
 

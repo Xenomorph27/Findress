@@ -126,7 +126,7 @@ export function PreviewSheet({ row, onClose }: { row: ExplorerRow | null; onClos
                     items={row.subfields.map((s) => SUBFIELD_LABEL[s as SubfieldId] ?? s)}
                     active
                   />
-                  <TopicLine items={row.topics} />
+                  <TopicLine items={row.topics} max={row.topics.length} />
                 </section>
               )}
 

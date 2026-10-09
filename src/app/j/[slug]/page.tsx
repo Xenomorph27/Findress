@@ -176,7 +176,7 @@ function ScopeSection({ j }: { j: JournalDetail }) {
       {(j.subfields.length > 0 || j.topics.length > 0) && (
         <div className="mb-6 space-y-3" aria-label="Topics">
           <ChipList items={j.subfields.map((s) => SUBFIELD_LABEL[s as SubfieldId] ?? s)} active />
-          <TopicLine items={j.topics} />
+          <TopicLine items={j.topics} max={16} />
         </div>
       )}
       {j.scopeText ? (

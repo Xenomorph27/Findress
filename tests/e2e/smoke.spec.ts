@@ -7,7 +7,8 @@ import { expect, test } from "@playwright/test";
 
 test("landing renders hero, search and next deadlines", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("Every AI/ML");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("FIndress");
+  await expect(page.getByText("Every AI/ML venue on Earth.")).toBeVisible();
   await expect(page.getByRole("search")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Next deadlines" })).toBeVisible();
 });
