@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu, Search } from "lucide-react";
+import { LogOut, Menu, Search } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Suspense, useState } from "react";
@@ -8,6 +8,7 @@ import { useCommandPalette } from "@/components/command/command-palette-provider
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { useLogout } from "@/lib/hooks/use-logout";
 import { cn } from "@/lib/utils";
 import { Wordmark } from "./wordmark";
 
@@ -91,6 +92,7 @@ function ActiveMobileNav({ onNavigate }: { onNavigate: () => void }) {
 export function SiteHeader() {
   const { setOpen } = useCommandPalette();
   const [menuOpen, setMenuOpen] = useState(false);
+  const { logout, pending } = useLogout();
 
   return (
     <header className="border-hairline bg-chrome-header/85 sticky top-0 z-40 border-b backdrop-blur-xl">
@@ -124,6 +126,17 @@ export function SiteHeader() {
             <Search className="size-4" />
           </Button>
           <ThemeToggle />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-muted-foreground hidden md:inline-flex"
+            aria-label="Log out"
+            title="Log out"
+            disabled={pending}
+            onClick={() => void logout()}
+          >
+            <LogOut className="size-4" />
+          </Button>
           <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
             <SheetTrigger asChild>
               <Button
@@ -147,6 +160,14 @@ export function SiteHeader() {
                 >
                   <ActiveMobileNav onNavigate={() => setMenuOpen(false)} />
                 </Suspense>
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() => void logout()}
+                  className="text-muted-foreground hover:text-foreground tint-row-hover mt-4 flex items-center gap-2 rounded-md px-3 py-2.5 text-left text-base"
+                >
+                  <LogOut className="size-4" aria-hidden /> Log out
+                </button>
               </nav>
             </SheetContent>
           </Sheet>

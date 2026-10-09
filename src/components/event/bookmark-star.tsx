@@ -30,13 +30,13 @@ export function BookmarkStar({
       type="button"
       aria-pressed={on}
       aria-label={on ? `Remove ${label} from bookmarks` : `Bookmark ${label}`}
-      title={isOwner || !loaded ? undefined : "Unlock your workspace to bookmark"}
+      title={isOwner || !loaded ? undefined : "Sign in to bookmark"}
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
         if (!isOwner) {
           router.push(
-            `/unlock?next=${encodeURIComponent(window.location.pathname + window.location.search)}`,
+            `/login?next=${encodeURIComponent(window.location.pathname + window.location.search)}`,
           );
           return;
         }

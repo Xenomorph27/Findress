@@ -20,7 +20,7 @@ function requestTime() {
 }
 
 async function WorkspaceContent() {
-  if (!(await isOwner())) redirect("/unlock?next=/workspace");
+  if (!(await isOwner())) redirect("/login?next=/workspace");
   const db = getDb();
   if (!db) {
     return (

@@ -27,7 +27,7 @@ test("explore filters sync to the URL and search narrows results", async ({ page
   }
 });
 
-test("public API returns JSON", async ({ request }) => {
+test("API returns JSON when signed in", async ({ request }) => {
   const res = await request.get("/api/events?limit=3");
   expect(res.ok()).toBeTruthy();
   const data = await res.json();
@@ -35,14 +35,37 @@ test("public API returns JSON", async ({ request }) => {
   expect(data.limit).toBe(3);
 });
 
-test("owner-only routes are protected", async ({ page, request }) => {
-  const chat = await request.post("/api/chat", { data: { messages: [] } });
-  expect(chat.status()).toBe(401);
-  const ws = await request.get("/api/workspace/bookmarks");
-  expect(ws.status()).toBe(401);
-  await page.goto("/workspace");
-  await expect(page).toHaveURL(/\/unlock\?next=/);
-  await expect(page.getByRole("heading", { name: "Unlock FIndress" })).toBeVisible();
+test.describe("signed out", () => {
+  test.use({ storageState: { cookies: [], origins: [] } });
+
+  test("every page redirects to /login with next", async ({ page }) => {
+    for (const path of ["/", "/explore?tab=journals", "/c/icml-2026", "/j/jmlr", "/workspace"]) {
+      await page.goto(path);
+      await expect(page).toHaveURL(/\/login(\?next=|$)/);
+    }
+    await expect(page.getByRole("button", { name: "Sign in" })).toBeVisible();
+  });
+
+  test("API routes answer 401; public routes stay open", async ({ request }) => {
+    for (const path of [
+      "/api/events?limit=1",
+      "/api/journals?limit=1",
+      "/api/workspace/bookmarks",
+    ]) {
+      expect((await request.get(path, { maxRedirects: 0 })).status(), path).toBe(401);
+    }
+    expect((await request.post("/api/chat", { data: { messages: [] } })).status()).toBe(401);
+    expect((await request.get("/api/auth/session")).ok()).toBeTruthy();
+    expect((await request.get("/api/ingest", { maxRedirects: 0 })).status()).toBe(401);
+  });
+
+  test("a wrong password shows an inline error", async ({ page }) => {
+    await page.goto("/login?next=/sources");
+    await page.getByLabel("Password", { exact: true }).fill("definitely-not-it");
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await expect(page.getByTestId("login-error")).toContainText("didn’t match");
+    await expect(page).toHaveURL(/\/login\?next=(%2F|\/)sources/);
+  });
 });
 
 test("insights and sources render", async ({ page }) => {

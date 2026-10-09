@@ -421,6 +421,14 @@ export const httpCache = pgTable("http_cache", {
   fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+/** Login lockout state per client IP (src/lib/auth/lockout.ts). */
+export const loginAttempts = pgTable("login_attempts", {
+  ip: text("ip").primaryKey(),
+  failures: integer("failures").notNull().default(0),
+  lastFailureAt: timestamp("last_failure_at", { withTimezone: true }),
+  lockedUntil: timestamp("locked_until", { withTimezone: true }),
+});
+
 export type EventRow = typeof events.$inferSelect;
 export type DeadlineRow = typeof deadlines.$inferSelect;
 export type EventSourceRow = typeof eventSources.$inferSelect;

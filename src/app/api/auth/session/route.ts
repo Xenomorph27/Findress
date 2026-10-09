@@ -1,6 +1,6 @@
-import { isOwnerRequest, SESSION_COOKIE } from "@/lib/auth/session";
+import { clearedSessionCookie, cookieSecureFor, isOwnerRequest } from "@/lib/auth/session";
 
-/** GET → { owner }   ·   DELETE → lock (clears the cookie). */
+/** GET → { owner }   ·   DELETE → log out (clears the cookie; same as POST /api/auth/logout). */
 export async function GET(request: Request) {
   return Response.json(
     { owner: await isOwnerRequest(request) },
@@ -8,12 +8,12 @@ export async function GET(request: Request) {
   );
 }
 
-export async function DELETE() {
+export async function DELETE(request: Request) {
   return Response.json(
     { ok: true },
     {
       headers: {
-        "Set-Cookie": `${SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`,
+        "Set-Cookie": clearedSessionCookie(cookieSecureFor(request.url)),
         "Cache-Control": "no-store",
       },
     },

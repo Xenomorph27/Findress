@@ -267,11 +267,11 @@ export function AssistantPanel({
                 : "Ask across every venue: deadlines, regions, subfields, recent papers."}
           </p>
           <p className="text-xs">
-            The assistant uses a paid API, so it’s available after you unlock your workspace.
+            Your session ended. Sign in again to ask.
           </p>
           <Button asChild variant="outline" size="sm">
-            <Link href={`/unlock?next=${encodeURIComponent(subjectPath)}`}>
-              <Lock /> Unlock to ask
+            <Link href={`/login?next=${encodeURIComponent(subjectPath)}`}>
+              <Lock /> Sign in to ask
             </Link>
           </Button>
         </div>

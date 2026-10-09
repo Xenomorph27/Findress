@@ -6,8 +6,10 @@
  *   SHOT_BASE=http://localhost:3000 SHOT_OUT=docs/screenshots pnpm screenshots /
  *
  * Options via env: SHOT_BASE, SHOT_OUT (default .data/screenshots), SHOT_FULL=1 for full-page.
+ * Pages sit behind the login: the session saved by the e2e setup (.data/e2e-auth.json, written by
+ * pnpm test:e2e) is reused when present; /login is always shot signed out.
  */
-import { mkdirSync } from "node:fs";
+import { existsSync, mkdirSync } from "node:fs";
 import path from "node:path";
 import { chromium } from "@playwright/test";
 
@@ -19,6 +21,7 @@ const WIDTHS = [
   { width: 1440, height: 900, label: "1440" },
 ];
 const THEMES = ["dark", "light"] as const;
+const AUTH_STATE = ".data/e2e-auth.json";
 
 function nameFor(route: string) {
   const clean = route.replace(/^\/+/, "").replace(/[/?&=]+/g, "_") || "home";
@@ -38,6 +41,8 @@ async function main() {
           colorScheme: theme,
           deviceScaleFactor: 1,
           reducedMotion: "reduce",
+          storageState:
+            route.startsWith("/login") || !existsSync(AUTH_STATE) ? undefined : AUTH_STATE,
         });
         const page = await context.newPage();
         // next-themes reads localStorage first; pin the theme explicitly.

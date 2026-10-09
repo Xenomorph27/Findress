@@ -6,6 +6,7 @@ import {
   CalendarClock,
   Compass,
   FolderKanban,
+  LogOut,
   MoonStar,
   Radio,
   Sparkles,
@@ -25,6 +26,7 @@ import {
   CommandSeparator,
   CommandShortcut,
 } from "@/components/ui/command";
+import { useLogout } from "@/lib/hooks/use-logout";
 import { SUBFIELDS } from "@/lib/taxonomy";
 
 interface SearchHit {
@@ -99,6 +101,7 @@ export function CommandPalette({
   onOpenChange: (open: boolean) => void;
 }) {
   const router = useRouter();
+  const { logout } = useLogout();
   const { resolvedTheme, setTheme } = useTheme();
   const [query, setQuery] = useState("");
   const { hits, journals, loading } = useEventSearch(query, open);
@@ -223,6 +226,15 @@ export function CommandPalette({
               {resolvedTheme === "dark" ? <Sun /> : <MoonStar />}
               Switch to {resolvedTheme === "dark" ? "light" : "dark"} theme
               <CommandShortcut>theme</CommandShortcut>
+            </CommandItem>
+            <CommandItem
+              value="log-out"
+              onSelect={() => {
+                onOpenChange(false);
+                void logout();
+              }}
+            >
+              <LogOut /> Log out
             </CommandItem>
           </CommandGroup>
         </CommandList>

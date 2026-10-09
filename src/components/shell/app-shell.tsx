@@ -1,7 +1,10 @@
 import type { ReactNode } from "react";
 import { type RouteAccentKey, routeAccentCss } from "@/lib/theme/route-accents";
 
-const CSS = routeAccentCss();
+// Route tints, plus: the sign-in screen is full-bleed, so it hides the site header and footer.
+const CSS =
+  routeAccentCss() +
+  '[data-app-shell]:has([data-route-accent="login"])>:is(header,footer){display:none}';
 
 /**
  * Root of the app. Sets --screen once for the whole tree (header, page, footer) from the route

@@ -1,13 +1,15 @@
 "use client";
 
-import { CalendarPlus, Check, Copy, Lock } from "lucide-react";
+import { CalendarPlus, Check, Copy, LogOut } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useLogout } from "@/lib/hooks/use-logout";
 import { resetOwner } from "@/lib/hooks/use-owner";
 
 export function CalendarFeed({ feedUrl }: { feedUrl: string | null }) {
   const [copied, setCopied] = useState(false);
+  const { logout, pending } = useLogout();
   return (
     <div className="space-y-3 text-sm">
       <p className="text-muted-foreground">
@@ -47,14 +49,13 @@ export function CalendarFeed({ feedUrl }: { feedUrl: string | null }) {
         </Button>
         <Button
           variant="ghost"
-          onClick={async () => {
-            await fetch("/api/auth/session", { method: "DELETE" });
+          disabled={pending}
+          onClick={() => {
             resetOwner();
-            // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- full reload so the client router drops cached auth redirects
-            window.location.assign("/");
+            void logout();
           }}
         >
-          <Lock /> Lock workspace
+          <LogOut /> Log out
         </Button>
       </div>
     </div>

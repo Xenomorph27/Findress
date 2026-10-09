@@ -1,30 +1,31 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { gateDecision } from "@/lib/auth/gate";
 import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth/session";
 
 /**
- * Owner gate (SPEC §8). Browsing stays public; the workspace, the assistant, notes and
- * bookmarks require the signed owner cookie set by /unlock. Route handlers re-check too.
- * The calendar feed carries its own token, and /api/ingest accepts CRON_SECRET, so both are
- * left to their handlers.
+ * The whole app sits behind the owner login. Pages redirect to /login?next=…; API routes answer
+ * 401 JSON (a redirect to an HTML page would break fetch callers). Route handlers re-check the
+ * session too. Rules and exceptions live in src/lib/auth/gate.ts.
  */
 export async function proxy(request: NextRequest) {
   const token = request.cookies.get(SESSION_COOKIE)?.value;
-  if (await verifySessionToken(token, process.env.AUTH_SECRET)) return NextResponse.next();
-
+  const hasSession = await verifySessionToken(token, process.env.AUTH_SECRET);
   const { pathname, search } = request.nextUrl;
-  if (pathname.startsWith("/api/")) {
-    if (pathname === "/api/workspace/ics") return NextResponse.next();
+  const decision = gateDecision(pathname, search, hasSession);
+
+  if (decision.action === "next") return NextResponse.next();
+  if (decision.action === "unauthorized") {
     return NextResponse.json(
-      { error: "unauthorized", message: "Unlock FIndress first." },
-      { status: 401 },
+      { error: "unauthorized", message: "Log in to FIndress first.", login: "/login" },
+      { status: 401, headers: { "Cache-Control": "no-store" } },
     );
   }
-  const url = request.nextUrl.clone();
-  url.pathname = "/unlock";
-  url.search = `?next=${encodeURIComponent(pathname + search)}`;
-  return NextResponse.redirect(url);
+  return NextResponse.redirect(new URL(decision.location, request.url));
 }
 
 export const config = {
-  matcher: ["/workspace/:path*", "/api/workspace/:path*", "/api/chat/:path*"],
+  // Everything except Next's static output and public files (images, fonts, icons, robots).
+  matcher: [
+    "/((?!_next/static|_next/image|favicon\\.ico|.*\\.(?:png|jpg|jpeg|gif|svg|webp|avif|ico|woff2?|ttf|otf|txt|xml|webmanifest)$).*)",
+  ],
 };

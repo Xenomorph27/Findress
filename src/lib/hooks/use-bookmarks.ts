@@ -7,7 +7,7 @@ import { targetKey, type TargetKind } from "@/lib/workspace/targets";
 /**
  * Owner bookmarks (events, journals, special issues), shared by every star on the page.
  * Loaded once from /api/workspace/bookmarks; a 401 means "not unlocked" and stars link to
- * /unlock instead. Keys are "<kind>:<id>".
+ * /login instead. Keys are "<kind>:<id>".
  */
 interface State {
   loaded: boolean;

@@ -17,8 +17,8 @@ export function RefreshButton({ step, label = "Refresh now" }: { step: string; l
   if (owner === false) {
     return (
       <Button asChild variant="ghost" size="sm" className="text-muted-foreground">
-        <Link href="/unlock?next=/sources">
-          <Lock /> Unlock to refresh
+        <Link href="/login?next=/sources">
+          <Lock /> Sign in to refresh
         </Link>
       </Button>
     );

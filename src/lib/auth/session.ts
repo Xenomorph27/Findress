@@ -1,11 +1,47 @@
 /**
- * Owner session (SPEC §8): a signed, httpOnly cookie set by /unlock after APP_PASSWORD matches.
+ * Owner session: a signed, httpOnly cookie set by POST /api/auth/login after APP_PASSWORD
+ * matches. The whole app sits behind it (src/proxy.ts); this is the one shared auth helper.
  * Token = base64url(payload).base64url(HMAC-SHA256(payload, AUTH_SECRET)); payload = {exp}.
  * Uses Web Crypto only, so it works in Node route handlers and in proxy.ts.
  */
 
-export const SESSION_COOKIE = "findress_owner";
+export const SESSION_COOKIE = "findress_session";
+/** "Remember me": a persistent cookie for 30 days. */
 export const SESSION_MAX_AGE_S = 30 * 24 * 3600;
+/**
+ * Without "remember me" the cookie has no Max-Age, so it ends with the browser session. The token
+ * inside still expires after 24 h, so a restored browser session cannot keep it alive forever.
+ */
+export const SESSION_ONLY_TOKEN_S = 24 * 3600;
+
+/** Set-Cookie value for a fresh session. */
+export function sessionCookie(
+  token: string,
+  { remember, secure }: { remember: boolean; secure: boolean },
+): string {
+  return [
+    `${SESSION_COOKIE}=${token}`,
+    "Path=/",
+    "HttpOnly",
+    "SameSite=Lax",
+    ...(remember ? [`Max-Age=${SESSION_MAX_AGE_S}`] : []),
+    ...(secure ? ["Secure"] : []),
+  ].join("; ");
+}
+
+/** Set-Cookie value that ends the session. */
+export function clearedSessionCookie(secure: boolean): string {
+  return `${SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secure ? "; Secure" : ""}`;
+}
+
+/**
+ * Mark cookies Secure on https, and on http://localhost (browsers treat localhost as a secure
+ * context). Only plain-http LAN dev hosts get a non-Secure cookie, or the browser would drop it.
+ */
+export function cookieSecureFor(url: string): boolean {
+  const u = new URL(url);
+  return u.protocol === "https:" || u.hostname === "localhost" || u.hostname === "127.0.0.1";
+}
 
 const enc = new TextEncoder();
 

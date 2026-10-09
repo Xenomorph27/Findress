@@ -296,7 +296,7 @@ export function Explorer({
         if (isOwner) void toggleBookmark(it.row.id, it.kind);
         else
           router.push(
-            `/unlock?next=${encodeURIComponent(window.location.pathname + window.location.search)}`,
+            `/login?next=${encodeURIComponent(window.location.pathname + window.location.search)}`,
           );
       }
     };
