@@ -172,7 +172,7 @@ export function FilterRail({
         )}
         <Toggle
           id="f-passed"
-          label="Hide passed deadlines"
+          label="Hide past editions"
           checked={!filters.showPassed}
           onChange={(v) => onChange({ showPassed: !v })}
         />

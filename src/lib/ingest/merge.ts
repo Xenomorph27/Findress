@@ -101,7 +101,11 @@ export function mergeGroup(group: EventInput[]): MergedEvent {
   // Mode can be stated by a source that has no address (e.g. "Online" on WikiCFP).
   if (!loc.mode) loc.mode = pick("mode");
 
-  const dateSource = items.find((it) => it.startDate);
+  // Prefer dates that belong to this edition: a source still carrying last year's dates under
+  // the new year (seen upstream for UAI 2026) loses to one whose start year matches.
+  const dateSource =
+    items.find((it) => it.startDate?.startsWith(String(it.year))) ??
+    items.find((it) => it.startDate);
   const dates = {
     startDate: dateSource?.startDate ?? null,
     endDate: dateSource?.endDate ?? null,
@@ -156,5 +160,20 @@ export function mergeEventInputs(inputs: EventInput[]): MergedEvent[] {
     if (g) g.push(e);
     else groups.set(key, [e]);
   }
-  return [...groups.values()].map(mergeGroup);
+  const merged = [...groups.values()].map(mergeGroup);
+
+  // One display acronym per series ("KDD", not "SIGKDD" for the ccfddl-only 2027 edition and
+  // "KDD" for 2026): the spelling of the most trusted source across all its editions.
+  const best = new Map<string, { acronym: string; rank: number }>();
+  for (const e of inputs) {
+    if (e.type === "workshop") continue;
+    const key = seriesKeyFor(e.acronym);
+    const rank = SOURCE_PRIORITY[e.source];
+    const cur = best.get(key);
+    if (!cur || rank < cur.rank) best.set(key, { acronym: e.acronym, rank });
+  }
+  return merged.map((m) => {
+    const display = best.get(m.seriesKey)?.acronym;
+    return display && m.type !== "workshop" ? { ...m, acronym: display } : m;
+  });
 }

@@ -6,7 +6,7 @@ import { Explorer } from "@/components/explore/explorer";
 import { ExplorerSkeleton } from "@/components/explore/explorer-skeleton";
 import { Container } from "@/components/shell/states";
 import { getExplorerRows, withDbFallback } from "@/lib/data/events";
-import { nextDeadline, parseFilters } from "@/lib/explore/filters";
+import { inDefaultScope, parseFilters } from "@/lib/explore/filters";
 
 export const metadata: Metadata = {
   title: "Explore",
@@ -28,18 +28,11 @@ async function ExplorerLoader({
   await connection(); // the row set and countdowns depend on the request time
   const filters = parseFilters(sp);
   const res = await withDbFallback([], getExplorerRows);
-  // The default view (upcoming, ranked/structured sources) ships only what it shows; asking for
-  // passed or community-listed calls makes the client re-request the full set.
+  // The default view (current editions from ranked/structured sources) ships only what it
+  // shows; asking for past editions or community-listed calls re-requests the full set.
   const now = requestTime();
   const full = filters.showPassed || filters.community;
-  const today = new Date(now).toISOString().slice(0, 10);
-  const rows = full
-    ? res.data
-    : res.data.filter((r) => {
-        if (r.communityOnly) return false;
-        const nd = nextDeadline(r, now);
-        return nd ? !nd.passed : r.startDate == null || r.startDate >= today;
-      });
+  const rows = full ? res.data : res.data.filter((r) => inDefaultScope(r, now));
   const dataState =
     res.error == null ? "ok" : res.error === "not-configured" ? "not-configured" : "error";
   return (

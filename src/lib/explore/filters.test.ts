@@ -4,6 +4,7 @@ import {
   activeFilterCount,
   applyFilters,
   DEFAULT_FILTERS,
+  editionStatus,
   nextDeadline,
   parseFilters,
   serializeFilters,
@@ -38,6 +39,7 @@ function row(p: Partial<ExplorerRow> & { slug: string }): ExplorerRow {
     hasRebuttal: null,
     reviewType: null,
     communityOnly: false,
+    latestInSeries: true,
     sources: ["huggingface"],
     createdAt: 0,
     ...p,
@@ -64,10 +66,27 @@ const rows = [
     continent: "Europe",
     reviewType: "Double-blind",
   }),
+  // Submissions closed, event still ahead (NeurIPS in October): stays listed.
   row({
-    slug: "passed",
+    slug: "closed",
     deadlines: [{ kind: "paper", at: NOW - 5 * DAY, label: null }],
     startDate: "2026-12-01",
+  }),
+  // Latest edition of its series ended in July; next edition not announced yet: stays listed.
+  row({
+    slug: "lastcycle",
+    year: 2026,
+    deadlines: [{ kind: "paper", at: NOW - 250 * DAY, label: null }],
+    startDate: "2026-07-05",
+    endDate: "2026-07-10",
+  }),
+  // An older edition superseded by a newer one: hidden unless past editions are shown.
+  row({
+    slug: "past",
+    year: 2026,
+    deadlines: [{ kind: "paper", at: NOW - 200 * DAY, label: null }],
+    startDate: "2026-06-01",
+    latestInSeries: false,
   }),
   row({
     slug: "tba",
@@ -121,17 +140,19 @@ describe("applyFilters", () => {
   const slugs = (f: Partial<typeof DEFAULT_FILTERS>) =>
     applyFilters(rows, { ...DEFAULT_FILTERS, ...f }, NOW).map((r) => r.slug);
 
-  it("hides passed deadlines and community-only events by default, sorted by nearest deadline", () => {
-    expect(slugs({})).toEqual(["soon", "later", "tba"]);
+  it("hides past editions and community-only events by default, open calls first", () => {
+    expect(slugs({})).toEqual(["soon", "later", "tba", "closed", "lastcycle"]);
   });
 
-  it("shows passed and community events when asked", () => {
+  it("shows past editions and community events when asked", () => {
     expect(slugs({ showPassed: true, community: true })).toEqual([
       "soon",
       "community",
       "later",
       "tba",
-      "passed",
+      "closed",
+      "lastcycle",
+      "past",
     ]);
   });
 
@@ -140,7 +161,7 @@ describe("applyFilters", () => {
     expect(slugs({ subfields: ["cv"] })).toEqual(["later"]);
     expect(slugs({ ranks: ["A*"] })).toEqual(["soon"]);
     expect(slugs({ ranks: ["CCF-B"] })).toEqual(["later"]);
-    expect(slugs({ ranks: ["unranked"] })).toEqual(["tba"]);
+    expect(slugs({ ranks: ["unranked"] })).toEqual(["tba", "closed", "lastcycle"]);
     expect(slugs({ continents: ["Asia"] })).toEqual(["soon"]);
     expect(slugs({ doubleBlind: true })).toEqual(["later"]);
     expect(slugs({ hasAbstract: true })).toEqual(["later"]);
@@ -155,14 +176,29 @@ describe("applyFilters", () => {
 
   it("sorts by rank and name", () => {
     expect(slugs({ sort: "rank" })[0]).toBe("soon");
-    expect(slugs({ sort: "name" })).toEqual(["later", "soon", "tba"]);
+    expect(slugs({ sort: "name" })).toEqual(["closed", "lastcycle", "later", "soon", "tba"]);
+  });
+});
+
+describe("editionStatus (regression: flagships vanished once their call closed)", () => {
+  const by = (slug: string) => rows.find((r) => r.slug === slug)!;
+  it("classifies open, unknown, closed, tba and past editions", () => {
+    expect(editionStatus(by("soon"), NOW)).toBe("open");
+    expect(editionStatus(by("tba"), NOW)).toBe("unknown");
+    expect(editionStatus(by("closed"), NOW)).toBe("closed");
+    expect(editionStatus(by("lastcycle"), NOW)).toBe("tba");
+    expect(editionStatus(by("past"), NOW)).toBe("past");
+  });
+  it("drops a finished latest edition after a year without a successor", () => {
+    expect(editionStatus(by("lastcycle"), NOW + 400 * DAY)).toBe("past");
   });
 });
 
 describe("nextDeadline", () => {
   it("prefers the earliest upcoming, else the latest passed", () => {
-    expect(nextDeadline(rows[1], NOW)?.kind).toBe("abstract");
-    expect(nextDeadline(rows[2], NOW)).toMatchObject({ passed: true });
-    expect(nextDeadline(rows[3], NOW)).toBeNull();
+    const by = (slug: string) => rows.find((r) => r.slug === slug)!;
+    expect(nextDeadline(by("later"), NOW)?.kind).toBe("abstract");
+    expect(nextDeadline(by("closed"), NOW)).toMatchObject({ passed: true });
+    expect(nextDeadline(by("tba"), NOW)).toBeNull();
   });
 });

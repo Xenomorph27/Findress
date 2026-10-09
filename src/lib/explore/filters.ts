@@ -166,6 +166,44 @@ export function nextDeadline(
 }
 
 const DAY = 86_400_000;
+
+/**
+ * Where an edition stands today:
+ * - open:    a submission (abstract/paper) deadline is still ahead
+ * - unknown: no submission deadline known and the event hasn't happened yet
+ * - closed:  submissions closed but the event itself is still ahead (NeurIPS in October)
+ * - tba:     the series' latest known edition is over and the next one isn't announced yet
+ *            (kept visible for a year so flagships never vanish between cycles)
+ * - past:    an older edition, only shown with "show past editions"
+ */
+export type EditionStatus = "open" | "unknown" | "closed" | "tba" | "past";
+
+export function editionStatus(
+  row: Pick<ExplorerRow, "deadlines" | "startDate" | "endDate" | "latestInSeries">,
+  now: number,
+): EditionStatus {
+  const nd = nextDeadline(row, now);
+  if (nd && !nd.passed) return "open";
+  const today = new Date(now).toISOString().slice(0, 10);
+  const lastDay = row.endDate ?? row.startDate;
+  if (lastDay ? lastDay >= today : !nd) return nd ? "closed" : "unknown";
+  const endedAt = lastDay ? Date.parse(`${lastDay}T23:59:59Z`) : (nd?.at ?? 0);
+  return row.latestInSeries && now - endedAt < 365 * DAY ? "tba" : "past";
+}
+
+/** The default view (past editions hidden), shared by the server prefilter and the client. */
+export function inDefaultScope(row: ExplorerRow, now: number): boolean {
+  return !row.communityOnly && editionStatus(row, now) !== "past";
+}
+
+const STATUS_ORDER: Record<EditionStatus, number> = {
+  open: 0,
+  unknown: 1,
+  closed: 2,
+  tba: 3,
+  past: 4,
+};
+
 const RANK_SCORE: Record<string, number> = { "A*": 4, A: 3, B: 2, C: 1 };
 
 export function rankScore(row: Pick<ExplorerRow, "rankCore" | "rankCcf">): number {
@@ -201,7 +239,6 @@ export function haystack(row: ExplorerRow): string {
 
 export function applyFilters(rows: ExplorerRow[], f: Filters, now: number): ExplorerRow[] {
   const tokens = f.q.toLowerCase().split(/\s+/).filter(Boolean);
-  const today = new Date(now).toISOString().slice(0, 10);
   const winEnd = f.window && f.window !== "custom" ? now + Number(f.window) * DAY : null;
   const from = f.window === "custom" && f.dlFrom ? Date.parse(`${f.dlFrom}T00:00:00Z`) : null;
   const to = f.window === "custom" && f.dlTo ? Date.parse(`${f.dlTo}T23:59:59Z`) : null;
@@ -209,11 +246,7 @@ export function applyFilters(rows: ExplorerRow[], f: Filters, now: number): Expl
   const out = rows.filter((row) => {
     if (!f.community && row.communityOnly) return false;
     const nd = nextDeadline(row, now);
-    if (!f.showPassed) {
-      const upcoming = nd && !nd.passed;
-      const unknownButFuture = !nd && (row.startDate == null || row.startDate >= today);
-      if (!upcoming && !unknownButFuture) return false;
-    }
+    if (!f.showPassed && editionStatus(row, now) === "past") return false;
     if (winEnd != null && !(nd && !nd.passed && nd.at <= winEnd)) return false;
     if (
       (from != null || to != null) &&
@@ -245,17 +278,19 @@ export function applyFilters(rows: ExplorerRow[], f: Filters, now: number): Expl
 }
 
 export function sortRows(rows: ExplorerRow[], sort: SortKey, now: number): ExplorerRow[] {
-  const keyed = rows.map((row) => ({ row, nd: nextDeadline(row, now) }));
+  const keyed = rows.map((row) => ({
+    row,
+    nd: nextDeadline(row, now),
+    status: STATUS_ORDER[editionStatus(row, now)],
+  }));
   const byName = (a: ExplorerRow, b: ExplorerRow) =>
     a.acronym.localeCompare(b.acronym) || a.year - b.year;
   const deadlineOrder = (a: (typeof keyed)[number], b: (typeof keyed)[number]) => {
-    // upcoming (soonest first) → unknown → passed (most recent first)
-    const bucket = (x: (typeof keyed)[number]) => (x.nd ? (x.nd.passed ? 2 : 0) : 1);
-    const ba = bucket(a);
-    const bb = bucket(b);
-    if (ba !== bb) return ba - bb;
-    if (ba === 0) return a.nd!.at - b.nd!.at;
-    if (ba === 2) return b.nd!.at - a.nd!.at;
+    // open (soonest deadline first) → deadline not announced → call closed (both by soonest
+    // event) → next edition TBA → past editions (both by most recent deadline)
+    if (a.status !== b.status) return a.status - b.status;
+    if (a.status === 0) return a.nd!.at - b.nd!.at;
+    if (a.status >= 3) return (b.nd?.at ?? 0) - (a.nd?.at ?? 0) || byName(a.row, b.row);
     return (
       (a.row.startDate ?? "9999").localeCompare(b.row.startDate ?? "9999") || byName(a.row, b.row)
     );

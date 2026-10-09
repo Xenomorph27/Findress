@@ -1,0 +1,117 @@
+- title: ICLR
+  year: 2025
+  id: iclr25
+  full_name: International Conference on Learning Representations
+  link: https://iclr.cc/Conferences/2025
+  era_rating: a
+  deadlines:
+  - type: abstract
+    label: Abstract Submission
+    date: '2024-09-27 23:59:59'
+    timezone: AoE
+  - type: submission
+    label: Paper Submission
+    date: '2024-10-01 23:59:59'
+    timezone: AoE
+  city: Singapore
+  country: Singapore
+  venue: Singapore EXPO - 1 Expo Drive, Singapore
+  date: April 24-28, 2025
+  start: 2025-04-24
+  end: 2025-04-28
+  hindex: 304
+  tags:
+  - machine-learning
+  - computer-vision
+  - natural-language-processing
+  - signal-processing
+  - representation-learning
+  rankings: 'CCF: N, CORE: A*, THCPL: A'
+  note: Mandatory abstract deadline on September 27, 2024. More info <a href='https://iclr.cc/Conferences/2025/CallForPapers'>here</a>.
+
+- title: ICLR
+  year: 2026
+  id: iclr26
+  full_name: The Fourteenth International Conference on Learning Representations
+  link: https://iclr.cc/Conferences/2026
+  era_rating: a
+  deadlines:
+  - type: abstract
+    label: Abstract Submission
+    date: '2025-09-19 23:59:59'
+    timezone: AoE
+  - type: submission
+    label: Paper Submission
+    date: '2025-09-24 23:59:59'
+    timezone: AoE
+  - type: review_release
+    label: Reviews Released
+    date: '2025-11-11 23:59:59'
+    timezone: AoE
+  - type: rebuttal_end
+    label: Discussion Period End
+    date: '2025-12-03 23:59:59'
+    timezone: AoE
+  - type: notification
+    label: Notification
+    date: '2026-01-25 23:59:59'
+    timezone: AoE
+  city: Rio de Janeiro
+  country: Brazil
+  venue: Riocentro Convention and Event Center
+  date: April 23-27, 2026
+  start: 2026-04-23
+  end: 2026-04-27
+  hindex: 304
+  tags:
+  - data-mining
+  - machine-learning
+  - natural-language-processing
+  - computer-vision
+  - robotics
+  - mathematics
+  - reinforcement-learning
+  - representation-learning
+  note: Mandatory abstract deadline on Sep 19, 2025. More info <a href='https://iclr.cc/Conferences/2026/Dates#'>here</a>.
+
+- title: ICLR
+  year: 2027
+  id: iclr27
+  full_name: The Fifteenth International Conference on Learning Representations
+  link: https://iclr.cc/Conferences/2027
+  era_rating: a
+  deadlines:
+  - type: abstract
+    label: Abstract Submission
+    date: '2026-09-18 23:59:59'
+    timezone: AoE
+  - type: submission
+    label: Paper Submission
+    date: '2026-09-25 23:59:59'
+    timezone: AoE
+  - type: review_release
+    label: Reviews Released
+    date: '2026-11-05 23:59:59'
+    timezone: AoE
+  - type: rebuttal_end
+    label: Author-Reviewer Discussion End
+    date: '2026-11-18 23:59:59'
+    timezone: AoE
+  - type: notification
+    label: Final Decisions
+    date: '2026-12-16 23:59:59'
+    timezone: AoE
+  city: San Francisco
+  country: United States
+  venue: Moscone Center, San Francisco, CA
+  date: April 26-30, 2027
+  start: 2027-04-26
+  end: 2027-04-30
+  hindex: 304
+  tags:
+  - machine-learning
+  - computer-vision
+  - natural-language-processing
+  - signal-processing
+  - representation-learning
+  note: Mandatory abstract deadline on Sep 18, 2026. More info <a href='https://iclr.cc/Conferences/2027/Dates'>here</a>.

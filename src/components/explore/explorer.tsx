@@ -100,6 +100,7 @@ export function Explorer({
     () => results.filter((r) => r.type === "workshop").length,
     [results],
   );
+  const otherCount = results.length - workshopCount;
   const selectedIndex = Math.min(selected, Math.max(results.length - 1, 0));
 
   const filtersRef = useRef(filters);
@@ -249,14 +250,11 @@ export function Explorer({
           <div>
             <h1 className="font-display text-4xl leading-none md:text-5xl">Explore</h1>
             <p className="text-muted-foreground mt-2 text-sm" aria-live="polite">
-              <span className="text-foreground tabular font-mono">{results.length}</span> venues
-              {workshopCount > 0 && (
-                <>
-                  {" "}
-                  · <span className="tabular font-mono">{workshopCount}</span> workshops
-                </>
-              )}
-              {!filters.showPassed && " · upcoming deadlines"}
+              <span className="text-foreground tabular font-mono">{otherCount}</span>{" "}
+              {otherCount === 1 ? "conference" : "conferences"} ·{" "}
+              <span className="text-foreground tabular font-mono">{workshopCount}</span>{" "}
+              {workshopCount === 1 ? "workshop" : "workshops"}
+              {!filters.showPassed && " · current editions"}
             </p>
           </div>
           <div className="flex items-center gap-2">

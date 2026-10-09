@@ -41,6 +41,7 @@ export async function getExplorerRows(): Promise<ExplorerRow[]> {
     .select({
       id: events.id,
       slug: events.slug,
+      seriesKey: events.seriesKey,
       acronym: events.acronym,
       name: events.name,
       year: events.year,
@@ -92,6 +93,10 @@ export async function getExplorerRows(): Promise<ExplorerRow[]> {
     byEvent.set(d.eventId, list);
   }
 
+  const newestYear = new Map<string, number>();
+  for (const r of rows)
+    newestYear.set(r.seriesKey, Math.max(newestYear.get(r.seriesKey) ?? 0, r.year));
+
   return rows.map((r) => ({
     id: r.id,
     slug: r.slug,
@@ -120,6 +125,7 @@ export async function getExplorerRows(): Promise<ExplorerRow[]> {
     reviewType: r.reviewType,
     communityOnly:
       r.sources.length > 0 && r.sources.every((s) => s === "wikicfp") && !r.rankCore && !r.rankCcf,
+    latestInSeries: newestYear.get(r.seriesKey) === r.year,
     sources: r.sources,
     createdAt: r.createdAt.getTime(),
   }));

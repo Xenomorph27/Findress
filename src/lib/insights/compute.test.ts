@@ -29,6 +29,7 @@ const base: Omit<ExplorerRow, "slug" | "id"> = {
   hasRebuttal: null,
   reviewType: null,
   communityOnly: false,
+  latestInSeries: true,
   sources: [],
   createdAt: 0,
 };

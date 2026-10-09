@@ -7,10 +7,24 @@ import { BookmarkStar } from "@/components/event/bookmark-star";
 import { LocationLabel, RankChip, TopicChip, TypeBadge } from "@/components/event/chips";
 import { CountdownChip } from "@/components/event/countdown-chip";
 import type { ExplorerRow } from "@/lib/data/types";
-import { nextDeadline } from "@/lib/explore/filters";
+import { editionStatus, nextDeadline, type EditionStatus } from "@/lib/explore/filters";
 import { SUBFIELD_LABEL, type SubfieldId } from "@/lib/taxonomy";
 import { formatDateRange } from "@/lib/time/format";
 import { cn } from "@/lib/utils";
+
+const STATUS_NOTE: Partial<Record<EditionStatus, string>> = {
+  closed: "call closed",
+  tba: "next edition TBA",
+  past: "past edition",
+};
+
+/** Small caption under the countdown: which deadline, or why there is none ahead. */
+export function deadlineCaption(row: ExplorerRow, now: number): string {
+  const nd = nextDeadline(row, now);
+  const note = STATUS_NOTE[editionStatus(row, now)];
+  if (note) return note;
+  return nd ? (nd.kind === "abstract" ? "abstract" : "paper") : "deadline";
+}
 
 function DeadlineCell({ row, now }: { row: ExplorerRow; now: number }) {
   const nd = nextDeadline(row, now);
@@ -18,7 +32,7 @@ function DeadlineCell({ row, now }: { row: ExplorerRow; now: number }) {
     <div className="flex flex-col items-start gap-1">
       <CountdownChip dueAt={nd?.at ?? null} />
       <span className="text-muted-foreground font-mono text-[10px] tracking-wide uppercase">
-        {nd ? (nd.kind === "abstract" ? "abstract" : "paper") : "deadline"}
+        {deadlineCaption(row, now)}
       </span>
     </div>
   );
@@ -76,7 +90,7 @@ export function ResultRow({
       className={cn(
         "group border-hairline relative grid cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 border-b px-3 py-3 transition-colors md:grid-cols-[112px_minmax(0,1fr)_150px_170px_auto] md:px-4",
         selected ? "bg-surface-2/70" : "hover:bg-surface-2/40",
-        row.deadlines.length > 0 && nextDeadline(row, now)?.passed && "opacity-70",
+        ["tba", "past"].includes(editionStatus(row, now)) && "opacity-70",
       )}
     >
       {selected && (
@@ -118,7 +132,14 @@ export function ResultRow({
       </div>
 
       <div className="-mr-1 flex items-center gap-0.5 self-start md:hidden">
-        <CountdownChip dueAt={nextDeadline(row, now)?.at ?? null} />
+        <span className="flex flex-col items-end gap-0.5">
+          <CountdownChip dueAt={nextDeadline(row, now)?.at ?? null} />
+          {editionStatus(row, now) !== "open" && nextDeadline(row, now) && (
+            <span className="text-muted-foreground font-mono text-[9px] tracking-wide uppercase">
+              {deadlineCaption(row, now)}
+            </span>
+          )}
+        </span>
         <BookmarkStar eventId={row.id} label={`${row.acronym} ${row.year}`} />
       </div>
 
@@ -172,7 +193,7 @@ export function ResultCard({
       onClick={onOpen}
       className={cn(
         "group border-hairline bg-surface/70 hover:border-hairline-strong relative flex cursor-pointer flex-col gap-3 rounded-xl border p-4 transition-colors",
-        nd?.passed && "opacity-75",
+        ["tba", "past"].includes(editionStatus(row, now)) && "opacity-75",
       )}
     >
       <div className="flex items-start justify-between gap-3">
@@ -195,7 +216,14 @@ export function ResultCard({
           dueAt={nd?.at ?? null}
           label={nd ? (nd.kind === "abstract" ? "abs" : "paper") : undefined}
         />
-        <span className="text-muted-foreground font-mono text-[11px]">{dates ?? "Dates TBA"}</span>
+        <span className="text-muted-foreground text-right font-mono text-[11px]">
+          {dates ?? "Dates TBA"}
+          {nd?.passed && (
+            <span className="block text-[9px] tracking-wide uppercase">
+              {deadlineCaption(row, now)}
+            </span>
+          )}
+        </span>
       </div>
       <div className="border-hairline flex items-center justify-between gap-2 border-t pt-3 text-sm">
         <LocationLabel

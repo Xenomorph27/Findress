@@ -34,6 +34,8 @@ export interface ExplorerRow {
   reviewType: string | null;
   /** Only WikiCFP lists it and it has no rank: hidden behind a toggle by default. */
   communityOnly: boolean;
+  /** Newest edition of its series in the archive (keeps flagships listed between cycles). */
+  latestInSeries: boolean;
   sources: string[];
   createdAt: number;
 }
