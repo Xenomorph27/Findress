@@ -5,10 +5,18 @@ import { useSyncExternalStore } from "react";
 /**
  * Gate for the WebGL scenes (crystal ball, login galaxy/ripple/laser, background light pillar):
  * - "pending": server render / first client render (render nothing heavy yet)
- * - "static": no WebGL2, or the viewer prefers reduced motion → show the static fallback
+ * - "static": no hardware WebGL2, or the viewer prefers reduced motion → show the static fallback
  * - "webgl": mount the canvas
  */
 export type WebGLMode = "pending" | "static" | "webgl";
+
+/**
+ * Software rasterisers (no GPU acceleration: SwiftShader, llvmpipe, Microsoft Basic Render) run
+ * shaders on the CPU, so a full-screen raymarch or particle field would block the main thread
+ * for seconds. Treat them like "no WebGL2" and show the still art instead.
+ */
+export const SOFTWARE_RENDERER =
+  /swiftshader|llvmpipe|softpipe|software|basic render|mesa offscreen/i;
 
 let webgl2: boolean | null = null;
 function hasWebGL2(): boolean {
@@ -16,7 +24,16 @@ function hasWebGL2(): boolean {
   try {
     const canvas = document.createElement("canvas");
     const gl = canvas.getContext("webgl2");
-    webgl2 = !!gl;
+    let renderer = "";
+    if (gl) {
+      const info = gl.getExtension("WEBGL_debug_renderer_info");
+      renderer = String(
+        (info && gl.getParameter(info.UNMASKED_RENDERER_WEBGL)) ||
+          gl.getParameter(gl.RENDERER) ||
+          "",
+      );
+    }
+    webgl2 = !!gl && !SOFTWARE_RENDERER.test(renderer);
     gl?.getExtension("WEBGL_lose_context")?.loseContext();
   } catch {
     webgl2 = false;
@@ -37,9 +54,14 @@ function snapshot(): WebGLMode {
   return window.matchMedia(REDUCED).matches ? "static" : "webgl";
 }
 
-export function useWebGLMode(): WebGLMode {
-  return useSyncExternalStore(subscribe, snapshot, () => "pending");
+/**
+ * `enabled: false` keeps the answer "pending" without probing: creating a WebGL context is itself
+ * a long task on slow devices, so deferred scenes only ask once they are about to draw.
+ */
+export function useWebGLMode(enabled = true): WebGLMode {
+  return useSyncExternalStore(subscribe, enabled ? snapshot : pendingSnapshot, () => "pending");
 }
+const pendingSnapshot = (): WebGLMode => "pending";
 
 /** Reduced-motion preference alone (for scenes that stay interactive but stop moving). */
 export function usePrefersReducedMotion(): boolean {

@@ -40,8 +40,9 @@ const MASK =
  */
 export function PillarBackground() {
   const pathname = usePathname();
-  const mode = useWebGLMode();
   const started = useDeferredStart();
+  // Probe WebGL only once the deferred start fires (the probe itself is a long task on slow GPUs).
+  const mode = useWebGLMode(started);
   const { resolvedTheme } = useTheme();
   // On phones the pillar spans the whole content column, so it runs dimmer.
   const narrow = useMediaQuery("(max-width: 767px)", false);

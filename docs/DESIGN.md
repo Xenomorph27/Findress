@@ -183,6 +183,9 @@ Rules for every WebGL scene:
 - `useWebGLMode()` returns `"static"` without WebGL2 or under `prefers-reduced-motion`, and the
   scene then shows still art: a CSS glow ball, a still starfield with the greyscale hero image and a
   CSS beam, or no pillar.
+- Software rasterisers (SwiftShader, llvmpipe, Microsoft Basic Render) count as no WebGL2: a
+  full-screen shader on the CPU would freeze the page. Deferred scenes call `useWebGLMode(started)`
+  so even the probe (it creates a GL context) waits.
 - Decorative scenes start late (`useDeferredStart`): on the first pointer, key, touch or scroll, or
   3s after load. This keeps shader compiles off the critical path (Lighthouse mobile ≥ 85).
 - **Crystal globe interaction:**

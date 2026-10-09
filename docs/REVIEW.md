@@ -285,3 +285,98 @@ suite and Lighthouse 12.
 - **Login screen in light theme.** The PixelSwap hand-off lands on the dark background (per the
   brief), so in light theme a dark panel briefly precedes the light page.
 - **No new env vars.** `APP_PASSWORD` is unchanged (still the one in `.env.local`).
+
+## Update 2026-10-09 (d) — galaxy login, accent swap, LightPillar background, Gemini
+
+### What changed
+
+- **Login (no more split screen).** A full-screen layered scene, with the card centred:
+  1. React Bits **Galaxy** (back).
+  2. The hero globe through **RippleDistortion**, full screen, screen-blended at 0.6 with a soft
+     vignette, sitting just above the card.
+  3. **LaserFlow** (`#FF79C6`).
+  4. The card: `#120F17`, a 1.5px `#FF79C6` border, 20px corners, a top glow and the lift.
+
+  Everything inside the card is unchanged: wordmark, tagline, show/hide password, remember me,
+  errors, lockout, PixelSwap hand-off. One pointer listener on the wrapper forwards moves to Galaxy
+  (the ripple and laser listen on `window`). Phones and low-end devices get Galaxy + LaserFlow only,
+  and the card is full width with 16px margins.
+
+- **Accents.** `/explore` now uses the sign-in pink `#F25BD0`; `/sources` uses the old Explore cyan
+  `#38BDF8`. Nav neighbours in OKLCH: Explore 338°, Insights 177°, Workspace 79°, Sources 233°
+  (gaps 161°, 98°, 154°).
+- **Background.** The footer Strands is removed (component and file deleted). React Bits
+  **LightPillar** is now a fixed, full-viewport light behind every app page (not `/login`). It is
+  mounted once in `AppShell` and never re-initialised on navigation; content scrolls over it.
+  - The opaque canvas is blended away: `screen` in dark, and the component's `lightMode` with
+    `multiply` in light. A radial mask feathers every edge.
+  - Allowed edits only: pause in hidden tabs, one still frame under reduced motion, ResizeObserver.
+    Quality is `medium`.
+- **Assistant → Gemini.** `@ai-sdk/google`, with `AI_PROVIDER=google` as the default,
+  `GOOGLE_GENERATIVE_AI_API_KEY`, and `AI_MODEL` defaulting to `gemini-3.8-flash`. That is the
+  latest stable Flash on Google's model list (ai.google.dev/gemini-api/docs/models, checked
+  2026-10-09).
+  - Anthropic and the Vercel AI Gateway remain options. `AI_EFFORT` maps to Gemini's thinking level.
+  - All six tools are unchanged; `fetchPage` now takes a plain string URL, validated server-side, so
+    every tool schema stays inside the JSON-schema subset Gemini accepts.
+  - In `.env.local` I switched only `AI_PROVIDER` / `AI_MODEL` to google / gemini-3.8-flash. No
+    key was written anywhere.
+
+### Decisions and deviations
+
+- **LaserFlow API.** The registry's current LaserFlow has no `horizontalBeamOffset` /
+  `verticalBeamOffset`. Its beam comes down from the top and pours onto a `surfaceRef` element. The
+  card is that surface (`beamPosition 0.5`), so the beam lands on the card's top-edge centre and
+  re-measures itself on resize. Its canvas is transparent (not opaque black), and it sits under a
+  `screen` blend anyway.
+- **Ripple on desktop.** With a GPU, all three login layers hold ~60 fps at 360–1920 px, above the
+  ~50 fps bar, so the ripple stays. Headless software rendering manages 2–12 fps, which is not
+  representative.
+- **Readability over the light.** I measured every visible text element against the real background
+  behind it (`.data/contrast-check.mts`): text hidden, screenshot, 95th-percentile worst background
+  pixel per element. At the first pass, 188 of 1,456 elements were below AA. Fixes:
+  - Pillar intensity per route: `/` 0.28, `/explore` and `/insights` 0.2, `/c` and `/j` 0.22,
+    `/workspace` 0.2, `/sources` 0.18, ×0.4 on phones.
+  - The route glow leans 35% toward the pillar violet.
+  - Near-solid surfaces on data panels.
+  - A `dimmed` utility instead of opacity fades on past/closed rows and passed milestones.
+  - Light-theme heat colours a step darker, and chips on an opaque tint.
+  - Dark muted text `#98a2b3`, and the hero aurora blob quieter on phones.
+
+  The final run has 0 failures except 4 elements that the floating "Ask FIndress" button covers at
+  390 px (text under a floating control, readable once scrolled).
+
+- **WebGL probes deferred, software rasterisers skipped.** Probing for WebGL creates a GL context,
+  which is a long task on slow devices, so the background pillar now probes only after its deferred
+  start. Software renderers (SwiftShader, llvmpipe, Microsoft Basic Render) get the static
+  fallbacks: a full-screen raymarch on the CPU would freeze the page.
+
+### Part 5 checklist (re-run 2026-10-09, final build)
+
+| #   | Check                                          | Result        | Notes                                                                                                                                                                                                                                  |
+| --- | ---------------------------------------------- | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | typecheck, lint, test, build                   | PASS          | 254 unit tests; 20 e2e (+1 desktop-only skip); 0 build warnings                                                                                                                                                                        |
+| 2   | No console errors / hydration warnings         | PASS          | 12 routes + `/login` × dark/light × 360/390/1440                                                                                                                                                                                       |
+| 3   | Landing hero content                           | PASS          | FIndress h1, headline, tagline, search, Explore, 4 stats, deadlines/sources line                                                                                                                                                       |
+| 4   | No text lost vs pre-typography build (7fdc4c8) | PASS          | 0 lines lost on 9 of 11 pages. On `/explore` the only differences are chips past three (now "+N") and rows below the first viewport, which are still listed (EuroGP and IJRR checked by search)                                        |
+| 5   | Logged-out redirects + exceptions              | PASS          | pages 307 → `/login?next=…`, APIs 401; `/login`, `/api/auth/*`, `/api/ingest`, `/api/revalidate`, ICS feed and static assets open                                                                                                      |
+| 6   | Wrong password / lockout countdown             | PASS          | 5th attempt → "Try again in 14:59", ticking; row in Postgres                                                                                                                                                                           |
+| 7   | PixelSwap → `?next`, no blank flash            | PASS          | heading paints 0.46–0.83 s after the URL change                                                                                                                                                                                        |
+| 8   | Remember me / session cookie / logout          | PASS          | 30.00 days, httpOnly, Lax, Secure; session cookie when unchecked; logout from nav and palette                                                                                                                                          |
+| 9   | Login scene                                    | PASS          | 1440: galaxy + ripple + laser (3 canvases); 360: galaxy + laser. Beam vs card centre at 360 / 768 / 1440 / 1920: offset −1, −1, +4, −10 px (the beam wobbles), ~60 fps on GPU; card and transition work                                |
+| 10  | Crystal globe at 360–1920                      | PASS          | in the box at every width, no overflow; markers on the surface                                                                                                                                                                         |
+| 11  | Globe interactions                             | PASS          | drag; hover "Malmö, Sweden · 1 event"; popover → `/c/eccv-2026`; "See all" → `/explore?country=SE&q=Malmö`; ocean click does nothing                                                                                                   |
+| 12  | Keyboard + no-WebGL fallback                   | PASS          | arrows / Tab / Enter; WebGL off → still ball + 12 city links                                                                                                                                                                           |
+| 13  | Per-route `--screen` + glow                    | PASS          | 8 accents, and again after client-side navigation                                                                                                                                                                                      |
+| 14  | `/explore` purple, `/sources` blue             | PASS          | `#F25BD0` / `#38BDF8`, verified on load and after navigation                                                                                                                                                                           |
+| 15  | Tint ladder, grain, lift, chrome               | PASS          | grain 0.035; glow 220 px, isolated                                                                                                                                                                                                     |
+| 16  | LightPillar                                    | PASS          | fixed (top stays 0 after scrolling) on all 7 app pages in both themes; z −10, pointer-events none, feathered mask, `screen` / `multiply` blend; 61 rAF/s → 0 when hidden → 60 when back; same canvas after navigation; not on `/login` |
+| 17  | AA contrast                                    | PASS          | per-element pixel check over the light: 0 real failures; Lighthouse accessibility 100                                                                                                                                                  |
+| 18  | `/explore` regression                          | PASS          | tabs, filters, URL sync, list/cards, preview, keys, countdowns                                                                                                                                                                         |
+| 19  | ICML / JMLR detail + .ics                      | PASS          |                                                                                                                                                                                                                                        |
+| 20  | Chatbot with Gemini                            | **NEEDS KEY** | `GOOGLE_GENERATIVE_AI_API_KEY` is not in `.env.local`: `/api/chat` → 503 "GOOGLE_GENERATIVE_AI_API_KEY is not set". The ICML/JMLR "Elaborate the problem statement" answers can't be recorded until it is                              |
+| 21  | Workspace, sources, ingest auth                | PASS          |                                                                                                                                                                                                                                        |
+| 22  | Lighthouse mobile                              | PASS          | Standard: `/` 91 / 90 / 91, `/explore` 88 / 88 / 88, accessibility 100. With the GPU enabled (the background light actually loads): `/` 90, `/explore` 80 (one run each)                                                               |
+| 23  | Reduced motion                                 | PASS          | no canvases on `/login`; globe still; idle rAF 0                                                                                                                                                                                       |
+| 24  | 360 px, no horizontal scroll                   | PASS          |                                                                                                                                                                                                                                        |
+| 25  | Screenshots                                    | PASS          | `docs/screenshots/` (motion on, GPU): login, home, explore, c_icml-2026, j_jmlr, insights, workspace, sources × dark/light × 390/1440, plus `login-transition-dark-1440.png` / `login-transition-light-390.png`                        |

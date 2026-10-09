@@ -35,7 +35,11 @@ async function main() {
   const routes = process.argv.slice(2);
   if (routes.length === 0) routes.push("/");
   mkdirSync(OUT, { recursive: true });
-  const browser = await chromium.launch();
+  // With motion on, use the GPU: headless Chrome otherwise rasterises WebGL in software, and the
+  // app shows its static fallbacks there on purpose.
+  const browser = await chromium.launch(
+    MOTION ? { args: ["--enable-gpu", "--use-angle=d3d11", "--ignore-gpu-blocklist"] } : {},
+  );
   for (const route of routes) {
     for (const theme of THEMES) {
       for (const vp of WIDTHS) {
