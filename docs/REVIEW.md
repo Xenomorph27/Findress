@@ -7,6 +7,9 @@
 - Lighthouse (mobile) on `/explore`: performance 92, accessibility 100.
 - 148 unit tests passing (`pnpm test`); production build passing (`pnpm build`).
 - Owner flow (unlock → bookmark → Kanban → notes autosave → .ics feed) checked in a browser.
+- Playwright smoke suite (`pnpm build && pnpm test:e2e`): 12/12 passing, desktop 1440 + mobile 390.
+- Keyboard pass (automated, both themes): skip link is the first stop on every page, every focused
+  control shows a visible focus ring and has an accessible name (labels via `<label for>`).
 
 ## Run once keys are added
 1. **Neon:** add Neon in Vercel (Storage → Neon), then locally `npx vercel env pull .env.local`
@@ -34,5 +37,6 @@
 - On Vercel Hobby each `/api/ingest` call has a 270 s budget; the GitHub Action runs one source per call.
 - `ENABLE_LLM_TAGGING=true` re-tags untagged events each topics run (costs tokens).
 - `NEXT_PUBLIC_SITE_URL` in `.env.local` is `http://localhost:3000` for dev; set the real URL in Vercel.
-- Not done for lack of time: a manual screen-reader pass and a production deploy check
-  (cron registration, live ingestion, live chat) — do these after the first deploy.
+- Still worth doing by hand: a quick NVDA/VoiceOver listen-through, and the production deploy check
+  (cron listed under Vercel → Settings → Cron Jobs, `/sources` shows fresh runs, chat answers) after
+  the first deploy.

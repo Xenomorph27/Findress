@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { GlobalAssistant } from "@/components/assistant/global-assistant";
 import { Explorer } from "@/components/explore/explorer";
@@ -24,6 +25,7 @@ async function ExplorerLoader({
   searchParams: PageProps<"/explore">["searchParams"];
 }) {
   const sp = await searchParams;
+  await connection(); // the row set and countdowns depend on the request time
   const filters = parseFilters(sp);
   const res = await withDbFallback([], getExplorerRows);
   // The default view (upcoming, ranked/structured sources) ships only what it shows; asking for
