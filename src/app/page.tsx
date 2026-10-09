@@ -8,7 +8,7 @@ import { getLandingData, type LandingData } from "@/lib/data/landing";
 
 const EMPTY: LandingData = {
   next: [],
-  markers: [],
+  venues: [],
   stats: {
     conferences: 0,
     workshops: 0,

@@ -5,3 +5,4 @@ pnpm-lock.yaml
 .data
 src/components/ui
 src/lib/sources/__fixtures__
+src/components/react-bits

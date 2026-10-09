@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { formatLockRemaining } from "@/lib/auth/lockout";
 import { safeNextPath } from "@/lib/auth/next-path";
 import { SITE_TAGLINE } from "@/lib/site";
+import { LoginTransition } from "./login-transition";
 import { LoginVisual } from "./login-visual";
 
 interface LoginError {
@@ -21,7 +22,7 @@ interface LoginError {
  * Split-screen sign-in (desktop: visual left, card right; mobile: the visual fills the background
  * behind the card). Single owner: password only.
  */
-export function LoginScreen() {
+export function LoginScreen({ heroSrc }: { heroSrc: string }) {
   const router = useRouter();
   const params = useSearchParams();
   const next = safeNextPath(params.get("next"));
@@ -31,13 +32,9 @@ export function LoginScreen() {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<LoginError | null>(null);
   const [now, setNow] = useState(() => Date.now());
+  const [signedInTo, setSignedInTo] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const ids = { password: useId(), remember: useId(), error: useId() };
-
-  // Warm the destination so the hand-off after sign-in doesn't flash blank.
-  useEffect(() => {
-    router.prefetch(next);
-  }, [router, next]);
 
   // Lockout countdown.
   const lockedMs = error?.lockedUntil ? Math.max(0, error.lockedUntil - now) : 0;
@@ -80,8 +77,12 @@ export function LoginScreen() {
         retryAfterS?: number;
       };
       if (res.ok && data.ok) {
-        router.replace(safeNextPath(data.next ?? next));
-        router.refresh();
+        const to = safeNextPath(data.next ?? next);
+        // Prefetch now that the session cookie exists (a prefetch made while signed out would
+        // cache the redirect to /login), so the next page paints straight after the transition.
+        router.prefetch(to);
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) router.replace(to);
+        else setSignedInTo(to);
         return;
       }
       setPassword("");
@@ -102,7 +103,8 @@ export function LoginScreen() {
 
   return (
     <div className="relative grid min-h-dvh lg:grid-cols-2">
-      <LoginVisual className="absolute inset-0 lg:relative lg:inset-auto" />
+      <LoginVisual src={heroSrc} className="absolute inset-0 lg:relative lg:inset-auto" />
+      {signedInTo && <LoginTransition to={signedInTo} />}
 
       <div className="relative flex items-center justify-center px-4 py-12 sm:px-8">
         <form
@@ -190,10 +192,10 @@ export function LoginScreen() {
   );
 }
 
-export function LoginScreenSkeleton() {
+export function LoginScreenSkeleton({ heroSrc }: { heroSrc: string }) {
   return (
     <div className="relative grid min-h-dvh lg:grid-cols-2">
-      <LoginVisual className="absolute inset-0 lg:relative lg:inset-auto" />
+      <LoginVisual src={heroSrc} className="absolute inset-0 lg:relative lg:inset-auto" />
       <div className="relative flex items-center justify-center px-4 py-12">
         <div className="bg-surface lift h-[360px] w-full max-w-sm rounded-2xl" />
       </div>

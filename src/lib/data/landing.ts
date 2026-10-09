@@ -4,6 +4,7 @@ import { cacheLife, cacheTag } from "next/cache";
 import { getDb } from "@/lib/db";
 import { sourceRuns } from "@/lib/db/schema";
 import { inDefaultScope, nextDeadline } from "@/lib/explore/filters";
+import { clusterVenues, type VenueCluster } from "@/lib/landing/venues";
 import { LIST_SOURCES } from "@/lib/taxonomy";
 import { getExplorerRows } from "./events";
 import { getJournalRows, getSpecialIssueRows } from "./journals";
@@ -27,7 +28,8 @@ export interface LandingDeadline {
 
 export interface LandingData {
   next: LandingDeadline[];
-  markers: { id: string; lat: number; lng: number }[];
+  /** Venue clusters (by city) for the landing globe: current editions with a location. */
+  venues: VenueCluster[];
   stats: {
     /** Current editions (the /explore default view), split by kind. */
     conferences: number;
@@ -72,16 +74,7 @@ export async function getLandingData(): Promise<LandingData> {
     lng: r.lng,
   }));
 
-  const seen = new Set<string>();
-  const markers: LandingData["markers"] = [];
-  for (const { r } of upcoming) {
-    if (r.lat == null || r.lng == null) continue;
-    const key = `${r.lat.toFixed(1)},${r.lng.toFixed(1)}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    markers.push({ id: r.slug, lat: r.lat, lng: r.lng });
-    if (markers.length >= 160) break;
-  }
+  const venues = clusterVenues(current, now);
 
   const monthStart = new Date(now);
   const startMs = Date.UTC(monthStart.getUTCFullYear(), monthStart.getUTCMonth(), 1);
@@ -106,7 +99,7 @@ export async function getLandingData(): Promise<LandingData> {
 
   return {
     next,
-    markers,
+    venues,
     stats: {
       conferences: current.filter((r) => r.type !== "workshop").length,
       workshops: current.filter((r) => r.type === "workshop").length,

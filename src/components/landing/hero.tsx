@@ -93,8 +93,8 @@ export function Hero({ data }: { data: LandingData }) {
               sources refreshed in the last 48 h
             </p>
           </div>
-          <div className="relative mx-auto w-full max-w-[560px] lg:col-span-6">
-            <Globe markers={data.markers} highlight={highlight} />
+          <div className="relative w-full min-w-0 lg:col-span-6">
+            <Globe venues={data.venues} highlight={highlight} />
           </div>
         </div>
       </section>
