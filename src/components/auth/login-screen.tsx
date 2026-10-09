@@ -25,7 +25,7 @@ interface LoginError {
  * Split-screen sign-in (desktop: visual left, card right; mobile: the visual fills the background
  * behind the card). Single owner: password only.
  */
-export function LoginScreen({ heroSrc }: { heroSrc: string }) {
+export function LoginScreen() {
   const router = useRouter();
   const params = useSearchParams();
   const next = safeNextPath(params.get("next"));
@@ -40,7 +40,6 @@ export function LoginScreen({ heroSrc }: { heroSrc: string }) {
   // password) and Sign in just resumes it. Backspace, Delete or typing clears it.
   const [saved, setSaved] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const cardRef = useRef<HTMLFormElement>(null);
   const ids = { password: useId(), remember: useId(), error: useId() };
 
   useEffect(() => {
@@ -132,10 +131,9 @@ export function LoginScreen({ heroSrc }: { heroSrc: string }) {
   const locked = lockedMs > 0;
 
   return (
-    <LoginScene heroSrc={heroSrc} cardRef={cardRef}>
+    <LoginScene>
       {signedInTo && <LoginTransition to={signedInTo} />}
       <form
-        ref={cardRef}
         onSubmit={onSubmit}
         noValidate
         aria-describedby={error ? ids.error : undefined}
@@ -230,19 +228,20 @@ export function LoginScreen({ heroSrc }: { heroSrc: string }) {
   );
 }
 
-export function LoginScreenSkeleton({ heroSrc }: { heroSrc: string }) {
-  const cardRef = useRef<HTMLDivElement>(null);
+export function LoginScreenSkeleton() {
   return (
-    <LoginScene heroSrc={heroSrc} cardRef={cardRef}>
-      <div ref={cardRef} className={`${CARD} h-[360px]`} />
+    <LoginScene>
+      <div className={`${CARD} h-[360px]`} />
     </LoginScene>
   );
 }
 
 /**
- * The card, after the LaserFlow demo box: #120F17, a 1.5px beam-pink border, 20px corners, the
- * lift shadow plus a soft glow along the top edge where the beam lands. Full width (16px margins)
- * on phones.
+ * The card: #120F17, a 1.5px pink border, 20px corners and the lift shadow, plus a soft
+ * pink-violet halo on every side so it reads as a box floating over the galaxy (fading well
+ * before the screen edges; smaller on phones). Full width with 16px margins on phones.
  */
 const CARD =
-  "relative w-full sm:max-w-sm space-y-6 rounded-[20px] border-[1.5px] border-[#FF79C6] bg-[#120F17] p-7 sm:p-8 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.055),0_1px_2px_rgba(0,0,0,0.45),0_-6px_28px_-8px_rgba(255,121,198,0.55),0_0_0_4px_rgba(255,121,198,0.06)]";
+  "relative w-full sm:max-w-sm space-y-6 rounded-[20px] border-[1.5px] border-[#FF79C6] bg-[#120F17] p-7 sm:p-8 " +
+  "shadow-[inset_0_1px_0_0_rgba(255,255,255,0.055),0_1px_2px_rgba(0,0,0,0.45),0_0_40px_4px_color-mix(in_oklab,#C46BFF_24%,transparent),0_0_90px_20px_color-mix(in_oklab,#F25BD0_12%,transparent)] " +
+  "sm:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.055),0_1px_2px_rgba(0,0,0,0.45),0_0_80px_10px_color-mix(in_oklab,#C46BFF_28%,transparent),0_0_160px_40px_color-mix(in_oklab,#F25BD0_14%,transparent)]";
