@@ -90,16 +90,28 @@ export const SOURCES = [
   "cfp",
   "topics",
   "geocode",
+  "journals",
+  "journal-ranks",
+  "journal-pages",
+  "special-issues",
 ] as const;
 /** Sources that produce events (vs. enrichment steps that improve existing events). */
 export const LIST_SOURCES = ["ccfddl", "huggingface", "wikicfp", "openreview"] as const;
 export type ListSourceName = (typeof LIST_SOURCES)[number];
 export const ENRICHMENT_STEPS = ["cfp", "topics", "geocode"] as const;
 export type EnrichmentStep = (typeof ENRICHMENT_STEPS)[number];
+/** Journal pipeline: seed + OpenAlex, rankings, journal pages, special-issue calls. */
+export const JOURNAL_STEPS = [
+  "journals",
+  "journal-ranks",
+  "journal-pages",
+  "special-issues",
+] as const;
+export type JournalStep = (typeof JOURNAL_STEPS)[number];
 export type SourceName = (typeof SOURCES)[number];
 export const SOURCE_META: Record<
   SourceName,
-  { label: string; url: string; description: string; kind: "list" | "enrichment" }
+  { label: string; url: string; description: string; kind: "list" | "enrichment" | "journal" }
 > = {
   ccfddl: {
     label: "ccfddl",
@@ -145,6 +157,34 @@ export const SOURCE_META: Record<
       "Static country table plus cached OpenStreetMap Nominatim lookups (1 req/s) for venue cities.",
     kind: "enrichment",
   },
+  journals: {
+    label: "Journals · OpenAlex",
+    url: "https://openalex.org",
+    description:
+      "Curated seed list of AI/ML journals (ISSNs verified against OpenAlex and Crossref), with publisher, open-access status, APC, h-index, citedness and yearly counts from OpenAlex.",
+    kind: "journal",
+  },
+  "journal-ranks": {
+    label: "Journal rankings",
+    url: "https://github.com/WenyanLiu/CCFrank4dblp",
+    description:
+      "CCF 2026 journal list (CCFrank4dblp data, MIT) and the final CORE2020 journal ranks (portal.core.edu.au; CORE stopped ranking journals in 2022).",
+    kind: "journal",
+  },
+  "journal-pages": {
+    label: "Journal pages",
+    url: "",
+    description:
+      "Aims & scope text from each journal's own site (Readability), plus published metrics and calls for papers on Springer journal pages.",
+    kind: "journal",
+  },
+  "special-issues": {
+    label: "Special issues · WikiCFP",
+    url: "http://www.wikicfp.com/cfp/call?conference=special%20issue",
+    description:
+      "Special-issue calls from WikiCFP's special-issue, journal and AI category feeds, matched to journals.",
+    kind: "journal",
+  },
 };
 
 /** Lower number = more trusted when two sources disagree on a field. */
@@ -156,6 +196,10 @@ export const SOURCE_PRIORITY: Record<SourceName, number> = {
   cfp: 5,
   topics: 6,
   geocode: 7,
+  journals: 8,
+  "journal-ranks": 9,
+  "journal-pages": 10,
+  "special-issues": 11,
 };
 
 export const bookmarkStatuses = [

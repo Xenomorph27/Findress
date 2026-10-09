@@ -5,10 +5,20 @@ import type { ExplorerRow } from "@/lib/data/types";
  * is shareable; defaults are omitted from the URL.
  */
 export type SortKey = "deadline" | "date" | "rank" | "name" | "recent";
+export type JournalSortKey = "calls" | "hindex" | "citedness" | "apc" | "name";
+export type ExploreTab = "all" | "conferences" | "workshops" | "journals" | "special";
+export const EXPLORE_TABS: { value: ExploreTab; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "conferences", label: "Conferences" },
+  { value: "workshops", label: "Workshops" },
+  { value: "journals", label: "Journals" },
+  { value: "special", label: "Special issues" },
+];
 export type ViewMode = "list" | "cards";
 export type DeadlineWindow = "" | "7" | "30" | "90" | "custom";
 
 export interface Filters {
+  tab: ExploreTab;
   q: string;
   view: ViewMode;
   sort: SortKey;
@@ -28,9 +38,18 @@ export interface Filters {
   hasRebuttal: boolean;
   doubleBlind: boolean;
   community: boolean;
+  /** Journals: open-access model (full / hybrid / subscription). */
+  oa: string[];
+  /** Journals: maximum APC in USD ("" = any; "0" = free to publish). */
+  apcMax: string;
+  /** Journals: CORE journal rank (A*, A, B, C) or CCF-A/B/C. */
+  jranks: string[];
+  publishers: string[];
+  jsort: JournalSortKey;
 }
 
 export const DEFAULT_FILTERS: Filters = {
+  tab: "all",
   q: "",
   view: "list",
   sort: "deadline",
@@ -50,6 +69,11 @@ export const DEFAULT_FILTERS: Filters = {
   hasRebuttal: false,
   doubleBlind: false,
   community: false,
+  oa: [],
+  apcMax: "",
+  jranks: [],
+  publishers: [],
+  jsort: "calls",
 };
 
 type ParamSource = URLSearchParams | Record<string, string | string[] | undefined>;
@@ -74,7 +98,11 @@ export function parseFilters(src: ParamSource): Filters {
   const get = getter(src);
   const sort = get("sort") as SortKey;
   const win = get("window") as DeadlineWindow;
+  const tab = get("tab") as ExploreTab;
+  const jsort = get("jsort") as JournalSortKey;
+  const apcMax = get("apcmax");
   return {
+    tab: EXPLORE_TABS.some((t) => t.value === tab) ? tab : "all",
     q: get("q").slice(0, 200),
     view: get("view") === "cards" ? "cards" : "list",
     sort: ["deadline", "date", "rank", "name", "recent"].includes(sort) ? sort : "deadline",
@@ -94,12 +122,18 @@ export function parseFilters(src: ParamSource): Filters {
     hasRebuttal: flag(get("rebuttal")),
     doubleBlind: flag(get("blind")),
     community: flag(get("community")),
+    oa: list(get("oa")).filter((o) => ["full", "hybrid", "subscription"].includes(o)),
+    apcMax: /^\d{1,5}$/.test(apcMax) ? String(Number(apcMax)) : "",
+    jranks: list(get("jrank")),
+    publishers: list(get("publisher")).slice(0, 10),
+    jsort: ["calls", "hindex", "citedness", "apc", "name"].includes(jsort) ? jsort : "calls",
   };
 }
 
 export function serializeFilters(f: Filters): URLSearchParams {
   const p = new URLSearchParams();
   const setList = (k: string, v: string[]) => v.length && p.set(k, v.join(","));
+  if (f.tab !== "all") p.set("tab", f.tab);
   if (f.q.trim()) p.set("q", f.q.trim());
   if (f.view !== "list") p.set("view", f.view);
   if (f.sort !== "deadline") p.set("sort", f.sort);
@@ -119,11 +153,21 @@ export function serializeFilters(f: Filters): URLSearchParams {
   if (f.hasRebuttal) p.set("rebuttal", "1");
   if (f.doubleBlind) p.set("blind", "1");
   if (f.community) p.set("community", "1");
+  setList("oa", f.oa);
+  if (f.apcMax) p.set("apcmax", f.apcMax);
+  setList("jrank", f.jranks);
+  setList("publisher", f.publishers);
+  if (f.jsort !== "calls") p.set("jsort", f.jsort);
   return p;
 }
 
 /** Number of non-default filters (for the "Filters (3)" badge); search, view and sort excluded. */
 export function activeFilterCount(f: Filters): number {
+  if (f.tab === "journals") {
+    return (
+      f.subfields.length + f.oa.length + (f.apcMax ? 1 : 0) + f.jranks.length + f.publishers.length
+    );
+  }
   return (
     f.types.length +
     f.subfields.length +

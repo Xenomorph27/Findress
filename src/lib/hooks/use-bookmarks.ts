@@ -2,15 +2,17 @@
 
 import { useCallback, useEffect, useSyncExternalStore } from "react";
 import type { BookmarkStatus } from "@/lib/taxonomy";
+import { targetKey, type TargetKind } from "@/lib/workspace/targets";
 
 /**
- * Owner bookmarks, shared by every star on the page. Loaded once from /api/workspace/bookmarks;
- * a 401 means "not unlocked" and stars link to /unlock instead.
+ * Owner bookmarks (events, journals, special issues), shared by every star on the page.
+ * Loaded once from /api/workspace/bookmarks; a 401 means "not unlocked" and stars link to
+ * /unlock instead. Keys are "<kind>:<id>".
  */
 interface State {
   loaded: boolean;
   isOwner: boolean;
-  statuses: Map<number, BookmarkStatus>;
+  statuses: Map<string, BookmarkStatus>;
 }
 
 let state: State = { loaded: false, isOwner: false, statuses: new Map() };
@@ -30,11 +32,11 @@ async function load(force = false) {
         emit({ loaded: true, isOwner: false, statuses: new Map() });
         return;
       }
-      const data = (await res.json()) as { items: { eventId: number; status: BookmarkStatus }[] };
+      const data = (await res.json()) as { items: { key: string; status: BookmarkStatus }[] };
       emit({
         loaded: true,
         isOwner: true,
-        statuses: new Map(data.items.map((i) => [i.eventId, i.status])),
+        statuses: new Map(data.items.map((i) => [i.key, i.status])),
       });
     } catch {
       emit({ loaded: true, isOwner: false, statuses: new Map() });
@@ -61,31 +63,38 @@ export function useBookmarks() {
     if (!state.loaded) void load();
   }, []);
 
-  const setStatus = useCallback(async (eventId: number, status: BookmarkStatus | null) => {
-    const prev = state.statuses;
-    const next = new Map(prev);
-    if (status) next.set(eventId, status);
-    else next.delete(eventId);
-    emit({ ...state, statuses: next });
-    const res = await fetch("/api/workspace/bookmarks", {
-      method: status ? "POST" : "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ eventId, status }),
-    }).catch(() => null);
-    if (!res?.ok) emit({ ...state, statuses: prev });
-    return Boolean(res?.ok);
-  }, []);
+  const setStatus = useCallback(
+    async (id: number, status: BookmarkStatus | null, kind: TargetKind = "event") => {
+      const key = targetKey({ kind, id });
+      const prev = state.statuses;
+      const next = new Map(prev);
+      if (status) next.set(key, status);
+      else next.delete(key);
+      emit({ ...state, statuses: next });
+      const res = await fetch("/api/workspace/bookmarks", {
+        method: status ? "POST" : "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind, id, status }),
+      }).catch(() => null);
+      if (!res?.ok) emit({ ...state, statuses: prev });
+      return Boolean(res?.ok);
+    },
+    [],
+  );
 
   const toggle = useCallback(
-    (eventId: number) => setStatus(eventId, state.statuses.has(eventId) ? null : "interested"),
+    (id: number, kind: TargetKind = "event") =>
+      setStatus(id, state.statuses.has(targetKey({ kind, id })) ? null : "interested", kind),
     [setStatus],
   );
 
   return {
     loaded: snapshot.loaded,
     isOwner: snapshot.isOwner,
-    statusOf: (id: number) => snapshot.statuses.get(id) ?? null,
-    isBookmarked: (id: number) => snapshot.statuses.has(id),
+    statusOf: (id: number, kind: TargetKind = "event") =>
+      snapshot.statuses.get(targetKey({ kind, id })) ?? null,
+    isBookmarked: (id: number, kind: TargetKind = "event") =>
+      snapshot.statuses.has(targetKey({ kind, id })),
     toggle,
     setStatus,
   };

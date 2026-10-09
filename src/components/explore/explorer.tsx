@@ -12,6 +12,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
 } from "react";
 import { EmptyState } from "@/components/shell/states";
@@ -27,22 +28,35 @@ import {
 } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import type { ExplorerRow } from "@/lib/data/types";
+import type { ExplorerRow, JournalListRow, SpecialIssueListRow } from "@/lib/data/types";
 import {
   activeFilterCount,
   applyFilters,
   DEFAULT_FILTERS,
+  EXPLORE_TABS,
+  nextDeadline,
   parseFilters,
   serializeFilters,
+  type ExploreTab,
   type Filters,
+  type JournalSortKey,
   type SortKey,
 } from "@/lib/explore/filters";
+import { applyJournalFilters, applySpecialFilters } from "@/lib/explore/journal-filters";
 import { useBookmarks } from "@/lib/hooks/use-bookmarks";
 import { useMediaQuery } from "@/lib/hooks/use-media-query";
 import { useMounted } from "@/lib/hooks/use-mounted";
 import { useNow } from "@/lib/hooks/use-now";
+import { cn } from "@/lib/utils";
 import { ResultCard, ResultRow } from "./event-rows";
-import { FilterRail } from "./filter-rail";
+import { FilterRail, type RailMode } from "./filter-rail";
+import {
+  JournalCard,
+  journalHref,
+  JournalResultRow,
+  SpecialIssueCard,
+  SpecialIssueResultRow,
+} from "./journal-rows";
 import { PreviewSheet } from "./preview-sheet";
 
 const SORTS: { value: SortKey; label: string }[] = [
@@ -52,6 +66,18 @@ const SORTS: { value: SortKey; label: string }[] = [
   { value: "name", label: "Name" },
   { value: "recent", label: "Recently added" },
 ];
+const JOURNAL_SORTS: { value: JournalSortKey; label: string }[] = [
+  { value: "calls", label: "Open calls first" },
+  { value: "hindex", label: "h-index" },
+  { value: "citedness", label: "2-yr citedness" },
+  { value: "apc", label: "Lowest APC" },
+  { value: "name", label: "Name" },
+];
+
+type Item =
+  | { kind: "event"; key: string; row: ExplorerRow }
+  | { kind: "journal"; key: string; row: JournalListRow }
+  | { kind: "special"; key: string; row: SpecialIssueListRow };
 
 function isTypingTarget(el: EventTarget | null): boolean {
   const t = el as HTMLElement | null;
@@ -64,8 +90,39 @@ function isTypingTarget(el: EventTarget | null): boolean {
   );
 }
 
+const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+
+/** Merge events and special issues by deadline (default sort), then rolling journals. */
+function combineAll(
+  events: ExplorerRow[],
+  specials: SpecialIssueListRow[],
+  journals: JournalListRow[],
+  sort: SortKey,
+  now: number,
+): Item[] {
+  const ev: Item[] = events.map((row) => ({ kind: "event", key: `event:${row.id}`, row }));
+  const si: Item[] = specials.map((row) => ({ kind: "special", key: `special:${row.id}`, row }));
+  const jo: Item[] = journals.map((row) => ({ kind: "journal", key: `journal:${row.id}`, row }));
+  if (sort !== "deadline") return [...ev, ...si, ...jo];
+  const openAt = (it: Item): number | null => {
+    if (it.kind === "event") {
+      const nd = nextDeadline(it.row, now);
+      return nd && !nd.passed ? nd.at : null;
+    }
+    if (it.kind === "special") return it.row.at != null && it.row.at >= now ? it.row.at : null;
+    return null;
+  };
+  const open = [...ev, ...si]
+    .filter((it) => openAt(it) != null)
+    .sort((a, b) => openAt(a)! - openAt(b)!);
+  const rest = [...ev.filter((it) => openAt(it) == null), ...si.filter((it) => openAt(it) == null)];
+  return [...open, ...rest, ...jo];
+}
+
 export function Explorer({
   rows,
+  journals = [],
+  specials = [],
   initialFilters,
   initialNow,
   dataState,
@@ -74,6 +131,8 @@ export function Explorer({
 }: {
   scope?: "full" | "upcoming";
   rows: ExplorerRow[];
+  journals?: JournalListRow[];
+  specials?: SpecialIssueListRow[];
   initialFilters: Filters;
   initialNow: number;
   dataState: "ok" | "not-configured" | "error";
@@ -95,13 +154,42 @@ export function Explorer({
   const { toggle: toggleBookmark, isOwner } = useBookmarks();
 
   const effective = useMemo(() => ({ ...filters, q: deferredQuery }), [filters, deferredQuery]);
-  const results = useMemo(() => applyFilters(rows, effective, now), [rows, effective, now]);
-  const workshopCount = useMemo(
-    () => results.filter((r) => r.type === "workshop").length,
-    [results],
+  const tab = effective.tab;
+
+  const eventRows = useMemo(() => {
+    if (tab === "journals" || tab === "special") return [];
+    const scoped =
+      tab === "workshops"
+        ? rows.filter((r) => r.type === "workshop")
+        : tab === "conferences"
+          ? rows.filter((r) => r.type !== "workshop")
+          : rows;
+    return applyFilters(scoped, effective, now);
+  }, [rows, effective, now, tab]);
+  const journalRows = useMemo(
+    () =>
+      tab === "journals" || tab === "all" ? applyJournalFilters(journals, effective, now) : [],
+    [journals, effective, now, tab],
   );
-  const otherCount = results.length - workshopCount;
-  const selectedIndex = Math.min(selected, Math.max(results.length - 1, 0));
+  const specialRows = useMemo(
+    () => (tab === "special" || tab === "all" ? applySpecialFilters(specials, effective, now) : []),
+    [specials, effective, now, tab],
+  );
+  const items = useMemo<Item[]>(() => {
+    if (tab === "journals")
+      return journalRows.map((row) => ({ kind: "journal", key: `journal:${row.id}`, row }));
+    if (tab === "special")
+      return specialRows.map((row) => ({ kind: "special", key: `special:${row.id}`, row }));
+    if (tab === "all") return combineAll(eventRows, specialRows, journalRows, effective.sort, now);
+    return eventRows.map((row) => ({ kind: "event", key: `event:${row.id}`, row }));
+  }, [tab, eventRows, journalRows, specialRows, effective.sort, now]);
+
+  const workshopCount = useMemo(
+    () => eventRows.filter((r) => r.type === "workshop").length,
+    [eventRows],
+  );
+  const conferenceCount = eventRows.length - workshopCount;
+  const selectedIndex = Math.min(selected, Math.max(items.length - 1, 0));
 
   const filtersRef = useRef(filters);
   const queryRef = useRef(query);
@@ -114,8 +202,9 @@ export function Explorer({
       const next = { ...filtersRef.current, ...p };
       setFilters(next);
       setSelected(0);
-      // The server sent only upcoming rows: fetch the full set when a filter needs it.
-      if (scope === "upcoming" && (next.showPassed || next.community)) {
+      // The server sent only current editions: fetch the full set when a filter needs it.
+      const eventsTab = next.tab !== "journals" && next.tab !== "special";
+      if (scope === "upcoming" && eventsTab && (next.showPassed || next.community)) {
         const qs = serializeFilters({ ...next, q: queryRef.current }).toString();
         router.replace(`/explore${qs ? `?${qs}` : ""}`, { scroll: false });
       }
@@ -143,16 +232,24 @@ export function Explorer({
   }, []);
 
   const open = useCallback(
-    (row: ExplorerRow) => {
-      if (isDesktop) setPreview(row);
-      else router.push(`/c/${row.slug}`);
+    (item: Item) => {
+      if (item.kind === "event") {
+        if (isDesktop) setPreview(item.row);
+        else router.push(`/c/${item.row.slug}`);
+      } else if (item.kind === "journal") {
+        router.push(`/j/${item.row.slug}`);
+      } else {
+        const { href, external } = journalHref(item.row);
+        if (external) window.open(href, "_blank", "noopener,noreferrer");
+        else router.push(href);
+      }
     },
     [isDesktop, router],
   );
 
   // List virtualization against the window scroller.
   const listRef = useRef<HTMLDivElement>(null);
-  const hasResults = results.length > 0;
+  const hasResults = items.length > 0;
   const [scrollMargin, setScrollMargin] = useState(0);
   useLayoutEffect(() => {
     const update = () =>
@@ -161,12 +258,13 @@ export function Explorer({
     if (el) setScrollMargin(el.getBoundingClientRect().top + window.scrollY);
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
-  }, [filters.view, hasResults]);
+  }, [filters.view, hasResults, tab]);
   const virtualizer = useWindowVirtualizer({
-    count: filters.view === "list" ? results.length : 0,
+    count: filters.view === "list" ? items.length : 0,
     estimateSize: () => (isDesktop ? 96 : 118),
     overscan: 8,
     scrollMargin,
+    getItemKey: (i) => items[i]?.key ?? i,
   });
 
   // Keyboard: / search, j/k move, Enter open, b bookmark, Esc close.
@@ -178,23 +276,24 @@ export function Explorer({
         searchRef.current?.focus();
         return;
       }
-      if (isTypingTarget(e.target) || results.length === 0) return;
+      if (isTypingTarget(e.target) || items.length === 0) return;
       if (e.key === "j" || e.key === "k") {
         e.preventDefault();
         const next = Math.max(
           0,
-          Math.min(results.length - 1, selectedIndex + (e.key === "j" ? 1 : -1)),
+          Math.min(items.length - 1, selectedIndex + (e.key === "j" ? 1 : -1)),
         );
         setSelected(next);
         if (filters.view === "list") virtualizer.scrollToIndex(next, { align: "auto" });
-        if (preview) setPreview(results[next]);
+        const it = items[next];
+        if (preview && it.kind === "event") setPreview(it.row);
       } else if (e.key === "Enter" && !preview) {
         e.preventDefault();
-        open(results[selectedIndex]);
+        open(items[selectedIndex]);
       } else if (e.key === "b") {
         e.preventDefault();
-        const row = results[selectedIndex];
-        if (isOwner) void toggleBookmark(row.id);
+        const it = items[selectedIndex];
+        if (isOwner) void toggleBookmark(it.row.id, it.kind);
         else
           router.push(
             `/unlock?next=${encodeURIComponent(window.location.pathname + window.location.search)}`,
@@ -204,7 +303,7 @@ export function Explorer({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [
-    results,
+    items,
     selectedIndex,
     filters.view,
     virtualizer,
@@ -217,8 +316,16 @@ export function Explorer({
 
   const activeCount = activeFilterCount(filters);
   const signature = serializeFilters({ ...effective, view: "list", sort: "deadline" }).toString();
+  const railMode: RailMode =
+    tab === "journals" ? "journals" : tab === "special" ? "special" : "events";
+  const specialSubfields = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const r of specials) for (const s of r.subfields) m.set(s, (m.get(s) ?? 0) + 1);
+    return m;
+  }, [specials]);
+  const isJournalTab = tab === "journals";
 
-  if (dataState !== "ok" && rows.length === 0) {
+  if (dataState !== "ok" && rows.length === 0 && journals.length === 0) {
     return (
       <EmptyState
         title={dataState === "not-configured" ? "No data yet" : "The archive is unreachable"}
@@ -236,25 +343,45 @@ export function Explorer({
     );
   }
 
+  const summary = (() => {
+    if (tab === "journals") return plural(journalRows.length, "journal", "journals");
+    if (tab === "special")
+      return `${plural(specialRows.length, "special issue", "special issues")}${filters.showPassed ? "" : " · open or undated calls"}`;
+    const parts = [
+      tab !== "workshops" && plural(conferenceCount, "conference", "conferences"),
+      tab !== "conferences" && plural(workshopCount, "workshop", "workshops"),
+      tab === "all" && plural(journalRows.length, "journal", "journals"),
+      tab === "all" && plural(specialRows.length, "special issue", "special issues"),
+    ].filter(Boolean);
+    return `${parts.join(" · ")}${filters.showPassed ? "" : " · current editions"}`;
+  })();
+
+  const rail = (
+    <FilterRail
+      filters={filters}
+      onChange={patch}
+      rows={rows}
+      mode={railMode}
+      journals={journals}
+      specialSubfields={specialSubfields}
+    />
+  );
+
   return (
     <div className="flex gap-8 pt-6">
       <aside
         aria-label="Filters"
         className="sticky top-20 hidden max-h-[calc(100dvh-6rem)] w-[268px] shrink-0 scrollbar-none self-start overflow-y-auto pr-2 pb-8 lg:block"
       >
-        <FilterRail filters={filters} onChange={patch} rows={rows} />
+        {rail}
       </aside>
 
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-end justify-between gap-3 pb-4">
-          <div>
+          <div className="min-w-0">
             <h1 className="font-display text-4xl leading-none md:text-5xl">Explore</h1>
             <p className="text-muted-foreground mt-2 text-sm" aria-live="polite">
-              <span className="text-foreground tabular font-mono">{otherCount}</span>{" "}
-              {otherCount === 1 ? "conference" : "conferences"} ·{" "}
-              <span className="text-foreground tabular font-mono">{workshopCount}</span>{" "}
-              {workshopCount === 1 ? "workshop" : "workshops"}
-              {!filters.showPassed && " · current editions"}
+              {summary}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -263,10 +390,12 @@ export function Explorer({
           </div>
         </div>
 
+        <TabBar value={tab} onChange={(t) => patch({ tab: t })} />
+
         <div className="border-hairline bg-background/85 sticky top-14 z-20 -mx-4 flex flex-wrap items-center gap-2 border-b px-4 py-3 backdrop-blur-xl md:-mx-0 md:rounded-xl md:border md:px-3">
           <div className="relative min-w-[200px] flex-1">
             <Search
-              className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2"
+              className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 z-10 size-4 -translate-y-1/2"
               aria-hidden
             />
             <Input
@@ -274,7 +403,13 @@ export function Explorer({
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search acronym, name, topic, city…"
+              placeholder={
+                isJournalTab
+                  ? "Search journal, publisher, topic…"
+                  : tab === "special"
+                    ? "Search special issues, journals, topics…"
+                    : "Search acronym, name, topic, city…"
+              }
               aria-label="Search venues"
               className="h-9 pr-9 pl-8"
             />
@@ -295,18 +430,36 @@ export function Explorer({
               </span>
             )}
           </Button>
-          <Select value={filters.sort} onValueChange={(v) => patch({ sort: v as SortKey })}>
-            <SelectTrigger className="h-9 w-[170px]" aria-label="Sort by">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {SORTS.map((s) => (
-                <SelectItem key={s.value} value={s.value}>
-                  {s.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {isJournalTab ? (
+            <Select
+              value={filters.jsort}
+              onValueChange={(v) => patch({ jsort: v as JournalSortKey })}
+            >
+              <SelectTrigger className="h-9 w-[170px]" aria-label="Sort journals by">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {JOURNAL_SORTS.map((s) => (
+                  <SelectItem key={s.value} value={s.value}>
+                    {s.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : tab === "special" ? null : (
+            <Select value={filters.sort} onValueChange={(v) => patch({ sort: v as SortKey })}>
+              <SelectTrigger className="h-9 w-[170px]" aria-label="Sort by">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {SORTS.map((s) => (
+                  <SelectItem key={s.value} value={s.value}>
+                    {s.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
           <ToggleGroup
             type="single"
             value={filters.view}
@@ -326,19 +479,29 @@ export function Explorer({
 
         <motion.div
           key={signature}
+          id="explore-panel"
+          role="tabpanel"
+          aria-labelledby={`tab-${tab}`}
           initial={reduceMotion || !mounted ? false : { opacity: 0.4 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.18, ease: "easeOut" }}
           className="pt-3"
         >
-          {results.length === 0 ? (
+          {items.length === 0 ? (
             <EmptyState title="Nothing in orbit" className="mt-6">
-              No venues match these filters.
+              {tab === "special"
+                ? "No special-issue calls match. Calls appear as journals and WikiCFP announce them."
+                : "No venues match these filters."}
               <div className="mt-4">
                 <Button
                   variant="outline"
                   onClick={() => {
-                    setFilters({ ...DEFAULT_FILTERS, view: filters.view, sort: filters.sort });
+                    setFilters({
+                      ...DEFAULT_FILTERS,
+                      tab: filters.tab,
+                      view: filters.view,
+                      sort: filters.sort,
+                    });
                     setQuery("");
                   }}
                 >
@@ -354,18 +517,27 @@ export function Explorer({
               className="border-hairline bg-surface/40 relative overflow-hidden rounded-xl border"
               style={{ height: virtualizer.getTotalSize() }}
             >
-              {virtualizer.getVirtualItems().map((item) => {
-                const row = results[item.index];
-                const stagger = !mounted && !reduceMotion && item.index < 16;
+              {virtualizer.getVirtualItems().map((v) => {
+                const item = items[v.index];
+                const stagger = !mounted && !reduceMotion && v.index < 16;
+                const common = {
+                  now,
+                  selected: v.index === selectedIndex,
+                  onSelect: () => setSelected(v.index),
+                  onOpen: () => {
+                    setSelected(v.index);
+                    open(item);
+                  },
+                };
                 return (
                   <div
-                    key={row.slug}
-                    id={`row-${row.slug}`}
-                    data-index={item.index}
+                    key={item.key}
+                    id={`row-${item.key.replace(":", "-")}`}
+                    data-index={v.index}
                     ref={virtualizer.measureElement}
                     className="absolute inset-x-0 top-0"
                     style={{
-                      transform: `translateY(${item.start - virtualizer.options.scrollMargin}px)`,
+                      transform: `translateY(${v.start - virtualizer.options.scrollMargin}px)`,
                     }}
                   >
                     <motion.div
@@ -374,31 +546,28 @@ export function Explorer({
                       transition={{
                         duration: 0.2,
                         ease: "easeOut",
-                        delay: stagger ? item.index * 0.02 : 0,
+                        delay: stagger ? v.index * 0.02 : 0,
                       }}
                     >
-                      <ResultRow
-                        row={row}
-                        now={now}
-                        selected={item.index === selectedIndex}
-                        onSelect={() => setSelected(item.index)}
-                        onOpen={() => {
-                          setSelected(item.index);
-                          open(row);
-                        }}
-                      />
+                      {item.kind === "event" ? (
+                        <ResultRow row={item.row} {...common} />
+                      ) : item.kind === "journal" ? (
+                        <JournalResultRow row={item.row} {...common} />
+                      ) : (
+                        <SpecialIssueResultRow row={item.row} {...common} />
+                      )}
                     </motion.div>
                   </div>
                 );
               })}
             </div>
           ) : (
-            <CardGrid rows={results} now={now} onOpen={open} reduceMotion={!!reduceMotion} />
+            <CardGrid items={items} now={now} onOpen={open} reduceMotion={!!reduceMotion} />
           )}
         </motion.div>
         <p className="text-muted-foreground mt-6 hidden text-xs lg:block">
           Keyboard: <kbd className="font-mono">/</kbd> search · <kbd className="font-mono">j</kbd>/
-          <kbd className="font-mono">k</kbd> move · <kbd className="font-mono">Enter</kbd> preview ·{" "}
+          <kbd className="font-mono">k</kbd> move · <kbd className="font-mono">Enter</kbd> open ·{" "}
           <kbd className="font-mono">b</kbd> bookmark
         </p>
       </div>
@@ -411,9 +580,9 @@ export function Explorer({
           <SheetHeader className="px-0">
             <SheetTitle className="font-display text-2xl font-normal">Filters</SheetTitle>
           </SheetHeader>
-          <FilterRail filters={filters} onChange={patch} rows={rows} />
+          {rail}
           <Button className="mt-5 w-full" onClick={() => setMobileFilters(false)}>
-            Show {results.length} venues
+            Show {items.length} results
           </Button>
         </SheetContent>
       </Sheet>
@@ -423,15 +592,69 @@ export function Explorer({
   );
 }
 
+/** Segmented control: All · Conferences · Workshops · Journals · Special issues (URL ?tab=). */
+function TabBar({ value, onChange }: { value: ExploreTab; onChange: (t: ExploreTab) => void }) {
+  const refs = useRef<(HTMLButtonElement | null)[]>([]);
+  const onKeyDown = (e: ReactKeyboardEvent, i: number) => {
+    if (e.key !== "ArrowRight" && e.key !== "ArrowLeft" && e.key !== "Home" && e.key !== "End")
+      return;
+    e.preventDefault();
+    const n = EXPLORE_TABS.length;
+    const next =
+      e.key === "Home"
+        ? 0
+        : e.key === "End"
+          ? n - 1
+          : (i + (e.key === "ArrowRight" ? 1 : -1) + n) % n;
+    refs.current[next]?.focus();
+    onChange(EXPLORE_TABS[next].value);
+  };
+  return (
+    <div
+      role="tablist"
+      aria-label="What to explore"
+      className="border-hairline bg-surface/50 mb-3 flex w-full scrollbar-none gap-1 overflow-x-auto rounded-xl border p-1 sm:w-fit"
+    >
+      {EXPLORE_TABS.map((t, i) => {
+        const active = t.value === value;
+        return (
+          <button
+            key={t.value}
+            ref={(el) => {
+              refs.current[i] = el;
+            }}
+            id={`tab-${t.value}`}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            aria-controls="explore-panel"
+            tabIndex={active ? 0 : -1}
+            onClick={() => onChange(t.value)}
+            onKeyDown={(e) => onKeyDown(e, i)}
+            className={cn(
+              "h-8 shrink-0 rounded-lg px-3 text-sm whitespace-nowrap transition-colors",
+              active
+                ? "bg-surface-2 text-foreground shadow-[inset_0_0_0_1px_var(--hairline-strong)]"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {t.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function CardGrid({
-  rows,
+  items,
   now,
   onOpen,
   reduceMotion,
 }: {
-  rows: ExplorerRow[];
+  items: Item[];
   now: number;
-  onOpen: (r: ExplorerRow) => void;
+  onOpen: (it: Item) => void;
   reduceMotion: boolean;
 }) {
   const [limit, setLimit] = useState(48);
@@ -445,21 +668,27 @@ function CardGrid({
     io.observe(el);
     return () => io.disconnect();
   }, []);
-  const shown = rows.slice(0, limit);
+  const shown = items.slice(0, limit);
   return (
     <>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        {shown.map((row, i) => (
+        {shown.map((item, i) => (
           <motion.div
-            key={row.slug}
+            key={item.key}
             layout={!reduceMotion && i < 24}
             transition={{ duration: 0.2, ease: "easeOut" }}
           >
-            <ResultCard row={row} now={now} onOpen={() => onOpen(row)} />
+            {item.kind === "event" ? (
+              <ResultCard row={item.row} now={now} onOpen={() => onOpen(item)} />
+            ) : item.kind === "journal" ? (
+              <JournalCard row={item.row} now={now} onOpen={() => onOpen(item)} />
+            ) : (
+              <SpecialIssueCard row={item.row} now={now} onOpen={() => onOpen(item)} />
+            )}
           </motion.div>
         ))}
       </div>
-      {limit < rows.length && <div ref={sentinel} className="h-10" aria-hidden />}
+      {limit < items.length && <div ref={sentinel} className="h-10" aria-hidden />}
     </>
   );
 }

@@ -6,12 +6,13 @@ import { Explorer } from "@/components/explore/explorer";
 import { ExplorerSkeleton } from "@/components/explore/explorer-skeleton";
 import { Container } from "@/components/shell/states";
 import { getExplorerRows, withDbFallback } from "@/lib/data/events";
+import { getJournalRows, getSpecialIssueRows } from "@/lib/data/journals";
 import { inDefaultScope, parseFilters } from "@/lib/explore/filters";
 
 export const metadata: Metadata = {
   title: "Explore",
   description:
-    "Every AI/ML conference and workshop — filter by deadline, subfield, rank and place.",
+    "Every AI/ML conference, workshop, journal and special issue — filter by deadline, subfield, rank, open access and place.",
 };
 
 /** Request time for the first render (client components keep their own ticking clock). */
@@ -27,7 +28,11 @@ async function ExplorerLoader({
   const sp = await searchParams;
   await connection(); // the row set and countdowns depend on the request time
   const filters = parseFilters(sp);
-  const res = await withDbFallback([], getExplorerRows);
+  const [res, journalRes, specialRes] = await Promise.all([
+    withDbFallback([], getExplorerRows),
+    withDbFallback([], getJournalRows),
+    withDbFallback([], getSpecialIssueRows),
+  ]);
   // The default view (current editions from ranked/structured sources) ships only what it
   // shows; asking for past editions or community-listed calls re-requests the full set.
   const now = requestTime();
@@ -38,6 +43,8 @@ async function ExplorerLoader({
   return (
     <Explorer
       rows={rows}
+      journals={journalRes.data}
+      specials={specialRes.data}
       scope={full ? "full" : "upcoming"}
       initialFilters={filters}
       initialNow={now}

@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import { bookmarkStatuses, type BookmarkStatus } from "../taxonomy";
 import {
   boolean,
+  check,
   customType,
   date,
   doublePrecision,
@@ -178,33 +179,189 @@ export const sourceRuns = pgTable(
   (t) => [index("source_runs_source_idx").on(t.source, t.startedAt)],
 );
 
+/** Journal impact figure exactly as a source published it, e.g. JIF "4.9" for 2025. */
+export interface JournalMetric {
+  name: string;
+  value: string;
+  year: number | null;
+  source: string;
+  url: string | null;
+}
+
+/**
+ * AI/ML journals (seeded from src/data/journals-seed.ts, enriched by OpenAlex, CCF, CORE and
+ * the journal's own pages). Unknown values stay null and render "Not announced".
+ */
+export const journals = pgTable(
+  "journals",
+  {
+    id: serial("id").primaryKey(),
+    slug: text("slug").notNull(),
+    name: text("name").notNull(),
+    abbreviation: text("abbreviation").notNull(),
+    publisher: text("publisher"),
+    issnPrint: text("issn_print"),
+    issnOnline: text("issn_online"),
+    /** Every ISSN known for the title (typed or not), for lookups and matching. */
+    issns: text("issns")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    openalexId: text("openalex_id"),
+    homepage: text("homepage"),
+    submissionUrl: text("submission_url"),
+    scopeUrl: text("scope_url"),
+    scopeText: text("scope_text"),
+    scopeHash: text("scope_hash"),
+    scopeFetchedAt: timestamp("scope_fetched_at", { withTimezone: true }),
+    subfields: text("subfields")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    topics: text("topics")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    /** full | hybrid | subscription */
+    openAccess: text("open_access"),
+    apcUsd: integer("apc_usd"),
+    hIndex: integer("h_index"),
+    i10Index: integer("i10_index"),
+    twoYrMeanCitedness: real("two_yr_mean_citedness"),
+    worksCount: integer("works_count"),
+    citedByCount: integer("cited_by_count"),
+    /** When OpenAlex last updated the source record the metrics above came from. */
+    metricsAsOf: timestamp("metrics_as_of", { withTimezone: true }),
+    countsByYear: jsonb("counts_by_year")
+      .$type<{ year: number; works: number; citations: number }[]>()
+      .notNull()
+      .default([]),
+    impactMetrics: jsonb("impact_metrics").$type<JournalMetric[]>().notNull().default([]),
+    rankCoreJournal: text("rank_core_journal"),
+    rankCcf: text("rank_ccf"),
+    /** Only when an openly reusable source provides it (see docs/REVIEW.md). */
+    sjrQuartile: text("sjr_quartile"),
+    reviewModel: text("review_model"),
+    /** As the journal publishes it, e.g. "37 days" (median, submission to first decision). */
+    avgTimeToFirstDecision: text("avg_time_to_first_decision"),
+    sources: text("sources")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    fieldProvenance: jsonb("field_provenance").$type<FieldProvenance>().notNull().default({}),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("journals_slug_idx").on(t.slug),
+    index("journals_subfields_idx").using("gin", t.subfields),
+  ],
+);
+
+/** A journal special issue / topical collection call, stored only with what the call states. */
+export const specialIssues = pgTable(
+  "special_issues",
+  {
+    id: serial("id").primaryKey(),
+    /** Null when the call names a journal outside the seed list (journalName keeps it). */
+    journalId: integer("journal_id").references(() => journals.id, { onDelete: "cascade" }),
+    journalName: text("journal_name"),
+    title: text("title").notNull(),
+    guestEditors: text("guest_editors")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    descriptionText: text("description_text"),
+    submissionDeadlineUtc: timestamp("submission_deadline_utc", { withTimezone: true }),
+    /** The deadline exactly as written ("February 25, 2025") and its zone, if stated. */
+    deadlineText: text("deadline_text"),
+    deadlineTz: text("deadline_tz"),
+    url: text("url"),
+    source: text("source").notNull(),
+    sourceId: text("source_id").notNull(),
+    subfields: text("subfields")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    topics: text("topics")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    firstSeenAt: timestamp("first_seen_at", { withTimezone: true }).notNull().defaultNow(),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("special_issues_source_idx").on(t.source, t.sourceId),
+    index("special_issues_journal_idx").on(t.journalId),
+    index("special_issues_deadline_idx").on(t.submissionDeadlineUtc),
+  ],
+);
+
 export { bookmarkStatuses, type BookmarkStatus };
 
-export const bookmarks = pgTable("bookmarks", {
-  eventId: integer("event_id")
-    .primaryKey()
-    .references(() => events.id, { onDelete: "cascade" }),
-  status: text("status").$type<BookmarkStatus>().notNull().default("interested"),
-  position: integer("position").notNull().default(0),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-});
+/**
+ * Bookmarks, notes and chats target exactly one of: an event, a journal, a special issue.
+ * Separate foreign keys (not a type/id pair) keep referential integrity and cascades.
+ */
+export const bookmarks = pgTable(
+  "bookmarks",
+  {
+    id: serial("id").primaryKey(),
+    eventId: integer("event_id").references(() => events.id, { onDelete: "cascade" }),
+    journalId: integer("journal_id").references(() => journals.id, { onDelete: "cascade" }),
+    specialIssueId: integer("special_issue_id").references(() => specialIssues.id, {
+      onDelete: "cascade",
+    }),
+    status: text("status").$type<BookmarkStatus>().notNull().default("interested"),
+    position: integer("position").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("bookmarks_event_idx").on(t.eventId),
+    uniqueIndex("bookmarks_journal_idx").on(t.journalId),
+    uniqueIndex("bookmarks_special_issue_idx").on(t.specialIssueId),
+    check(
+      "bookmarks_one_target",
+      sql`num_nonnulls(${t.eventId}, ${t.journalId}, ${t.specialIssueId}) = 1`,
+    ),
+  ],
+);
 
-export const notes = pgTable("notes", {
-  eventId: integer("event_id")
-    .primaryKey()
-    .references(() => events.id, { onDelete: "cascade" }),
-  bodyMd: text("body_md").notNull().default(""),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-});
+export const notes = pgTable(
+  "notes",
+  {
+    id: serial("id").primaryKey(),
+    eventId: integer("event_id").references(() => events.id, { onDelete: "cascade" }),
+    journalId: integer("journal_id").references(() => journals.id, { onDelete: "cascade" }),
+    specialIssueId: integer("special_issue_id").references(() => specialIssues.id, {
+      onDelete: "cascade",
+    }),
+    bodyMd: text("body_md").notNull().default(""),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("notes_event_idx").on(t.eventId),
+    uniqueIndex("notes_journal_idx").on(t.journalId),
+    uniqueIndex("notes_special_issue_idx").on(t.specialIssueId),
+    check(
+      "notes_one_target",
+      sql`num_nonnulls(${t.eventId}, ${t.journalId}, ${t.specialIssueId}) = 1`,
+    ),
+  ],
+);
 
 export const chats = pgTable(
   "chats",
   {
     id: serial("id").primaryKey(),
-    /** Null for the global (/explore) assistant. */
+    /** All three null for the global (/explore) assistant. */
     eventId: integer("event_id").references(() => events.id, { onDelete: "cascade" }),
-    /** "event:<id>" or "global" — one thread per scope. */
+    journalId: integer("journal_id").references(() => journals.id, { onDelete: "cascade" }),
+    specialIssueId: integer("special_issue_id").references(() => specialIssues.id, {
+      onDelete: "cascade",
+    }),
+    /** "event:<id>", "journal:<id>", "special:<id>" or "global" — one thread per scope. */
     scope: text("scope").notNull(),
     messages: jsonb("messages").$type<unknown[]>().notNull().default([]),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -268,6 +425,8 @@ export type EventRow = typeof events.$inferSelect;
 export type DeadlineRow = typeof deadlines.$inferSelect;
 export type EventSourceRow = typeof eventSources.$inferSelect;
 export type SourceRunRow = typeof sourceRuns.$inferSelect;
+export type JournalRow = typeof journals.$inferSelect;
+export type SpecialIssueRow = typeof specialIssues.$inferSelect;
 export type AcceptanceRow = typeof acceptanceStats.$inferSelect;
 export type BookmarkRow = typeof bookmarks.$inferSelect;
 export type NoteRow = typeof notes.$inferSelect;

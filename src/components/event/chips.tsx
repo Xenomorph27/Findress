@@ -34,9 +34,14 @@ export function RankChip({
   );
 }
 
+const EXTRA_TYPE_LABEL: Record<string, string> = {
+  journal: "Journal",
+  "special-issue": "Special issue",
+};
+
 export function TypeBadge({ type, className }: { type: string; className?: string }) {
-  const label = EVENT_TYPE_LABEL[type as EventType] ?? type;
-  const isWorkshop = type === "workshop";
+  const label = EXTRA_TYPE_LABEL[type] ?? EVENT_TYPE_LABEL[type as EventType] ?? type;
+  const isWorkshop = type === "workshop" || type === "special-issue";
   return (
     <span
       className={cn(

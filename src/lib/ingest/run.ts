@@ -7,12 +7,20 @@ import { openreviewAdapter } from "@/lib/sources/openreview";
 import { wikicfpAdapter } from "@/lib/sources/wikicfp";
 import {
   ENRICHMENT_STEPS,
+  JOURNAL_STEPS,
   LIST_SOURCES,
   type EnrichmentStep,
+  type JournalStep,
   type ListSourceName,
 } from "@/lib/taxonomy";
 import { enrichCfps } from "./enrich-cfp";
 import { geocodeEvents } from "./geocode";
+import {
+  runJournalPagesStep,
+  runJournalRanksStep,
+  runJournalsStep,
+  runSpecialIssuesStep,
+} from "./journals";
 import { llmTagUntagged } from "./llm-tagging";
 import { PoliteFetcher } from "./http";
 import type { SourceAdapter } from "./types";
@@ -35,7 +43,7 @@ export const ADAPTERS: Record<ListSourceName, SourceAdapter> = {
   wikicfp: wikicfpAdapter,
 };
 
-export type StepName = ListSourceName | EnrichmentStep | "merge";
+export type StepName = ListSourceName | EnrichmentStep | JournalStep | "merge";
 export const ALL_STEPS: StepName[] = [
   "ccfddl",
   "huggingface",
@@ -45,6 +53,10 @@ export const ALL_STEPS: StepName[] = [
   "cfp",
   "topics",
   "geocode",
+  "journals",
+  "journal-ranks",
+  "journal-pages",
+  "special-issues",
 ];
 
 export interface StepReport {
@@ -213,6 +225,23 @@ export async function runIngestion(db: Db, opts: RunOptions = {}): Promise<StepR
         }),
       );
     }
+  }
+  for (const step of JOURNAL_STEPS.filter((s) => steps.has(s))) {
+    log(`→ ${step}`);
+    reports.push(
+      await recordRun(db, step, () => {
+        switch (step) {
+          case "journals":
+            return runJournalsStep(db, fetcher, deadlineMs, env, log);
+          case "journal-ranks":
+            return runJournalRanksStep(db, fetcher, deadlineMs, log);
+          case "journal-pages":
+            return runJournalPagesStep(db, fetcher, deadlineMs, log);
+          case "special-issues":
+            return runSpecialIssuesStep(db, fetcher, deadlineMs, log);
+        }
+      }),
+    );
   }
   log(`done in ${Math.round((Date.now() - started) / 1000)}s`);
   return reports;

@@ -129,3 +129,99 @@ export interface EventDetail {
   history: EditionSummary[];
   acceptance: AcceptancePoint[];
 }
+
+/** One journal in /explore (Journals tab and "All"). */
+export interface JournalListRow {
+  id: number;
+  slug: string;
+  abbreviation: string;
+  name: string;
+  publisher: string | null;
+  openAccess: "full" | "hybrid" | "subscription" | null;
+  apcUsd: number | null;
+  hIndex: number | null;
+  twoYrMeanCitedness: number | null;
+  worksCount: number | null;
+  rankCoreJournal: string | null;
+  rankCcf: string | null;
+  sjrQuartile: string | null;
+  subfields: string[];
+  topics: string[];
+  /** Earliest open special-issue deadline (epoch ms), if any call is open. */
+  nextCall: { id: number; title: string; at: number } | null;
+  openCalls: number;
+}
+
+/** One special-issue call in /explore (Special issues tab and "All"). */
+export interface SpecialIssueListRow {
+  id: number;
+  title: string;
+  journal: { slug: string; abbreviation: string; name: string } | null;
+  /** Journal as named in the call when it isn't one of the tracked journals. */
+  journalName: string | null;
+  /** Submission deadline, epoch ms (UTC); null when the call doesn't state one. */
+  at: number | null;
+  deadlineText: string | null;
+  url: string | null;
+  source: string;
+  subfields: string[];
+  topics: string[];
+  guestEditors: string[];
+}
+
+export interface JournalSpecialIssue {
+  id: number;
+  title: string;
+  guestEditors: string[];
+  descriptionText: string | null;
+  submissionDeadlineUtc: string | null;
+  deadlineText: string | null;
+  deadlineTz: string | null;
+  url: string | null;
+  source: string;
+  lastSeenAt: string;
+}
+
+export interface JournalDetail {
+  id: number;
+  slug: string;
+  name: string;
+  abbreviation: string;
+  publisher: string | null;
+  issnPrint: string | null;
+  issnOnline: string | null;
+  issns: string[];
+  openalexId: string | null;
+  homepage: string | null;
+  submissionUrl: string | null;
+  scopeUrl: string | null;
+  scopeText: string | null;
+  scopeFetchedAt: string | null;
+  subfields: string[];
+  topics: string[];
+  openAccess: "full" | "hybrid" | "subscription" | null;
+  apcUsd: number | null;
+  hIndex: number | null;
+  i10Index: number | null;
+  twoYrMeanCitedness: number | null;
+  worksCount: number | null;
+  citedByCount: number | null;
+  metricsAsOf: string | null;
+  countsByYear: { year: number; works: number; citations: number }[];
+  impactMetrics: {
+    name: string;
+    value: string;
+    year: number | null;
+    source: string;
+    url: string | null;
+  }[];
+  rankCoreJournal: string | null;
+  rankCcf: string | null;
+  sjrQuartile: string | null;
+  reviewModel: string | null;
+  avgTimeToFirstDecision: string | null;
+  sources: string[];
+  provenance: Record<string, string>;
+  updatedAt: string;
+  specialIssues: JournalSpecialIssue[];
+}

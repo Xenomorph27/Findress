@@ -5,7 +5,7 @@ import { useMemo, type ReactNode } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import type { ExplorerRow } from "@/lib/data/types";
+import type { ExplorerRow, JournalListRow } from "@/lib/data/types";
 import { DEFAULT_FILTERS, type DeadlineWindow, type Filters } from "@/lib/explore/filters";
 import {
   CONTINENTS,
@@ -94,7 +94,240 @@ const WINDOWS: { value: DeadlineWindow; label: string }[] = [
   { value: "custom", label: "Custom" },
 ];
 
+const OA_OPTIONS = [
+  { value: "full", label: "Full OA" },
+  { value: "hybrid", label: "Hybrid" },
+  { value: "subscription", label: "Subscription" },
+];
+const APC_OPTIONS = [
+  { value: "", label: "Any" },
+  { value: "0", label: "Free" },
+  { value: "1000", label: "≤ $1k" },
+  { value: "2500", label: "≤ $2.5k" },
+  { value: "4000", label: "≤ $4k" },
+];
+const JOURNAL_RANKS = ["A*", "A", "B", "C", "CCF-A", "CCF-B", "CCF-C"];
+
+export type RailMode = "events" | "journals" | "special";
+
+function ResetHeader({
+  filters,
+  onChange,
+  isDefault,
+}: {
+  filters: Filters;
+  onChange: (patch: Partial<Filters>) => void;
+  isDefault: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between">
+      <h2 className="text-sm font-medium">Filters</h2>
+      <button
+        type="button"
+        onClick={() =>
+          onChange({
+            ...DEFAULT_FILTERS,
+            tab: filters.tab,
+            q: filters.q,
+            view: filters.view,
+            sort: filters.sort,
+            jsort: filters.jsort,
+          })
+        }
+        disabled={isDefault}
+        className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-xs disabled:opacity-40"
+      >
+        <RotateCcw className="size-3" aria-hidden /> Reset
+      </button>
+    </div>
+  );
+}
+
+function SubfieldSection({
+  filters,
+  onChange,
+  counts,
+}: {
+  filters: Filters;
+  onChange: (patch: Partial<Filters>) => void;
+  counts: Map<string, number>;
+}) {
+  return (
+    <Section title="Subfield">
+      <div className="flex flex-wrap gap-1.5">
+        {SUBFIELDS.map((s) => (
+          <Chip
+            key={s.id}
+            active={filters.subfields.includes(s.id)}
+            count={counts.get(s.id) ?? 0}
+            onClick={() => onChange({ subfields: toggle(filters.subfields, s.id) })}
+          >
+            {s.label}
+          </Chip>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+function countSubfields(rows: { subfields: string[] }[]) {
+  const m = new Map<string, number>();
+  for (const r of rows) for (const s of r.subfields) m.set(s, (m.get(s) ?? 0) + 1);
+  return m;
+}
+
+/** Journals tab: open access, APC, rank and publisher (plus subfield). */
+function JournalRail({
+  filters,
+  onChange,
+  journals,
+}: {
+  filters: Filters;
+  onChange: (patch: Partial<Filters>) => void;
+  journals: JournalListRow[];
+}) {
+  const subfieldCounts = useMemo(() => countSubfields(journals), [journals]);
+  const publishers = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const j of journals) if (j.publisher) m.set(j.publisher, (m.get(j.publisher) ?? 0) + 1);
+    return [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, 12);
+  }, [journals]);
+  const isDefault =
+    !filters.subfields.length &&
+    !filters.oa.length &&
+    !filters.apcMax &&
+    !filters.jranks.length &&
+    !filters.publishers.length;
+  return (
+    <div className="space-y-5">
+      <ResetHeader filters={filters} onChange={onChange} isDefault={isDefault} />
+      <Section title="Open access">
+        <div className="flex flex-wrap gap-1.5">
+          {OA_OPTIONS.map((o) => (
+            <Chip
+              key={o.value}
+              active={filters.oa.includes(o.value)}
+              onClick={() => onChange({ oa: toggle(filters.oa, o.value) })}
+            >
+              {o.label}
+            </Chip>
+          ))}
+        </div>
+      </Section>
+      <Section title="Publication fee (APC)">
+        <div className="flex flex-wrap gap-1.5" role="group" aria-label="Maximum APC">
+          {APC_OPTIONS.map((o) => (
+            <Chip
+              key={o.value || "any"}
+              active={filters.apcMax === o.value}
+              onClick={() => onChange({ apcMax: o.value })}
+            >
+              {o.label}
+            </Chip>
+          ))}
+        </div>
+        <p className="text-muted-foreground text-[11px]">
+          Subscription journals charge no APC; journals with an unknown fee are hidden by a limit.
+        </p>
+      </Section>
+      <Section title="Rank">
+        <div className="flex flex-wrap gap-1.5">
+          {JOURNAL_RANKS.map((r) => (
+            <Chip
+              key={r}
+              active={filters.jranks.includes(r)}
+              onClick={() => onChange({ jranks: toggle(filters.jranks, r) })}
+            >
+              <span className="font-mono">{r.startsWith("CCF") ? r : `CORE ${r}`}</span>
+            </Chip>
+          ))}
+        </div>
+        <p className="text-muted-foreground text-[11px]">
+          CORE journal ranks are the final 2020 edition; SJR quartiles are not shown (see Sources).
+        </p>
+      </Section>
+      <SubfieldSection filters={filters} onChange={onChange} counts={subfieldCounts} />
+      <Section title="Publisher">
+        <div className="flex flex-wrap gap-1.5">
+          {publishers.map(([name, n]) => (
+            <Chip
+              key={name}
+              active={filters.publishers.includes(name)}
+              count={n}
+              onClick={() => onChange({ publishers: toggle(filters.publishers, name) })}
+            >
+              {name}
+            </Chip>
+          ))}
+        </div>
+      </Section>
+    </div>
+  );
+}
+
+/** Special-issues tab: deadline window, closed calls, subfield. */
+function SpecialRail({
+  filters,
+  onChange,
+  counts,
+}: {
+  filters: Filters;
+  onChange: (patch: Partial<Filters>) => void;
+  counts: Map<string, number>;
+}) {
+  const isDefault = !filters.window && !filters.showPassed && !filters.subfields.length;
+  return (
+    <div className="space-y-5">
+      <ResetHeader filters={filters} onChange={onChange} isDefault={isDefault} />
+      <Section title="Deadline">
+        <div className="flex flex-wrap gap-1.5" role="group" aria-label="Deadline window">
+          {WINDOWS.filter((w) => w.value !== "custom").map((w) => (
+            <Chip
+              key={w.value || "any"}
+              active={filters.window === w.value}
+              onClick={() => onChange({ window: w.value })}
+            >
+              {w.label}
+            </Chip>
+          ))}
+        </div>
+        <Toggle
+          id="f-passed"
+          label="Hide closed calls"
+          checked={!filters.showPassed}
+          onChange={(v) => onChange({ showPassed: !v })}
+        />
+      </Section>
+      <SubfieldSection filters={filters} onChange={onChange} counts={counts} />
+    </div>
+  );
+}
+
 export function FilterRail({
+  filters,
+  onChange,
+  rows,
+  mode = "events",
+  journals = [],
+  specialSubfields,
+}: {
+  filters: Filters;
+  onChange: (patch: Partial<Filters>) => void;
+  rows: ExplorerRow[];
+  mode?: RailMode;
+  journals?: JournalListRow[];
+  specialSubfields?: Map<string, number>;
+}) {
+  if (mode === "journals")
+    return <JournalRail filters={filters} onChange={onChange} journals={journals} />;
+  if (mode === "special")
+    return (
+      <SpecialRail filters={filters} onChange={onChange} counts={specialSubfields ?? new Map()} />
+    );
+  return <EventRail filters={filters} onChange={onChange} rows={rows} />;
+}
+
+function EventRail({
   filters,
   onChange,
   rows,
@@ -114,31 +347,21 @@ export function FilterRail({
     return [...m.entries()].sort((a, b) => b[1].n - a[1].n).slice(0, 14);
   }, [rows]);
 
-  const subfieldCounts = useMemo(() => {
-    const m = new Map<string, number>();
-    for (const r of rows) for (const s of r.subfields) m.set(s, (m.get(s) ?? 0) + 1);
-    return m;
-  }, [rows]);
+  const subfieldCounts = useMemo(() => countSubfields(rows), [rows]);
 
   const isDefault =
-    JSON.stringify({ ...filters, q: "", view: "list", sort: "deadline" }) ===
-    JSON.stringify({ ...DEFAULT_FILTERS });
+    JSON.stringify({
+      ...filters,
+      tab: "all",
+      q: "",
+      view: "list",
+      sort: "deadline",
+      jsort: DEFAULT_FILTERS.jsort,
+    }) === JSON.stringify({ ...DEFAULT_FILTERS });
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-medium">Filters</h2>
-        <button
-          type="button"
-          onClick={() =>
-            onChange({ ...DEFAULT_FILTERS, q: filters.q, view: filters.view, sort: filters.sort })
-          }
-          disabled={isDefault}
-          className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-xs disabled:opacity-40"
-        >
-          <RotateCcw className="size-3" aria-hidden /> Reset
-        </button>
-      </div>
+      <ResetHeader filters={filters} onChange={onChange} isDefault={isDefault} />
 
       <Section title="Deadline">
         <div className="flex flex-wrap gap-1.5" role="group" aria-label="Deadline window">
@@ -180,7 +403,13 @@ export function FilterRail({
 
       <Section title="Type">
         <div className="flex flex-wrap gap-1.5">
-          {EVENT_TYPES.map((t) => (
+          {EVENT_TYPES.filter((t) =>
+            filters.tab === "workshops"
+              ? t === "workshop"
+              : filters.tab === "conferences"
+                ? t !== "workshop"
+                : true,
+          ).map((t) => (
             <Chip
               key={t}
               active={filters.types.includes(t)}
@@ -192,20 +421,7 @@ export function FilterRail({
         </div>
       </Section>
 
-      <Section title="Subfield">
-        <div className="flex flex-wrap gap-1.5">
-          {SUBFIELDS.map((s) => (
-            <Chip
-              key={s.id}
-              active={filters.subfields.includes(s.id)}
-              count={subfieldCounts.get(s.id) ?? 0}
-              onClick={() => onChange({ subfields: toggle(filters.subfields, s.id) })}
-            >
-              {s.label}
-            </Chip>
-          ))}
-        </div>
-      </Section>
+      <SubfieldSection filters={filters} onChange={onChange} counts={subfieldCounts} />
 
       <Section title="Rank">
         <div className="flex flex-wrap gap-1.5">

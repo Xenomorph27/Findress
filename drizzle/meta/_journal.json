@@ -15,6 +15,13 @@
       "when": 1791490032900,
       "tag": "0001_dazzling_true_believers",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791514202990,
+      "tag": "0002_journals",
+      "breakpoints": true
     }
   ]
 }

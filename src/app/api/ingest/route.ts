@@ -36,6 +36,7 @@ async function handle(request: Request): Promise<Response> {
     log: (m) => console.log(`[ingest] ${m}`),
   });
   revalidateTag("events", "max");
+  revalidateTag("journals", "max");
   revalidateTag("sources", "max");
   return Response.json(
     { ok: reports.every((r) => r.ok), reports },

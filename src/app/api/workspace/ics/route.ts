@@ -23,12 +23,16 @@ export async function GET(request: Request) {
   const items: IcsItem[] = [];
   for (const it of await listWorkspace(db)) {
     if (it.status === "rejected") continue;
-    const url = absoluteUrl(`/c/${it.slug}`);
+    const url = it.href.startsWith("/") ? absoluteUrl(it.href) : it.href;
+    const label = it.year != null ? `${it.acronym} ${it.year}` : it.acronym;
     it.deadlines.forEach((d, i) => {
       const kind = DEADLINE_KIND_LABEL[d.kind as DeadlineKind] ?? d.kind;
       items.push({
-        uid: `${it.slug}-${d.kind}-${i}@findress`,
-        title: `${it.acronym} ${it.year}: ${kind}${d.label && d.label.toLowerCase() !== kind.toLowerCase() ? ` — ${d.label}` : ""}`,
+        uid: `${it.key.replace(":", "-")}-${d.kind}-${i}@findress`,
+        title:
+          it.kind === "event"
+            ? `${label}: ${kind}${d.label && d.label.toLowerCase() !== kind.toLowerCase() ? ` — ${d.label}` : ""}`
+            : `${label}: ${d.label ?? kind}`,
         description: `Status: ${it.status}\n${url}`,
         url,
         at: new Date(d.dueAtUtc),

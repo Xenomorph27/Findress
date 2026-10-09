@@ -5,11 +5,15 @@ import { useEffect, useRef, useState } from "react";
 import { MessageMarkdown } from "@/components/assistant/message-markdown";
 import { useOwner } from "@/lib/hooks/use-owner";
 import { cn } from "@/lib/utils";
+import type { TargetKind } from "@/lib/workspace/targets";
 
 type SaveState = "idle" | "saving" | "saved" | "error";
 
-/** Owner-only markdown notes per event, autosaved (SPEC §4.9). Renders nothing for visitors. */
-export function NotesSlot({ eventId }: { eventId: number }) {
+/**
+ * Owner-only markdown notes per event, journal or special issue, autosaved (SPEC §4.9).
+ * Renders nothing for visitors.
+ */
+export function NotesSlot({ eventId, kind = "event" }: { eventId: number; kind?: TargetKind }) {
   const owner = useOwner();
   const [body, setBody] = useState("");
   const [loaded, setLoaded] = useState(false);
@@ -21,7 +25,7 @@ export function NotesSlot({ eventId }: { eventId: number }) {
   useEffect(() => {
     if (owner !== true) return;
     let cancelled = false;
-    fetch(`/api/workspace/notes?eventId=${eventId}`, { cache: "no-store" })
+    fetch(`/api/workspace/notes?kind=${kind}&id=${eventId}`, { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : { bodyMd: "" }))
       .then((d: { bodyMd: string }) => {
         if (cancelled) return;
@@ -33,7 +37,7 @@ export function NotesSlot({ eventId }: { eventId: number }) {
     return () => {
       cancelled = true;
     };
-  }, [owner, eventId]);
+  }, [owner, eventId, kind]);
 
   useEffect(() => {
     if (!loaded || body === lastSaved.current) return;
@@ -43,7 +47,7 @@ export function NotesSlot({ eventId }: { eventId: number }) {
       const res = await fetch("/api/workspace/notes", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ eventId, bodyMd: body }),
+        body: JSON.stringify({ kind, id: eventId, bodyMd: body }),
       }).catch(() => null);
       if (res?.ok) {
         lastSaved.current = body;
@@ -51,7 +55,7 @@ export function NotesSlot({ eventId }: { eventId: number }) {
       } else setState("error");
     }, 800);
     return () => clearTimeout(timer.current);
-  }, [body, loaded, eventId]);
+  }, [body, loaded, eventId, kind]);
 
   if (owner !== true) return null;
 
@@ -102,11 +106,11 @@ export function NotesSlot({ eventId }: { eventId: number }) {
         </div>
       ) : (
         <>
-          <label htmlFor={`notes-${eventId}`} className="sr-only">
+          <label htmlFor={`notes-${kind}-${eventId}`} className="sr-only">
             Notes (markdown)
           </label>
           <textarea
-            id={`notes-${eventId}`}
+            id={`notes-${kind}-${eventId}`}
             value={body}
             onChange={(e) => setBody(e.target.value)}
             rows={8}

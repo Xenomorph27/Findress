@@ -23,10 +23,11 @@ import { NotebookPen, X } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { CountdownChip } from "@/components/event/countdown-chip";
-import { LocationLabel } from "@/components/event/chips";
+import { LocationLabel, TypeBadge } from "@/components/event/chips";
 import type { WorkspaceItem } from "@/lib/data/workspace";
 import { bookmarkStatuses, STATUS_LABEL, type BookmarkStatus } from "@/lib/taxonomy";
 import { cn } from "@/lib/utils";
+import { parseTargetKey } from "@/lib/workspace/targets";
 
 function nextSubmission(item: WorkspaceItem, now: number) {
   const subs = item.deadlines.filter((d) => d.kind === "abstract" || d.kind === "paper");
@@ -46,6 +47,8 @@ function Card({
   dragging?: boolean;
 }) {
   const nd = nextSubmission(item, now);
+  const label = item.year != null ? `${item.acronym} ${item.year}` : item.acronym;
+  const external = !item.href.startsWith("/");
   return (
     <div
       className={cn(
@@ -55,12 +58,14 @@ function Card({
     >
       <div className="flex items-start justify-between gap-2">
         <Link
-          href={`/c/${item.slug}`}
+          href={item.href}
           className="min-w-0"
           onPointerDown={(e) => e.stopPropagation()}
+          {...(external ? { target: "_blank", rel: "noreferrer" } : {})}
         >
           <span className="font-display text-xl leading-none">
-            {item.acronym} <span className="text-muted-foreground">{item.year}</span>
+            {item.acronym}
+            {item.year != null && <span className="text-muted-foreground"> {item.year}</span>}
           </span>
         </Link>
         {onRemove && (
@@ -68,18 +73,31 @@ function Card({
             type="button"
             onPointerDown={(e) => e.stopPropagation()}
             onClick={onRemove}
-            aria-label={`Remove ${item.acronym} ${item.year} from workspace`}
+            aria-label={`Remove ${label} from workspace`}
             className="text-muted-foreground hover:text-foreground rounded p-0.5 opacity-60 hover:opacity-100"
           >
             <X className="size-3.5" />
           </button>
         )}
       </div>
+      {item.kind !== "event" && (
+        <div className="mt-1">
+          <TypeBadge type={item.kind === "journal" ? "journal" : "special-issue"} />
+        </div>
+      )}
       <p className="text-muted-foreground mt-1 line-clamp-2 text-xs">{item.name}</p>
       <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
         <CountdownChip
           dueAt={nd?.dueAtUtc ?? null}
-          label={nd ? (nd.kind === "abstract" ? "abs" : "paper") : undefined}
+          label={
+            nd
+              ? item.kind !== "event"
+                ? "SI"
+                : nd.kind === "abstract"
+                  ? "abs"
+                  : "paper"
+              : undefined
+          }
         />
         {item.hasNote && (
           <NotebookPen className="text-muted-foreground size-3.5" aria-label="Has notes" />
@@ -105,7 +123,7 @@ function SortableCard({
   onRemove: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: item.eventId,
+    id: item.key,
     data: { status: item.status },
   });
   return (
@@ -131,7 +149,7 @@ function Column({
   status: BookmarkStatus;
   items: WorkspaceItem[];
   now: number;
-  onRemove: (id: number) => void;
+  onRemove: (key: string) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: `col-${status}`, data: { status } });
   return (
@@ -148,14 +166,14 @@ function Column({
         </h3>
         <span className="text-muted-foreground font-mono text-[11px]">{items.length}</span>
       </header>
-      <SortableContext items={items.map((i) => i.eventId)} strategy={verticalListSortingStrategy}>
+      <SortableContext items={items.map((i) => i.key)} strategy={verticalListSortingStrategy}>
         <ul ref={setNodeRef} className="flex min-h-24 flex-1 flex-col gap-2">
           {items.map((item) => (
             <SortableCard
-              key={item.eventId}
+              key={item.key}
               item={item}
               now={now}
-              onRemove={() => onRemove(item.eventId)}
+              onRemove={() => onRemove(item.key)}
             />
           ))}
           {items.length === 0 && (
@@ -183,29 +201,29 @@ export function Kanban({ initial, now }: { initial: WorkspaceItem[]; now: number
     return m;
   }, [items]);
 
-  const persist = (eventId: number, status: BookmarkStatus, position: number) =>
+  const persist = (key: string, status: BookmarkStatus, position: number) =>
     fetch("/api/workspace/bookmarks", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ eventId, status, position }),
+      body: JSON.stringify({ ...parseTargetKey(key), status, position }),
     });
 
   const onStart = (e: DragStartEvent) =>
-    setActive(items.find((i) => i.eventId === e.active.id) ?? null);
+    setActive(items.find((i) => i.key === e.active.id) ?? null);
 
   const onEnd = (e: DragEndEvent) => {
     setActive(null);
-    const id = Number(e.active.id);
+    const id = String(e.active.id);
     const over = e.over;
     if (!over) return;
     const overStatus =
       (over.data.current?.status as BookmarkStatus | undefined) ??
-      items.find((i) => i.eventId === over.id)?.status;
+      items.find((i) => i.key === over.id)?.status;
     if (!overStatus) return;
-    const column = (byStatus.get(overStatus) ?? []).filter((i) => i.eventId !== id);
-    const overIndex = column.findIndex((i) => i.eventId === over.id);
+    const column = (byStatus.get(overStatus) ?? []).filter((i) => i.key !== id);
+    const overIndex = column.findIndex((i) => i.key === over.id);
     const insertAt = overIndex >= 0 ? overIndex : column.length;
-    const moved = items.find((i) => i.eventId === id);
+    const moved = items.find((i) => i.key === id);
     if (!moved) return;
     const reordered = [
       ...column.slice(0, insertAt),
@@ -213,18 +231,18 @@ export function Kanban({ initial, now }: { initial: WorkspaceItem[]; now: number
       ...column.slice(insertAt),
     ].map((it, idx) => ({ ...it, position: idx * 10 }));
     setItems((prev) => [
-      ...prev.filter((i) => i.status !== overStatus && i.eventId !== id),
+      ...prev.filter((i) => i.status !== overStatus && i.key !== id),
       ...reordered,
     ]);
-    void Promise.all(reordered.map((it) => persist(it.eventId, it.status, it.position)));
+    void Promise.all(reordered.map((it) => persist(it.key, it.status, it.position)));
   };
 
-  const remove = (eventId: number) => {
-    setItems((prev) => prev.filter((i) => i.eventId !== eventId));
+  const remove = (key: string) => {
+    setItems((prev) => prev.filter((i) => i.key !== key));
     void fetch("/api/workspace/bookmarks", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ eventId }),
+      body: JSON.stringify(parseTargetKey(key)),
     });
   };
 

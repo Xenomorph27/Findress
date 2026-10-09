@@ -1,0 +1,1508 @@
+<html>
+    
+    
+    <head>
+        
+        
+        <link href="/core/static/core/reset.css" rel="stylesheet" type="text/css" />
+        <link href="/core/static/core/text.css" rel="stylesheet" type="text/css" />
+        <link href="/core/static/core/960.css" rel="stylesheet" type="text/css" />
+        <link href="/core/static/core/main.css" rel="stylesheet" type="text/css" /> 
+        
+        <link rel="stylesheet" type="text/css" href="/core/static/journals/style.css" />
+        <script src="/core/static/journals/script.js"></script>
+    </head>
+    
+    
+    <body>
+        <div id="container" class="container_12 clearfix" style="width:100%">
+            
+            
+            <div id="sidebar" class="grid_3">
+                <a href=http://www.core.edu.au/home>
+                    <img alt="logo.jpg" src="/core/static/core/logo.jpg" />
+                </a>
+            </div>
+            
+            <div id="content" class="grid_6 ">
+                <h2>Journal Portal</h2>
+            </div>
+            <div class="titlenote" style="color: red">
+                <b>
+                    The CORE journal rankings have been discontinued as of February 2022 in order to focus on conference rankings.
+                    The journal rankings are no longer supported or updated.<br>
+                    The most recent update was in 2020.
+                    Details of that update can be found on the CORE website at <a href="https://www.core.edu.au/conference-portal#h.p_ID_82">core.edu.au</a>.
+                </b>
+            </div>
+            
+
+            
+            <div id="accountbar">
+
+                
+                <a href="/conf-ranks/login">Sign in with LinkedIn</a><br />
+                Signing in with LinkedIn authorizes us to store your name, email address, headline and display picture <br/>
+                <br/>
+                <span onclick=showReason() style="color:#0464ad; cursor:pointer;"> why? </span>
+	        
+
+            </div>
+            
+
+            <div class="grid_12" style="width:100%; margin:0px;">
+                
+<div id="search">
+
+    <a href="https://www.core.edu.au/">CORE homepage</a> |
+    <a href="https://www.core.edu.au/conference-portal">CORE rankings page</a> |
+    <a href="https://docs.google.com/document/d/11lyr_N7rnyhpvTnGJRVvrFIp73REt3lwTCmy0k8geJo/edit?usp=sharing">Frequently asked questions</a><br/>
+    <a style="line-height: 2" href="/conf-ranks/">Search conferences</a>
+    <br/>
+
+    <div class="ranking_summary">
+        CORE2020 Summary:<br />
+        A* - 6%<br />
+        A - 10%<br />
+        B - 30%<br />
+        C - 43%<br />
+        Other - 8%<br/>
+    </div>
+    <br /><br />
+
+    <form action="/jnl-ranks/" method="get" id="searchform">
+    <input type="text" name="search" value="" />
+    Search by: <select name="by">
+        <option value="all" selected="selected">All</option>
+        <option value="title" >Title</option>
+        <option value="rank" >Rank</option>
+        <option value="for" >Field Of Research</option>
+    </select>
+    Source: <select name="source">
+        <option value="all" >All</option>
+
+        
+        <option value="CORE2020" selected="selected">
+            CORE2020
+        </option>
+        
+        <option value="ERA2010" >
+            ERA2010
+        </option>
+        
+
+    </select><br />
+    <input type="hidden" id="sort" name="sort" value="atitle" />
+    <input type="hidden" id="page" name="page" value="1" />
+    <input type="submit" value="Search" /><br />
+
+    
+    Showing results 1 - 50 of 639
+    <span class="export">
+            <input type="submit" name="do" value="Export" />
+    </span>
+    </form>
+    <table>
+        <tr><th class="nowrap">
+            <b>Title</b>
+            <a href="javascript: sortField('dtitle')">
+                <img src="/core/static/conferences/updownarrow.png" width="15" height="15" />
+            </a>
+        </th><th class="nowrap">
+            <b>Source</b>
+            <a href="javascript: sortField('asource')">
+                <img src="/core/static/conferences/updownarrow.png" width="15" height="15" />
+            </a>
+        </th><th class="nowrap">
+            <b>Rank</b>
+            <a href="javascript: sortField('arank')">
+                <img src="/core/static/conferences/updownarrow.png" width="15" height="15" />
+            </a>
+        </th><th class="nowrap">
+            <b>DBLP</b>
+            <a href="javascript: sortField('adblp')">
+                <img src="/core/static/conferences/updownarrow.png" width="15" height="15" />
+            </a>
+        </th><th class="nowrap">
+            <b>Has data?</b>
+            <a href="javascript: sortField('ahasdata')">
+                <img src="/core/static/conferences/updownarrow.png" width="15" height="15" />
+            </a>
+        </th><th class="nowrap">
+            <b>FoR</b>
+            <a href="javascript: sortField('afor1')">
+                <img src="/core/static/conferences/updownarrow.png" width="15" height="15" />
+            </a>
+        </th>
+        <th class="nowrap">
+            <b>Comments</b>
+            <a href="javascript: sortField('aresponses')">
+                <img src="/core/static/conferences/updownarrow.png" width="15" height="15" />
+            </a>
+        </th><th class="nowrap">
+            <b>Average Rating</b>
+                <a href="javascript: sortField('aavgrank')">
+                <img src="/core/static/conferences/updownarrow.png" width="15" height="15" />
+            </a>
+        </th>
+        </tr>
+
+        
+        <tr class="evenrow" onclick="navigate('/jnl-ranks/555/')">
+            <td>
+                Academy of Information and Management Sciences Journal
+            </td><td class="nowrap">
+                CORE2020
+            </td><td class="nowrap">
+                C
+            </td><td class="nowrap">
+                none
+            </td><td class="nowrap">
+                No
+            </td><td class="nowrap">
+                0806
+            </td><td class="nowrap">
+                0
+            </td><td class="nowrap">
+                N/A
+            </td>
+        </tr>
+        
+        <tr class="oddrow" onclick="navigate('/jnl-ranks/789/')">
+            <td>
+                ACM Computers in Entertainment
+            </td><td class="nowrap">
+                CORE2020
+            </td><td class="nowrap">
+                B
+            </td><td class="nowrap">
+                
+                    <a target="_blank" href= "https://dblp.uni-trier.de/db/journals/cie">
+                        <div style="height:100%; width: 100%" onclick="event.cancelBubble=true;">
+                            view
+                        </div>
+                    </a>
+                
+            </td><td class="nowrap">
+                No
+            </td><td class="nowrap">
+                0899
+            </td><td class="nowrap">
+                0
+            </td><td class="nowrap">
+                N/A
+            </td>
+        </tr>
+        
+        <tr class="evenrow" onclick="navigate('/jnl-ranks/356/')">
+            <td>
+                ACM Computing Surveys
+            </td><td class="nowrap">
+                CORE2020
+            </td><td class="nowrap">
+                A*
+            </td><td class="nowrap">
+                
+                    <a target="_blank" href= "https://dblp.uni-trier.de/db/journals/csur">
+                        <div style="height:100%; width: 100%" onclick="event.cancelBubble=true;">
+                            view
+                        </div>
+                    </a>
+                
+            </td><td class="nowrap">
+                No
+            </td><td class="nowrap">
+                0803
+            </td><td class="nowrap">
+                0
+            </td><td class="nowrap">
+                N/A
+            </td>
+        </tr>
+        
+        <tr class="oddrow" onclick="navigate('/jnl-ranks/281/')">
+            <td>
+                ACM Transactions on Algorithms
+            </td><td class="nowrap">
+                CORE2020
+            </td><td class="nowrap">
+                A
+            </td><td class="nowrap">
+                
+                    <a target="_blank" href= "https://dblp.uni-trier.de/db/journals/talg">
+                        <div style="height:100%; width: 100%" onclick="event.cancelBubble=true;">
+                            view
+                        </div>
+                    </a>
+                
+            </td><td class="nowrap">
+                Yes
+            </td><td class="nowrap">
+                0802
+            </td><td class="nowrap">
+                1
+            </td><td class="nowrap">
+                5.0
+            </td>
+        </tr>
+        
+        <tr class="evenrow" onclick="navigate('/jnl-ranks/171/')">
+            <td>
+                ACM Transactions on Applied Perception
+            </td><td class="nowrap">
+                CORE2020
+            </td><td class="nowrap">
+                B
+            </td><td class="nowrap">
+                
+                    <a target="_blank" href= "https://dblp.uni-trier.de/db/journals/tap">
+                        <div style="height:100%; width: 100%" onclick="event.cancelBubble=true;">
+                            view
+                        </div>
+                    </a>
+                
+            </td><td class="nowrap">
+                No
+            </td><td class="nowrap">
+                0801
+            </td><td class="nowrap">
+                0
+            </td><td class="nowrap">
+                N/A
+            </td>
+        </tr>
+        
+        <tr class="oddrow" onclick="navigate('/jnl-ranks/340/')">
+            <td>
+                ACM Transactions on Architecture and Code Optimization
+            </td><td class="nowrap">
+                CORE2020
+            </td><td class="nowrap">
+                B
+            </td><td class="nowrap">
+                
+                    <a target="_blank" href= "https://dblp.uni-trier.de/db/journals/taco">
+                        <div style="height:100%; width: 100%" onclick="event.cancelBubble=true;">
+                            view
+                        </div>
+                    </a>
+                
+            </td><td class="nowrap">
+                Yes
+            </td><td class="nowrap">
+                0803
+            </td><td class="nowrap">
+                0
+            </td><td class="nowrap">
+                N/A
+            </td>
+        </tr>
+        
+        <tr class="evenrow" onclick="navigate('/jnl-ranks/419/')">
+            <td>
+                ACM Transactions on Asian Language Information Processing
+            </td><td class="nowrap">
+                CORE2020
+            </td><td class="nowrap">
+                B
+            </td><td class="nowrap">
+                
+                    <a target="_blank" href= "https://dblp.uni-trier.de/db/journals/talip">
+                        <div style="height:100%; width: 100%" onclick="event.cancelBubble=true;">
+                            view
+                        </div>
+                    </a>
+                
+            </td><td class="nowrap">
+                No
+            </td><td class="nowrap">
+                0804
+            </td><td class="nowrap">
+                0
+            </td><td class="nowrap">
+                N/A
+            </td>
+        </tr>
+        
+        <tr class="oddrow" onclick="navigate('/jnl-ranks/172/')">
+            <td>
+                ACM Transactions on Autonomous and Adaptive Systems
+            </td><td class="nowrap">
+                CORE2020
+            </td><td class="nowrap">
+                B
+            </td><td class="nowrap">
+                
+                    <a target="_blank" href= "https://dblp.uni-trier.de/db/journals/taas">
+                        <div style="height:100%; width: 100%" onclick="event.cancelBubble=true;">
+                            view
+                        </div>
+                    </a>
+                
+            </td><td class="nowrap">
+                No
+            </td><td class="nowrap">
+                0801
+            </td><td class="nowrap">
+                0
+            </td><td class="nowrap">
+                N/A
+            </td>
+        </tr>
+        
+        <tr class="evenrow" onclick="navigate('/jnl-ranks/282/')">
+            <td>
+                ACM Transactions on Computational Logic
+            </td><td class="nowrap">
+                CORE2020
+            </td><td class="nowrap">
+                A
+            </td><td class="nowrap">
+                
+                    <a target="_blank" href= "https://dblp.uni-trier.de/db/journals/tocl">
+                        <div style="height:100%; width: 100%" onclick="event.cancelBubble=true;">
+                            view
+                        </div>
+                    </a>
+                
+            </td><td class="nowrap">
+                Yes
+            </td><td class="nowrap">
+                0802
+            </td><td class="nowrap">
+                0
+            </td><td class="nowrap">
+                N/A
+            </td>
+        </tr>
+        
+        <tr class="oddrow" onclick="navigate('/jnl-ranks/518/')">
+            <td>
+                ACM Transactions on Computer - Human Interaction
+            </td><td class="nowrap">
+                CORE2020
+            </td><td class="nowrap">
+                A*
+            </td><td class="nowrap">
+                
+                    <a target="_blank" href= "https://dblp.uni-trier.de/db/journals/tochi">
+                        <div style="height:100%; width: 100%" onclick="event.cancelBubble=true;">
+                            view
+                        </div>
+                    </a>
+                
+            </td><td class="nowrap">
+                Yes
+            </td><td class="nowrap">
+                0806
+            </td><td class="nowrap">
+                0
+            </td><td class="nowrap">
+                N/A
+            </td>
+        </tr>
+        
+        <tr class="evenrow" onclick="navigate('/jnl-ranks/357/')">
+            <td>
+                ACM Transactions on Computer Systems
+            </td><td class="nowrap">
+                CORE2020
+            </td><td class="nowrap">
+                A*
+            </td><td class="nowrap">
+                
+                    <a target="_blank" href= "https://dblp.uni-trier.de/db/journals/tocs">
+                        <div style="height:100%; width: 100%" onclick="event.cancelBubble=true;">
+                            view
+                        </div>
+                    </a>
+                
+            </td><td class="nowrap">
+                No
+            </td><td class="nowrap">
+                0803
+            </td><td class="nowrap">
+                0
+            </td><td class="nowrap">
+                N/A
+            </td>
+        </tr>
+        
+        <tr class="oddrow" onclick="navigate('/jnl-ranks/416/')">
+            <td>
+                ACM Transactions on Database Systems
+            </td><td class="nowrap">
+                CORE2020
+            </td><td class="nowrap">
+                A*
+            </td><td class="nowrap">
+                
+                    <a target="_blank" href= "https://dblp.uni-trier.de/db/journals/tods">
+                        <div style="height:100%; width: 100%" onclick="event.cancelBubble=true;">
+                            view
+                        </div>
+                    </a>
+                
+            </td><td class="nowrap">
+                Yes
+            </td><td class="nowrap">
+                0804
+            </td><td class="nowrap">
+                0
+            </td><td class="nowrap">
+                N/A
+            </td>
+        </tr>
+        
+        <tr class="evenrow" onclick="navigate('/jnl-ranks/341/')">
+            <td>
+                ACM Transactions on Design Automation of Electronic Systems
+            </td><td class="nowrap">
+                CORE2020
+            </td><td class="nowrap">
+                not primarily CS
+            </td><td class="nowrap">
+                
+                    <a target="_blank" href= "https://dblp.uni-trier.de/db/journals/todaes">
+                        <div style="height:100%; width: 100%" onclick="event.cancelBubble=true;">
+                            view
+                        </div>
+                    </a>
+                
+            </td><td class="nowrap">
+                No
+            </td><td class="nowrap">
+                0803
+            </td><td class="nowrap">
+                0
+            </td><td class="nowrap">
+                N/A
+            </td>
+        </tr>
+        
+        <tr class="oddrow" onclick="navigate('/jnl-ranks/342/')">
+            <td>
+                ACM Transactions on Embedded Computing Systems
+            </td><td class="nowrap">
+                CORE2020
+            </td><td class="nowrap">
+                B
+            </td><td class="nowrap">
+                
+                    <a target="_blank" href= "https://dblp.uni-trier.de/db/journals/tecs">
+                        <div style="height:100%; width: 100%" onclick="event.cancelBubble=true;">
+                            view
+                        </div>
+                    </a>
+                
+            </td><td class="nowrap">
+                Yes
+            </td><td class="nowrap">
+                0803
+            </td><td class="nowrap">
+                0
+            </td><td class="nowrap">
+                N/A
+            </td>
+        </tr>
+        
+        <tr class="evenrow" onclick="navigate('/jnl-ranks/155/')">
+            <td>
+                ACM Transactions on Graphics
+            </td><td class="nowrap">
+                CORE2020
+            </td><td class="nowrap">
+                A*
+            </td><td class="nowrap">
+                
+                    <a target="_blank" href= "https://dblp.uni-trier.de/db/journals/tog">
+                        <div style="height:100%; width: 100%" onclick="event.cancelBubble=true;">
+                            view
+                        </div>
+                    </a>
+                
+            </td><td class="nowrap">
+                No
+            </td><td class="nowrap">
+                0801
+            </td><td class="nowrap">
+                1
+            </td><td class="nowrap">
+                5.0
+            </td>
+        </tr>
+        
+        <tr class="oddrow" onclick="navigate('/jnl-ranks/504/')">
+            <td>
+                ACM Transactions on Information Systems
+            </td><td class="nowrap">
+                CORE2020
+            </td><td class="nowrap">
+                A
+            </td><td class="nowrap">
+                
+                    <a target="_blank" href= "https://dblp.uni-trier.de/db/journals/tois">
+                        <div style="height:100%; width: 100%" onclick="event.cancelBubble=true;">
+                            view
+                        </div>
+                    </a>
+                
+            </td><td class="nowrap">
+                Yes
+            </td><td class="nowrap">
+                0806
+            </td><td class="nowrap">
+                0
+            </td><td class="nowrap">
+                N/A
+            </td>
+        </tr>
+        
+        <tr class="evenrow" onclick="navigate('/jnl-ranks/445/')">
+            <td>
+                ACM Transactions on Internet Technology
+            </td><td class="nowrap">
+                CORE2020
+            </td><td class="nowrap">
+                B
+            </td><td class="nowrap">
+                
+                    <a target="_blank" href= "https://dblp.uni-trier.de/db/journals/toit">
+                        <div style="height:100%; width: 100%" onclick="event.cancelBubble=true;">
+                            view
+                        </div>
+                    </a>
+                
+            </td><td class="nowrap">
+                Yes
+            </td><td class="nowrap">
+                0805
+            </td><td class="nowrap">
+                0
+            </td><td class="nowrap">
+                N/A
+            </td>
+        </tr>
+        
+        <tr class="oddrow" onclick="navigate('/jnl-ranks/173/')">
+            <td>
+                ACM Transactions on Knowledge Discovery from Data
+            </td><td class="nowrap">
+                CORE2020
+            </td><td class="nowrap">
+                B
+            </td><td class="nowrap">
+                
+                    <a target="_blank" href= "https://dblp.uni-trier.de/db/journals/tkdd">
+                        <div style="height:100%; width: 100%" onclick="event.cancelBubble=true;">
+                            view
+                        </div>
+                    </a>
+                
+            </td><td class="nowrap">
+                No
+            </td><td class="nowrap">
+                0801
+            </td><td class="nowrap">
+                0
+            </td><td class="nowrap">
+                N/A
+            </td>
+        </tr>
+        
+        <tr class="evenrow" onclick="navigate('/jnl-ranks/293/')">
+            <td>
+                ACM Transactions on Mathematical Software
+            </td><td class="nowrap">
+                CORE2020
+            </td><td class="nowrap">
+                A*
+            </td><td class="nowrap">
+                
+                    <a target="_blank" href= "https://dblp.uni-trier.de/db/journals/toms">
+                        <div style="height:100%; width: 100%" onclick="event.cancelBubble=true;">
+                            view
+                        </div>
+                    </a>
+                
+            </td><td class="nowrap">
+                No
+            </td><td class="nowrap">
+                0802
+            </td><td class="nowrap">
+                0
+            </td><td class="nowrap">
+                N/A
+            </td>
+        </tr>
+        
+        <tr class="oddrow" onclick="navigate('/jnl-ranks/298/')">
+            <td>
+                ACM Transactions on Modeling and Computer Simulation
+            </td><td class="nowrap">
+                CORE2020
+            </td><td class="nowrap">
+                B
+            </td><td class="nowrap">
+                
+                    <a target="_blank" href= "https://dblp.uni-trier.de/db/journals/tomacs">
+                        <div style="height:100%; width: 100%" onclick="event.cancelBubble=true;">
+                            view
+                        </div>
+                    </a>
+                
+            </td><td class="nowrap">
+                No
+            </td><td class="nowrap">
+                0802
+            </td><td class="nowrap">
+                0
+            </td><td class="nowrap">
+                N/A
+            </td>
+        </tr>
+        
+        <tr class="evenrow" onclick="navigate('/jnl-ranks/362/')">
+            <td>
+                ACM Transactions on Multimedia Computing Communications and Applications
+            </td><td class="nowrap">
+                CORE2020
+            </td><td class="nowrap">
+                B
+            </td><td class="nowrap">
+                
+                    <a target="_blank" href= "https://dblp.uni-trier.de/db/journals/tomccap">
+                        <div style="height:100%; width: 100%" onclick="event.cancelBubble=true;">
+                            view
+                        </div>
+                    </a>
+                
+            </td><td class="nowrap">
+                No
+            </td><td class="nowrap">
+                0803
+            </td><td class="nowrap">
+                0
+            </td><td class="nowrap">
+                N/A
+            </td>
+        </tr>
+        
+        <tr class="oddrow" onclick="navigate('/jnl-ranks/343/')">
+            <td>
+                ACM Transactions on Privacy and Security (was ACM Transactions on Information and System Security, TISSEC pre 2018)
+            </td><td class="nowrap">
+                CORE2020
+            </td><td class="nowrap">
+                A
+            </td><td class="nowrap">
+                
+                    <a target="_blank" href= "https://dblp.uni-trier.de/db/journals/tissec">
+                        <div style="height:100%; width: 100%" onclick="event.cancelBubble=true;">
+                            view
+                        </div>
+                    </a>
+                
+            </td><td class="nowrap">
+                Yes
+            </td><td class="nowrap">
+                0803
+            </td><td class="nowrap">
+                0
+            </td><td class="nowrap">
+                N/A
+            </td>
+        </tr>
+        
+        <tr class="evenrow" onclick="navigate('/jnl-ranks/358/')">
+            <td>
+                ACM Transactions on Programming Languages and Systems
+            </td><td class="nowrap">
+                CORE2020
+            </td><td class="nowrap">
+                A*
+            </td><td class="nowrap">
+                
+                    <a target="_blank" href= "https://dblp.uni-trier.de/db/journals/toplas">
+                        <div style="height:100%; width: 100%" onclick="event.cancelBubble=true;">
+                            view
+                        </div>
+                    </a>
+                
+            </td><td class="nowrap">
+                Yes
+            </td><td class="nowrap">
+                0803
+            </td><td class="nowrap">
+                0
+            </td><td class="nowrap">
+                N/A
+            </td>
+        </tr>
+        
+        <tr class="oddrow" onclick="navigate('/jnl-ranks/474/')">
+            <td>
+                ACM Transactions on Sensor Networks
+            </td><td class="nowrap">
+                CORE2020
+            </td><td class="nowrap">
+                C
+            </td><td class="nowrap">
+                
+                    <a target="_blank" href= "https://dblp.uni-trier.de/db/journals/tosn">
+                        <div style="height:100%; width: 100%" onclick="event.cancelBubble=true;">
+                            view
+                        </div>
+                    </a>
+                
+            </td><td class="nowrap">
+                Yes
+            </td><td class="nowrap">
+                0805
+            </td><td class="nowrap">
+                0
+            </td><td class="nowrap">
+                N/A
+            </td>
+        </tr>
+        
+        <tr class="evenrow" onclick="navigate('/jnl-ranks/359/')">
+            <td>
+                ACM Transactions on Software Engineering and Methodology
+            </td><td class="nowrap">
+                CORE2020
+            </td><td class="nowrap">
+                A*
+            </td><td class="nowrap">
+                
+                    <a target="_blank" href= "https://dblp.uni-trier.de/db/journals/tosem">
+                        <div style="height:100%; width: 100%" onclick="event.cancelBubble=true;">
+                            view
+                        </div>
+                    </a>
+                
+            </td><td class="nowrap">
+                Yes
+            </td><td class="nowrap">
+                0803
+            </td><td class="nowrap">
+                1
+            </td><td class="nowrap">
+                5.0
+            </td>
+        </tr>
+        
+        <tr class="oddrow" onclick="navigate('/jnl-ranks/174/')">
+            <td>
+                ACM Transactions on Speech and Language Processing
+            </td><td class="nowrap">
+                CORE2020
+            </td><td class="nowrap">
+                B
+            </td><td class="nowrap">
+                
+                    <a target="_blank" href= "https://dblp.uni-trier.de/db/journals/tslp">
+                        <div style="height:100%; width: 100%" onclick="event.cancelBubble=true;">
+                            view
+                        </div>
+                    </a>
+                
+            </td><td class="nowrap">
+                No
+            </td><td class="nowrap">
+                0801
+            </td><td class="nowrap">
+                0
+            </td><td class="nowrap">
+                N/A
+            </td>
+        </tr>
+        
+        <tr class="evenrow" onclick="navigate('/jnl-ranks/420/')">
+            <td>
+                ACM Transactions on Storage
+            </td><td class="nowrap">
+                CORE2020
+            </td><td class="nowrap">
+                B
+            </td><td class="nowrap">
+                
+                    <a target="_blank" href= "https://dblp.uni-trier.de/db/journals/tos">
+                        <div style="height:100%; width: 100%" onclick="event.cancelBubble=true;">
+                            view
+                        </div>
+                    </a>
+                
+            </td><td class="nowrap">
+                No
+            </td><td class="nowrap">
+                0804
+            </td><td class="nowrap">
+                0
+            </td><td class="nowrap">
+                N/A
+            </td>
+        </tr>
+        
+        <tr class="oddrow" onclick="navigate('/jnl-ranks/461/')">
+            <td>
+                ACM Transactions on the Web
+            </td><td class="nowrap">
+                CORE2020
+            </td><td class="nowrap">
+                B
+            </td><td class="nowrap">
+                
+                    <a target="_blank" href= "https://dblp.uni-trier.de/db/journals/tweb">
+                        <div style="height:100%; width: 100%" onclick="event.cancelBubble=true;">
+                            view
+                        </div>
+                    </a>
+                
+            </td><td class="nowrap">
+                Yes
+            </td><td class="nowrap">
+                0805
+            </td><td class="nowrap">
+                1
+            </td><td class="nowrap">
+                5.0
+            </td>
+        </tr>
+        
+        <tr class="evenrow" onclick="navigate('/jnl-ranks/216/')">
+            <td>
+                Acta Automatica Sinica
+            </td><td class="nowrap">
+                CORE2020
+            </td><td class="nowrap">
+                C
+            </td><td class="nowrap">
+                none
+            </td><td class="nowrap">
+                No
+            </td><td class="nowrap">
+                0801
+            </td><td class="nowrap">
+                0
+            </td><td class="nowrap">
+                N/A
+            </td>
+        </tr>
+        
+        <tr class="oddrow" onclick="navigate('/jnl-ranks/217/')">
+            <td>
+                Acta Cybernetica
+            </td><td class="nowrap">
+                CORE2020
+            </td><td class="nowrap">
+                C
+            </td><td class="nowrap">
+                
+                    <a target="_blank" href= "https://dblp.uni-trier.de/db/journals/actaC">
+                        <div style="height:100%; width: 100%" onclick="event.cancelBubble=true;">
+                            view
+                        </div>
+                    </a>
+                
+            </td><td class="nowrap">
+                No
+            </td><td class="nowrap">
+                0801
+            </td><td class="nowrap">
+                0
+            </td><td class="nowrap">
+                N/A
+            </td>
+        </tr>
+        
+        <tr class="evenrow" onclick="navigate('/jnl-ranks/344/')">
+            <td>
+                Acta Informatica
+            </td><td class="nowrap">
+                CORE2020
+            </td><td class="nowrap">
+                B
+            </td><td class="nowrap">
+                
+                    <a target="_blank" href= "https://dblp.uni-trier.de/db/journals/acta">
+                        <div style="height:100%; width: 100%" onclick="event.cancelBubble=true;">
+                            view
+                        </div>
+                    </a>
+                
+            </td><td class="nowrap">
+                Yes
+            </td><td class="nowrap">
+                0803
+            </td><td class="nowrap">
+                0
+            </td><td class="nowrap">
+                N/A
+            </td>
+        </tr>
+        
+        <tr class="oddrow" onclick="navigate('/jnl-ranks/127/')">
+            <td>
+                Adaptive Behavior: animals, animats, software agents, robots, adaptive systems
+            </td><td class="nowrap">
+                CORE2020
+            </td><td class="nowrap">
+                B
+            </td><td class="nowrap">
+                none
+            </td><td class="nowrap">
+                Yes
+            </td><td class="nowrap">
+                0801
+            </td><td class="nowrap">
+                0
+            </td><td class="nowrap">
+                N/A
+            </td>
+        </tr>
+        
+        <tr class="evenrow" onclick="navigate('/jnl-ranks/175/')">
+            <td>
+                Advanced Robotics
+            </td><td class="nowrap">
+                CORE2020
+            </td><td class="nowrap">
+                B
+            </td><td class="nowrap">
+                
+                    <a target="_blank" href= "https://dblp.uni-trier.de/db/journals/ar">
+                        <div style="height:100%; width: 100%" onclick="event.cancelBubble=true;">
+                            view
+                        </div>
+                    </a>
+                
+            </td><td class="nowrap">
+                No
+            </td><td class="nowrap">
+                0801
+            </td><td class="nowrap">
+                0
+            </td><td class="nowrap">
+                N/A
+            </td>
+        </tr>
+        
+        <tr class="oddrow" onclick="navigate('/jnl-ranks/277/')">
+            <td>
+                Advances in Artificial Neural Systems
+            </td><td class="nowrap">
+                CORE2020
+            </td><td class="nowrap">
+                Not ranked
+            </td><td class="nowrap">
+                
+                    <a target="_blank" href= "https://dblp.uni-trier.de/db/journals/aans">
+                        <div style="height:100%; width: 100%" onclick="event.cancelBubble=true;">
+                            view
+                        </div>
+                    </a>
+                
+            </td><td class="nowrap">
+                No
+            </td><td class="nowrap">
+                0801
+            </td><td class="nowrap">
+                0
+            </td><td class="nowrap">
+                N/A
+            </td>
+        </tr>
+        
+        <tr class="evenrow" onclick="navigate('/jnl-ranks/69/')">
+            <td>
+                Advances in Computational Sciences and Technology
+            </td><td class="nowrap">
+                CORE2020
+            </td><td class="nowrap">
+                C
+            </td><td class="nowrap">
+                none
+            </td><td class="nowrap">
+                No
+            </td><td class="nowrap">
+                08
+            </td><td class="nowrap">
+                0
+            </td><td class="nowrap">
+                N/A
+            </td>
+        </tr>
+        
+        <tr class="oddrow" onclick="navigate('/jnl-ranks/299/')">
+            <td>
+                Advances in Mathematics of Commmunications
+            </td><td class="nowrap">
+                CORE2020
+            </td><td class="nowrap">
+                B
+            </td><td class="nowrap">
+                
+                    <a target="_blank" href= "https://dblp.uni-trier.de/db/journals/amco">
+                        <div style="height:100%; width: 100%" onclick="event.cancelBubble=true;">
+                            view
+                        </div>
+                    </a>
+                
+            </td><td class="nowrap">
+                No
+            </td><td class="nowrap">
+                0802
+            </td><td class="nowrap">
+                0
+            </td><td class="nowrap">
+                N/A
+            </td>
+        </tr>
+        
+        <tr class="evenrow" onclick="navigate('/jnl-ranks/308/')">
+            <td>
+                Advances in Modelling and Analysis B: Signals, Information, Data, Patterns
+            </td><td class="nowrap">
+                CORE2020
+            </td><td class="nowrap">
+                C
+            </td><td class="nowrap">
+                none
+            </td><td class="nowrap">
+                No
+            </td><td class="nowrap">
+                0802
+            </td><td class="nowrap">
+                0
+            </td><td class="nowrap">
+                N/A
+            </td>
+        </tr>
+        
+        <tr class="oddrow" onclick="navigate('/jnl-ranks/218/')">
+            <td>
+                AI and Society: the journal of human-centered systems and machine intelligence
+            </td><td class="nowrap">
+                CORE2020
+            </td><td class="nowrap">
+                C
+            </td><td class="nowrap">
+                
+                    <a target="_blank" href= "https://dblp.uni-trier.de/db/journals/ais">
+                        <div style="height:100%; width: 100%" onclick="event.cancelBubble=true;">
+                            view
+                        </div>
+                    </a>
+                
+            </td><td class="nowrap">
+                No
+            </td><td class="nowrap">
+                0801
+            </td><td class="nowrap">
+                0
+            </td><td class="nowrap">
+                N/A
+            </td>
+        </tr>
+        
+        <tr class="evenrow" onclick="navigate('/jnl-ranks/176/')">
+            <td>
+                AI Communications: the European journal on artificial intelligence
+            </td><td class="nowrap">
+                CORE2020
+            </td><td class="nowrap">
+                B
+            </td><td class="nowrap">
+                
+                    <a target="_blank" href= "https://dblp.uni-trier.de/db/journals/aicom">
+                        <div style="height:100%; width: 100%" onclick="event.cancelBubble=true;">
+                            view
+                        </div>
+                    </a>
+                
+            </td><td class="nowrap">
+                No
+            </td><td class="nowrap">
+                0801
+            </td><td class="nowrap">
+                0
+            </td><td class="nowrap">
+                N/A
+            </td>
+        </tr>
+        
+        <tr class="oddrow" onclick="navigate('/jnl-ranks/219/')">
+            <td>
+                AI Magazine
+            </td><td class="nowrap">
+                CORE2020
+            </td><td class="nowrap">
+                C
+            </td><td class="nowrap">
+                
+                    <a target="_blank" href= "https://dblp.uni-trier.de/db/journals/aim">
+                        <div style="height:100%; width: 100%" onclick="event.cancelBubble=true;">
+                            view
+                        </div>
+                    </a>
+                
+            </td><td class="nowrap">
+                No
+            </td><td class="nowrap">
+                0801
+            </td><td class="nowrap">
+                0
+            </td><td class="nowrap">
+                N/A
+            </td>
+        </tr>
+        
+        <tr class="evenrow" onclick="navigate('/jnl-ranks/294/')">
+            <td>
+                Algorithmica: an international journal in computer science
+            </td><td class="nowrap">
+                CORE2020
+            </td><td class="nowrap">
+                A*
+            </td><td class="nowrap">
+                
+                    <a target="_blank" href= "https://dblp.uni-trier.de/db/journals/algorithmica">
+                        <div style="height:100%; width: 100%" onclick="event.cancelBubble=true;">
+                            view
+                        </div>
+                    </a>
+                
+            </td><td class="nowrap">
+                Yes
+            </td><td class="nowrap">
+                0802
+            </td><td class="nowrap">
+                1
+            </td><td class="nowrap">
+                4.0
+            </td>
+        </tr>
+        
+        <tr class="oddrow" onclick="navigate('/jnl-ranks/220/')">
+            <td>
+                Annals of Mathematics and Artificial Intelligence
+            </td><td class="nowrap">
+                CORE2020
+            </td><td class="nowrap">
+                C
+            </td><td class="nowrap">
+                
+                    <a target="_blank" href= "https://dblp.uni-trier.de/db/journals/amai">
+                        <div style="height:100%; width: 100%" onclick="event.cancelBubble=true;">
+                            view
+                        </div>
+                    </a>
+                
+            </td><td class="nowrap">
+                No
+            </td><td class="nowrap">
+                0801
+            </td><td class="nowrap">
+                0
+            </td><td class="nowrap">
+                N/A
+            </td>
+        </tr>
+        
+        <tr class="evenrow" onclick="navigate('/jnl-ranks/94/')">
+            <td>
+                Annals of Operations Research
+            </td><td class="nowrap">
+                CORE2020
+            </td><td class="nowrap">
+                B
+            </td><td class="nowrap">
+                
+                    <a target="_blank" href= "https://dblp.uni-trier.de/db/journals/anor">
+                        <div style="height:100%; width: 100%" onclick="event.cancelBubble=true;">
+                            view
+                        </div>
+                    </a>
+                
+            </td><td class="nowrap">
+                No
+            </td><td class="nowrap">
+                0802
+            </td><td class="nowrap">
+                0
+            </td><td class="nowrap">
+                N/A
+            </td>
+        </tr>
+        
+        <tr class="oddrow" onclick="navigate('/jnl-ranks/659/')">
+            <td>
+                Annual Review of Information Science and Technology
+            </td><td class="nowrap">
+                CORE2020
+            </td><td class="nowrap">
+                A*
+            </td><td class="nowrap">
+                
+                    <a target="_blank" href= "https://dblp.uni-trier.de/db/journals/arist">
+                        <div style="height:100%; width: 100%" onclick="event.cancelBubble=true;">
+                            view
+                        </div>
+                    </a>
+                
+            </td><td class="nowrap">
+                No
+            </td><td class="nowrap">
+                0807
+            </td><td class="nowrap">
+                0
+            </td><td class="nowrap">
+                N/A
+            </td>
+        </tr>
+        
+        <tr class="evenrow" onclick="navigate('/jnl-ranks/177/')">
+            <td>
+                Applied Artificial Intelligence: an international journal
+            </td><td class="nowrap">
+                CORE2020
+            </td><td class="nowrap">
+                B
+            </td><td class="nowrap">
+                
+                    <a target="_blank" href= "https://dblp.uni-trier.de/db/journals/aai">
+                        <div style="height:100%; width: 100%" onclick="event.cancelBubble=true;">
+                            view
+                        </div>
+                    </a>
+                
+            </td><td class="nowrap">
+                No
+            </td><td class="nowrap">
+                0801
+            </td><td class="nowrap">
+                0
+            </td><td class="nowrap">
+                N/A
+            </td>
+        </tr>
+        
+        <tr class="oddrow" onclick="navigate('/jnl-ranks/178/')">
+            <td>
+                Applied Intelligence
+            </td><td class="nowrap">
+                CORE2020
+            </td><td class="nowrap">
+                B
+            </td><td class="nowrap">
+                
+                    <a target="_blank" href= "https://dblp.uni-trier.de/db/journals/apin">
+                        <div style="height:100%; width: 100%" onclick="event.cancelBubble=true;">
+                            view
+                        </div>
+                    </a>
+                
+            </td><td class="nowrap">
+                No
+            </td><td class="nowrap">
+                0801
+            </td><td class="nowrap">
+                0
+            </td><td class="nowrap">
+                N/A
+            </td>
+        </tr>
+        
+        <tr class="evenrow" onclick="navigate('/jnl-ranks/100/')">
+            <td>
+                Applied Mathematics and Information Sciences
+            </td><td class="nowrap">
+                CORE2020
+            </td><td class="nowrap">
+                C
+            </td><td class="nowrap">
+                none
+            </td><td class="nowrap">
+                No
+            </td><td class="nowrap">
+                0801
+            </td><td class="nowrap">
+                0
+            </td><td class="nowrap">
+                N/A
+            </td>
+        </tr>
+        
+        <tr class="oddrow" onclick="navigate('/jnl-ranks/309/')">
+            <td>
+                Applied Numerical Analysis and Computational Mathematics
+            </td><td class="nowrap">
+                CORE2020
+            </td><td class="nowrap">
+                C
+            </td><td class="nowrap">
+                none
+            </td><td class="nowrap">
+                No
+            </td><td class="nowrap">
+                0802
+            </td><td class="nowrap">
+                0
+            </td><td class="nowrap">
+                N/A
+            </td>
+        </tr>
+        
+        <tr class="evenrow" onclick="navigate('/jnl-ranks/556/')">
+            <td>
+                Applied Ontology
+            </td><td class="nowrap">
+                CORE2020
+            </td><td class="nowrap">
+                C
+            </td><td class="nowrap">
+                
+                    <a target="_blank" href= "https://dblp.uni-trier.de/db/journals/ao">
+                        <div style="height:100%; width: 100%" onclick="event.cancelBubble=true;">
+                            view
+                        </div>
+                    </a>
+                
+            </td><td class="nowrap">
+                No
+            </td><td class="nowrap">
+                0806
+            </td><td class="nowrap">
+                0
+            </td><td class="nowrap">
+                N/A
+            </td>
+        </tr>
+        
+        <tr class="oddrow" onclick="navigate('/jnl-ranks/221/')">
+            <td>
+                Applied Soft Computing
+            </td><td class="nowrap">
+                CORE2020
+            </td><td class="nowrap">
+                C
+            </td><td class="nowrap">
+                
+                    <a target="_blank" href= "https://dblp.uni-trier.de/db/journals/asc">
+                        <div style="height:100%; width: 100%" onclick="event.cancelBubble=true;">
+                            view
+                        </div>
+                    </a>
+                
+            </td><td class="nowrap">
+                Yes
+            </td><td class="nowrap">
+                0801
+            </td><td class="nowrap">
+                16
+            </td><td class="nowrap">
+                4.9
+            </td>
+        </tr>
+        
+    </table>
+    <br />
+
+    
+    
+
+    
+    <b>1</b>&nbsp;
+    
+
+    
+
+    
+    <a href="javascript: jumpPage('2')">2</a>&nbsp;
+    
+
+    
+
+    
+    <a href="javascript: jumpPage('3')">3</a>&nbsp;
+    
+
+    
+
+    
+    <a href="javascript: jumpPage('4')">4</a>&nbsp;
+    
+
+    
+
+    
+    <a href="javascript: jumpPage('5')">5</a>&nbsp;
+    
+
+    
+
+    
+    <a href="javascript: jumpPage('6')">6</a>&nbsp;
+    
+
+    
+
+    
+    <a href="javascript: jumpPage('7')">7</a>&nbsp;
+    
+
+    
+
+    
+    <a href="javascript: jumpPage('8')">8</a>&nbsp;
+    
+
+    
+
+    
+    <a href="javascript: jumpPage('9')">9</a>&nbsp;
+    
+
+    
+
+    
+    <a href="javascript: jumpPage('10')">10</a>&nbsp;
+    
+
+    
+
+    
+    <a href="javascript: jumpPage('11')">11</a>&nbsp;
+    
+
+    
+
+    
+    <a href="javascript: jumpPage('12')">12</a>&nbsp;
+    
+
+    
+
+    
+    <a href="javascript: jumpPage('13')">13</a>&nbsp;
+    
+
+    
+    
+
+    
+
+</div>
+
+            </div>
+
+            
+            <div id="footer" class="grid_12" style="width:95%">
+                &copy; 2013 Computing Research & Education 
+		    </div>
+		    
+		    
+        </div>
+    </body>
+</html>
