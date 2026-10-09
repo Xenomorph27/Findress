@@ -4,3 +4,4 @@ drizzle
 pnpm-lock.yaml
 .data
 src/components/ui
+src/lib/sources/__fixtures__
