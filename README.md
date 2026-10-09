@@ -51,6 +51,9 @@ pnpm test            # unit tests · pnpm test:e2e (against pnpm start)
 
 ## Environment variables
 
+Deploying? Every variable Vercel needs, the GitHub Actions secrets and the post-deploy checks are in
+[`docs/DEPLOY.md`](docs/DEPLOY.md).
+
 See `.env.example`: `DATABASE_URL`, `CRON_SECRET`, `GITHUB_TOKEN` (optional), `ENABLE_LLM_TAGGING`,
 `OPENALEX_API_KEY` / `OPENALEX_EMAIL` (optional),
 `AI_PROVIDER` (default `google`), `AI_MODEL` (default `gemini-3.8-flash`), `GOOGLE_GENERATIVE_AI_API_KEY`,
@@ -70,7 +73,7 @@ See `.env.example`: `DATABASE_URL`, `CRON_SECRET`, `GITHUB_TOKEN` (optional), `E
 - Owner "Refresh now" on `/sources`. Every run is logged in `source_runs`; one failing source never
   stops the others. Polite fetching: `FIndressBot/1.0` UA, robots.txt, ≥1 req/s per host (WikiCFP 5 s).
 
-## Public API <a id="api"></a>
+## API <a id="api"></a>
 
 - `GET /api/events` — query params as `/explore`: `q` (full-text), `type`, `subfield`, `rank`
   (`A*,A,B,C,CCF-A,CCF-B,CCF-C,unranked`), `window` (`7|30|90|custom` + `from`,`to`), `passed=1`,
