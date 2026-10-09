@@ -100,7 +100,7 @@ function Header({ j }: { j: JournalDetail }) {
         <h1 className="font-heading text-3xl leading-tight md:text-5xl">{j.abbreviation}</h1>
         <p className="text-muted-foreground mt-3 max-w-3xl text-base text-balance">
           {j.name}
-          {j.publisher && <span className="opacity-80"> · {j.publisher}</span>}
+          {j.publisher && <span> · {j.publisher}</span>}
         </p>
       </div>
       <dl className="grid grid-cols-2 gap-2 sm:grid-cols-4">

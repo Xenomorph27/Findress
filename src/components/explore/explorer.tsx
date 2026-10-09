@@ -392,7 +392,7 @@ export function Explorer({
 
         <TabBar value={tab} onChange={(t) => patch({ tab: t })} />
 
-        <div className="border-hairline bg-background/85 md:bg-surface/70 sticky top-14 z-20 -mx-4 flex flex-wrap items-center gap-2 border-b px-4 py-3 backdrop-blur-xl md:-mx-0 md:rounded-xl md:border-0 md:px-3">
+        <div className="border-hairline bg-background/85 md:bg-surface/90 sticky top-14 z-20 -mx-4 flex flex-wrap items-center gap-2 border-b px-4 py-3 backdrop-blur-xl md:-mx-0 md:rounded-xl md:border-0 md:px-3">
           <div className="relative min-w-[200px] flex-1 basis-full sm:basis-auto">
             <Search
               className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 z-10 size-4 -translate-y-1/2"
@@ -514,7 +514,7 @@ export function Explorer({
               ref={listRef}
               role="list"
               aria-label="Venues"
-              className="relative"
+              className="bg-background/80 relative rounded-xl"
               style={{ height: virtualizer.getTotalSize() }}
             >
               {virtualizer.getVirtualItems().map((v) => {

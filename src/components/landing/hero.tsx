@@ -26,7 +26,7 @@ export function Hero({ data }: { data: LandingData }) {
         {/* One slow aurora blob, behind the hero only. */}
         <div
           aria-hidden
-          className="absolute top-[-20%] right-[-10%] -z-10 h-[620px] w-[620px] rounded-full opacity-[0.10] blur-[90px] dark:opacity-25"
+          className="absolute top-[-20%] right-[-10%] -z-10 h-[620px] w-[620px] rounded-full opacity-[0.08] blur-[90px] lg:opacity-[0.10] dark:opacity-[0.06] lg:dark:opacity-25"
           style={{
             background:
               "radial-gradient(circle at 30% 30%, var(--aurora-1), var(--aurora-2) 45%, var(--aurora-3) 75%, transparent 80%)",
@@ -62,7 +62,7 @@ export function Hero({ data }: { data: LandingData }) {
                   id="hero-q"
                   name="q"
                   placeholder="NeurIPS, diffusion workshops, Seoul…"
-                  className="border-hairline-strong bg-surface/70 placeholder:text-muted-foreground focus:border-aurora-2 h-11 w-full rounded-xl border pr-3 pl-9 text-sm backdrop-blur"
+                  className="border-hairline-strong bg-surface/90 placeholder:text-muted-foreground focus:border-aurora-2 h-11 w-full rounded-xl border pr-3 pl-9 text-sm backdrop-blur"
                 />
               </div>
               <Button type="submit" className="h-11 px-4">
@@ -130,7 +130,7 @@ export function Hero({ data }: { data: LandingData }) {
                     d.lat != null && d.lng != null && setHighlight({ lat: d.lat, lng: d.lng })
                   }
                   onBlur={() => setHighlight(null)}
-                  className="group border-hairline bg-surface/60 hover:border-hairline-strong flex h-full flex-col gap-3 rounded-xl border p-4 transition-colors"
+                  className="group border-hairline bg-surface/90 hover:border-hairline-strong flex h-full flex-col gap-3 rounded-xl border p-4 transition-colors"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <span className="font-heading text-xl leading-none">

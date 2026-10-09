@@ -66,7 +66,7 @@ function SourceCard({ h, now }: { h: SourceHealth; now: number }) {
   const meta = SOURCE_META[h.source as SourceName];
   const stats = h.lastRun?.stats ?? {};
   return (
-    <li className="border-hairline bg-surface/50 rounded-2xl border p-5">
+    <li className="border-hairline bg-surface/90 rounded-2xl border p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-3">
@@ -174,7 +174,7 @@ async function SourcesContent() {
           ["Journals", totals.journals],
           ["Special issues", totals.specialIssues],
         ].map(([label, value]) => (
-          <div key={label} className="border-hairline bg-surface/50 rounded-xl border px-4 py-3">
+          <div key={label} className="border-hairline bg-surface/90 rounded-xl border px-4 py-3">
             <p className="text-muted-foreground text-xs">{label}</p>
             <p className="mt-1 font-mono text-xl">{Number(value).toLocaleString()}</p>
           </div>

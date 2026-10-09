@@ -53,7 +53,7 @@ export function SpecialIssueList({
             id={`si-${c.id}`}
             className={cn(
               "border-hairline target:border-aurora-2/60 scroll-mt-24 rounded-xl border p-4",
-              !open && "opacity-75",
+              !open && "dimmed",
             )}
           >
             <div className="flex flex-wrap items-start justify-between gap-3">
@@ -63,10 +63,7 @@ export function SpecialIssueList({
                   {t != null ? (
                     <>
                       Due {formatInZone(t, zone, "EEE MMM d, yyyy · HH:mm")} {zoneShortLabel(zone)}
-                      <span className="opacity-80">
-                        {" "}
-                        · stated as “{c.deadlineText}”, no time zone → end of day AoE
-                      </span>
+                      <span> · stated as “{c.deadlineText}”, no time zone → end of day AoE</span>
                     </>
                   ) : (
                     "Submission deadline not stated in the call"

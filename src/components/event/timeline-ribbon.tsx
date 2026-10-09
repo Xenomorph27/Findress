@@ -153,7 +153,7 @@ export function TimelineRibbon({
                       key={m.key}
                       className={cn(
                         "flex flex-col items-center px-1 text-center",
-                        passed && "opacity-45",
+                        passed && "dimmed",
                       )}
                     >
                       <span
@@ -212,7 +212,7 @@ export function TimelineRibbon({
                 </li>
               );
               const row = (
-                <li key={m.key} className={cn("relative", passed && "opacity-45")}>
+                <li key={m.key} className={cn("relative", passed && "dimmed")}>
                   <span
                     aria-hidden
                     className={cn(

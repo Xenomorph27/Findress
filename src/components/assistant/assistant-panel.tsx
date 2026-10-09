@@ -301,7 +301,7 @@ export function AssistantPanel({
                       type="button"
                       onClick={() => applyPrompt(p.text)}
                       disabled={owner == null}
-                      className="border-hairline bg-surface/60 text-muted-foreground hover:border-aurora-2/50 hover:text-foreground rounded-full border px-2.5 py-1 text-left text-xs transition-colors disabled:opacity-50"
+                      className="border-hairline bg-surface/90 text-muted-foreground hover:border-aurora-2/50 hover:text-foreground rounded-full border px-2.5 py-1 text-left text-xs transition-colors disabled:opacity-50"
                     >
                       {p.label}
                     </button>

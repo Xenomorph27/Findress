@@ -53,7 +53,7 @@ function Chip({
       )}
     >
       {children}
-      {count != null && <span className="font-mono text-xs opacity-60">{count}</span>}
+      {count != null && <span className="text-muted-foreground font-mono text-xs">{count}</span>}
     </button>
   );
 }

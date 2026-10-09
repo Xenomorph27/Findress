@@ -88,7 +88,7 @@ export function ResultRow({
       className={cn(
         "group relative grid cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 rounded-lg px-3 py-4 transition-colors md:grid-cols-[112px_minmax(0,1fr)_150px_170px_auto] md:px-4",
         selected ? "tint-selected" : "tint-row-hover",
-        ["tba", "past"].includes(editionStatus(row, now)) && "opacity-70",
+        ["tba", "past"].includes(editionStatus(row, now)) && "dimmed",
       )}
     >
       {selected && (
@@ -178,7 +178,7 @@ export function ResultCard({
       onClick={onOpen}
       className={cn(
         "group bg-surface lift tint-col-hover relative flex cursor-pointer flex-col gap-4 rounded-xl p-5 transition-colors",
-        ["tba", "past"].includes(editionStatus(row, now)) && "opacity-75",
+        ["tba", "past"].includes(editionStatus(row, now)) && "dimmed",
       )}
     >
       <div className="flex items-start justify-between gap-3">

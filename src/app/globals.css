@@ -38,9 +38,10 @@
   --aurora-3: #7c3aed;
   --aurora-ink: #0f766e;
 
-  --heat-calm: #0369a1;
-  --heat-warm: #a85b06;
-  --heat-hot: #c8243d;
+  /* A step darker than the dark-theme hues: chips keep AA on tinted backgrounds. */
+  --heat-calm: #075985;
+  --heat-warm: #92400e;
+  --heat-hot: #b91c1c;
   --heat-passed: #6b7280;
 
   --primary: #0e1116;
@@ -65,7 +66,7 @@
   --hairline: rgba(255, 255, 255, 0.07);
   --hairline-strong: rgba(255, 255, 255, 0.13);
   --text: #e8ecf3;
-  --muted-text: #8a94a6;
+  --muted-text: #98a2b3;
 
   --aurora-1: #2ee6c5;
   --aurora-2: #38bdf8;
@@ -396,6 +397,16 @@
     box-shadow: inset 0 -2px 0 0 var(--screen);
   }
 }
+/*
+ * Past editions, closed calls, passed milestones: quieter, but still AA. Instead of fading the
+ * whole element (which drops text below 4.5:1), primary text takes the muted colour.
+ */
+@utility dimmed {
+  --foreground: var(--muted-foreground);
+  & .text-foreground {
+    color: var(--muted-foreground);
+  }
+}
 @utility lift {
   box-shadow: var(--lift);
 }
@@ -418,7 +429,13 @@
   pointer-events: none;
   background: radial-gradient(
     120% 100% at 50% 0%,
-    color-mix(in oklab, var(--screen) var(--glow-strength), transparent) 0%,
+    /* Leans 35% toward the LightPillar violet so the glow and the pillar read as one light. */
+    color-mix(
+        in oklab,
+        color-mix(in oklab, var(--screen) 65%, #5227ff) var(--glow-strength),
+        transparent
+      )
+      0%,
     transparent 70%
   );
 }

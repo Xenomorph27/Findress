@@ -122,7 +122,7 @@ export function JournalResultRow({
         </div>
         <p className="text-muted-foreground mt-1 truncate text-sm">
           {row.name}
-          {row.publisher && <span className="opacity-80"> · {row.publisher}</span>}
+          {row.publisher && <span> · {row.publisher}</span>}
         </p>
         <ChipList
           items={[...row.subfields.map((s) => SUBFIELD_LABEL[s as SubfieldId] ?? s), ...row.topics]}
@@ -168,8 +168,7 @@ function DeadlineText({ at }: { at: number | null }) {
   const zone = mounted ? tz : "UTC";
   return (
     <span title="The call gives a date only; shown as end of day AoE in your time zone">
-      {formatInZone(at, zone, "MMM d, yyyy")}{" "}
-      <span className="opacity-70">{zoneShortLabel(zone)}</span>
+      {formatInZone(at, zone, "MMM d, yyyy")} <span>{zoneShortLabel(zone)}</span>
     </span>
   );
 }
@@ -199,7 +198,7 @@ export function SpecialIssueResultRow({
       className={cn(
         ROW_GRID,
         selected ? "tint-selected" : "tint-row-hover",
-        status === "closed" && "opacity-70",
+        status === "closed" && "dimmed",
       )}
     >
       {selected && (
@@ -331,7 +330,7 @@ export function SpecialIssueCard({
       onClick={onOpen}
       className={cn(
         "group bg-surface lift tint-col-hover relative flex cursor-pointer flex-col gap-4 rounded-xl p-5 transition-colors",
-        status === "closed" && "opacity-75",
+        status === "closed" && "dimmed",
       )}
     >
       <div className="flex items-start justify-between gap-3">

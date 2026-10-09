@@ -16,13 +16,13 @@ import { MonthStackChart } from "./month-stack-chart";
 const VenueMap = dynamic(() => import("./venue-map").then((m) => m.VenueMap), {
   ssr: false,
   loading: () => (
-    <div className="border-hairline bg-surface/50 h-[420px] animate-pulse rounded-2xl border" />
+    <div className="border-hairline bg-surface/90 h-[420px] animate-pulse rounded-2xl border" />
   ),
 });
 
 function Stat({ label, value }: { label: string; value: number }) {
   return (
-    <div className="border-hairline bg-surface/50 rounded-xl border px-4 py-3">
+    <div className="border-hairline bg-surface/90 rounded-xl border px-4 py-3">
       <p className="text-muted-foreground text-xs">{label}</p>
       <p className="mt-1 font-mono text-xl">{value.toLocaleString()}</p>
     </div>

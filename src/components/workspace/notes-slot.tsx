@@ -93,11 +93,11 @@ export function NotesSlot({ eventId, kind = "event" }: { eventId: number; kind?:
         </div>
       </div>
       {!loaded ? (
-        <div className="border-hairline bg-surface/50 h-32 animate-pulse rounded-xl border" />
+        <div className="border-hairline bg-surface/90 h-32 animate-pulse rounded-xl border" />
       ) : preview ? (
         <div
           className={cn(
-            "border-hairline bg-surface/40 min-h-24 rounded-xl border px-4 py-2",
+            "border-hairline bg-surface/90 min-h-24 rounded-xl border px-4 py-2",
             !body && "text-muted-foreground text-sm",
           )}
           onDoubleClick={() => setPreview(false)}
@@ -115,7 +115,7 @@ export function NotesSlot({ eventId, kind = "event" }: { eventId: number; kind?:
             onChange={(e) => setBody(e.target.value)}
             rows={8}
             placeholder={"Ideas, co-authors, reviewer suggestions…\nMarkdown supported."}
-            className="border-hairline-strong bg-surface/40 placeholder:text-muted-foreground focus:border-aurora-2 w-full resize-y rounded-xl border px-4 py-3 text-sm outline-none"
+            className="border-hairline-strong bg-surface/90 placeholder:text-muted-foreground focus:border-aurora-2 w-full resize-y rounded-xl border px-4 py-3 text-sm outline-none"
           />
         </>
       )}

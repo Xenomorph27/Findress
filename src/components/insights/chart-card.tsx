@@ -20,7 +20,7 @@ export function ChartCard({
   return (
     <section
       className={cn(
-        "border-hairline bg-surface/50 min-w-0 rounded-2xl border p-5 md:p-6",
+        "border-hairline bg-surface/90 min-w-0 rounded-2xl border p-5 md:p-6",
         className,
       )}
     >

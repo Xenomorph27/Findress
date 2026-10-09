@@ -158,7 +158,7 @@ function Column({
     <section
       aria-label={`${STATUS_LABEL[status]} (${items.length})`}
       className={cn(
-        "border-hairline bg-surface/40 flex w-[260px] shrink-0 flex-col rounded-2xl border p-2.5 transition-colors",
+        "border-hairline bg-surface/90 flex w-[260px] shrink-0 flex-col rounded-2xl border p-2.5 transition-colors",
         isOver && "border-screen/50 tint-col",
       )}
     >

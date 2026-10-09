@@ -23,7 +23,8 @@ function chipStyle(heat: Heat | null): React.CSSProperties {
   const color = heat ? HEAT_COLOR_VAR[heat] : "var(--muted-text)";
   return {
     color,
-    backgroundColor: `color-mix(in oklab, ${color} 11%, transparent)`,
+    // Opaque (mixed into the surface), so the digits keep AA on any row tint or background light.
+    backgroundColor: `color-mix(in oklab, ${color} 11%, var(--surface))`,
     borderColor: `color-mix(in oklab, ${color} 32%, transparent)`,
   };
 }
@@ -74,7 +75,7 @@ export function CountdownChip({ dueAt, label, size = "sm", className }: Countdow
           heat === "hot" && "shadow-[0_0_8px_currentColor]",
         )}
       />
-      {label && <span className="font-sans opacity-80">{label}</span>}
+      {label && <span className="font-sans">{label}</span>}
       <span>{text}</span>
       <span className="sr-only">{describeCountdown(dueMs, now)}</span>
     </span>

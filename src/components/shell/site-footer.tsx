@@ -1,17 +1,12 @@
 import Link from "next/link";
 import { REPO_URL } from "@/lib/site";
-import { FooterStrands } from "./footer-strands";
 import { OrbitMark } from "./wordmark";
 
-/**
- * Site footer on the darkest chrome, with the Strands band behind it. The text sits on a chrome
- * scrim at the bottom of the band so it stays readable over the light trails.
- */
+/** Site footer on the darkest chrome colour. */
 export function SiteFooter() {
   return (
-    <footer className="bg-chrome relative isolate mt-24 flex min-h-[180px] flex-col justify-end overflow-hidden md:min-h-[260px]">
-      <FooterStrands />
-      <div className="from-chrome via-chrome/80 relative bg-gradient-to-t to-transparent">
+    <footer className="bg-chrome relative mt-24">
+      <div>
         <div className="text-muted-foreground mx-auto flex max-w-[1280px] flex-col gap-4 px-4 pt-10 pb-8 text-sm md:flex-row md:items-center md:justify-between md:px-8">
           <div className="flex items-center gap-2">
             <OrbitMark className="size-4" />

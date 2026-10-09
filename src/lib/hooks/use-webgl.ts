@@ -3,7 +3,7 @@
 import { useSyncExternalStore } from "react";
 
 /**
- * Gate for the WebGL scenes (globe crystal ball, login ripple, footer strands):
+ * Gate for the WebGL scenes (crystal ball, login galaxy/ripple/laser, background light pillar):
  * - "pending": server render / first client render (render nothing heavy yet)
  * - "static": no WebGL2, or the viewer prefers reduced motion → show the static fallback
  * - "webgl": mount the canvas
