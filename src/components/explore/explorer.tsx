@@ -374,13 +374,13 @@ export function Explorer({
     <div className="flex gap-8 pt-6">
       <aside
         aria-label="Filters"
-        className="bg-chrome/80 sticky top-20 hidden max-h-[calc(100dvh-6rem)] w-[268px] shrink-0 scrollbar-none self-start overflow-y-auto rounded-2xl px-4 pt-5 pb-8 lg:block"
+        className="glass-panel sticky top-20 hidden max-h-[calc(100dvh-6rem)] w-[268px] shrink-0 scrollbar-none self-start overflow-y-auto rounded-2xl px-4 pt-5 pb-8 lg:block"
       >
         {showRail && rail}
       </aside>
 
       <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center justify-between gap-3 pb-6">
+        <div className="glass-panel mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl py-2 pr-2 pl-4">
           <p className="text-muted-foreground min-w-0 text-sm" aria-live="polite">
             {summary}
           </p>
@@ -392,7 +392,7 @@ export function Explorer({
 
         <TabBar value={tab} onChange={(t) => patch({ tab: t })} />
 
-        <div className="border-hairline bg-background/85 md:bg-surface/90 sticky top-14 z-20 -mx-4 flex flex-wrap items-center gap-2 border-b px-4 py-3 backdrop-blur-xl md:-mx-0 md:rounded-xl md:border-0 md:px-3">
+        <div className="glass-panel sticky top-14 z-20 -mx-4 flex flex-wrap items-center gap-2 px-4 py-3 md:-mx-0 md:rounded-xl md:px-3">
           <div className="relative min-w-[200px] flex-1 basis-full sm:basis-auto">
             <Search
               className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 z-10 size-4 -translate-y-1/2"
@@ -514,7 +514,7 @@ export function Explorer({
               ref={listRef}
               role="list"
               aria-label="Venues"
-              className="bg-background/80 relative rounded-xl"
+              className="glass-panel relative rounded-xl"
               style={{ height: virtualizer.getTotalSize() }}
             >
               {virtualizer.getVirtualItems().map((v) => {
@@ -571,7 +571,7 @@ export function Explorer({
       <Sheet open={mobileFilters} onOpenChange={setMobileFilters}>
         <SheetContent
           side="bottom"
-          className="glass border-hairline max-h-[88dvh] overflow-y-auto px-5 pb-6"
+          className="glass-panel bg-surface/70 max-h-[88dvh] overflow-y-auto px-5 pb-6"
         >
           <SheetHeader className="px-0">
             <SheetTitle className="font-heading text-xl">Filters</SheetTitle>
@@ -609,7 +609,7 @@ function TabBar({ value, onChange }: { value: ExploreTab; onChange: (t: ExploreT
     <div
       role="tablist"
       aria-label="What to explore"
-      className="tint-surface mb-4 flex w-full flex-wrap gap-1 rounded-xl p-1 sm:w-fit sm:flex-nowrap"
+      className="glass-panel tint-surface mb-4 flex w-full flex-wrap gap-1 rounded-xl p-1 sm:w-fit sm:flex-nowrap"
     >
       {EXPLORE_TABS.map((t, i) => {
         const active = t.value === value;

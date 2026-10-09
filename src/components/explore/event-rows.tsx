@@ -177,7 +177,7 @@ export function ResultCard({
     <article
       onClick={onOpen}
       className={cn(
-        "group bg-surface lift tint-col-hover relative flex cursor-pointer flex-col gap-4 rounded-xl p-5 transition-colors",
+        "group glass-panel tint-col-hover relative flex cursor-pointer flex-col gap-4 rounded-xl p-5 transition-colors",
         ["tba", "past"].includes(editionStatus(row, now)) && "dimmed",
       )}
     >

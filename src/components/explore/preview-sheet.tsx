@@ -59,7 +59,7 @@ export function PreviewSheet({ row, onClose }: { row: ExplorerRow | null; onClos
     <Sheet open={row != null} onOpenChange={(open) => !open && onClose()}>
       <SheetContent
         side="right"
-        className="glass border-hairline w-full gap-0 overflow-y-auto p-0 sm:max-w-[460px]"
+        className="glass-panel bg-surface/70 w-full gap-0 overflow-y-auto p-0 sm:max-w-[460px]"
       >
         {row && (
           <>

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { GlobalAssistant } from "@/components/assistant/global-assistant";
+import { ExplorePillar } from "@/components/explore/explore-pillar";
 import { PackedExplorer } from "@/components/explore/packed-explorer";
 import { ExplorerSkeleton } from "@/components/explore/explorer-skeleton";
 import { Container } from "@/components/shell/states";
@@ -58,13 +59,16 @@ async function ExplorerLoader({
 export default function ExplorePage(props: PageProps<"/explore">) {
   return (
     <Container>
+      <ExplorePillar />
       {/* Static shell: the title and intro paint at first byte, before the row data streams in. */}
       <header className="pt-8 md:pt-10">
-        <h1 className="font-heading text-3xl leading-tight md:text-5xl">Explore</h1>
-        <p className="text-muted-foreground mt-3 max-w-2xl text-base">
-          Every AI/ML conference, workshop, journal and special issue in one list. Filter by
-          deadline, subfield, rank, open access and place.
-        </p>
+        <div className="glass-panel w-fit max-w-3xl rounded-2xl px-5 py-4 md:px-6 md:py-5">
+          <h1 className="font-heading text-3xl leading-tight md:text-5xl">Explore</h1>
+          <p className="text-muted-foreground mt-3 max-w-2xl text-base">
+            Every AI/ML conference, workshop, journal and special issue in one list. Filter by
+            deadline, subfield, rank, open access and place.
+          </p>
+        </div>
       </header>
       <Suspense fallback={<ExplorerSkeleton />}>
         <ExplorerLoader searchParams={props.searchParams} />

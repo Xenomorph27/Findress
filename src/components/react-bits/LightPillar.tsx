@@ -68,7 +68,9 @@ const LightPillar: React.FC<LightPillarProps> = ({
     const isLowEndDevice = isMobile || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4);
 
     let effectiveQuality = quality;
-    if (isLowEndDevice && quality === 'high') effectiveQuality = 'medium';
+    // FIndress: keep the requested quality on desktop (no downgrade on <=4-core laptops); phones
+    // still drop to low below.
+    if (isLowEndDevice && isMobile && quality === 'high') effectiveQuality = 'medium';
     if (isMobile && quality !== 'low') effectiveQuality = 'low';
 
     const qualitySettings = {
@@ -221,12 +223,11 @@ const fragmentShader = `
 
     // Pre-compute wave rotation values
     const waveAngle = 0.4;
-    const waveSinValues = new Float32Array(4);
-    const waveCosValues = new Float32Array(4);
-    for (let i = 0; i < 4; i++) {
-      waveSinValues[i] = Math.sin(waveAngle);
-      waveCosValues[i] = Math.cos(waveAngle);
-    }
+    // FIndress: uWaveSin/uWaveCos are `float` uniforms. The registry passes Float32Array(4)
+    // here, which WebGL cannot read as a float, so the twisting waves vanish and the pillar
+    // renders as a flat band. reactbits.dev itself ships plain numbers (Math.sin(0.4)).
+    const waveSinValues = Math.sin(waveAngle);
+    const waveCosValues = Math.cos(waveAngle);
 
     // Pre-compute pillar rotation
     const pillarRotRad = (pillarRotation * Math.PI) / 180.0;

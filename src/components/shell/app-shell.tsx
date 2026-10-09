@@ -1,6 +1,5 @@
 import { type ReactNode, Suspense } from "react";
 import { type RouteAccentKey, routeAccentCss } from "@/lib/theme/route-accents";
-import { PillarBackground } from "./pillar-background";
 import { RouteAccentSync } from "./route-accent-sync";
 
 // First paint: route tints from the markers, and the full-bleed sign-in screen hides the site
@@ -19,11 +18,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div data-app-shell className="flex min-h-dvh flex-col">
       <style>{CSS}</style>
-      {/* Read the pathname (request data), so they stream in. The fixed LightPillar background is
-          mounted here once, so navigation never re-initialises it. */}
+      {/* Reads the pathname (request data), so it streams in; it renders nothing. */}
       <Suspense fallback={null}>
         <RouteAccentSync />
-        <PillarBackground />
       </Suspense>
       {children}
     </div>

@@ -283,7 +283,7 @@ export function JournalCard({
   return (
     <article
       onClick={onOpen}
-      className="group bg-surface lift tint-col-hover relative flex cursor-pointer flex-col gap-4 rounded-xl p-5 transition-colors"
+      className="group glass-panel tint-col-hover relative flex cursor-pointer flex-col gap-4 rounded-xl p-5 transition-colors"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
@@ -329,7 +329,7 @@ export function SpecialIssueCard({
     <article
       onClick={onOpen}
       className={cn(
-        "group bg-surface lift tint-col-hover relative flex cursor-pointer flex-col gap-4 rounded-xl p-5 transition-colors",
+        "group glass-panel tint-col-hover relative flex cursor-pointer flex-col gap-4 rounded-xl p-5 transition-colors",
         status === "closed" && "dimmed",
       )}
     >

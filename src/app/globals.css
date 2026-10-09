@@ -61,12 +61,14 @@
   --surface: #0d121b;
   --surface-2: #151b26;
   --lift: inset 0 1px 0 0 rgba(255, 255, 255, 0.055), 0 1px 2px rgba(0, 0, 0, 0.45);
+  /* Glass over the /explore LightPillar: the backdrop (not the pillar) is darkened for AA text. */
+  --glass-dim: 0.5;
   --glow-strength: 13%;
   --muted-on-tint: #a9b2c1;
   --hairline: rgba(255, 255, 255, 0.07);
   --hairline-strong: rgba(255, 255, 255, 0.13);
   --text: #e8ecf3;
-  --muted-text: #98a2b3;
+  --muted-text: #8a94a6;
 
   --aurora-1: #2ee6c5;
   --aurora-2: #38bdf8;
@@ -407,6 +409,16 @@
     color: var(--muted-foreground);
   }
 }
+/*
+ * Glass panel (the /explore surfaces over the LightPillar, like the React Bits demo nav):
+ * dark translucent surface, 12px backdrop blur, hairline border, lift.
+ */
+@utility glass-panel {
+  background-color: color-mix(in oklab, var(--surface) 72%, transparent);
+  backdrop-filter: blur(14px) saturate(140%) brightness(var(--glass-dim, 1));
+  border: 1px solid var(--hairline);
+  box-shadow: var(--lift);
+}
 @utility lift {
   box-shadow: var(--lift);
 }
@@ -429,13 +441,7 @@
   pointer-events: none;
   background: radial-gradient(
     120% 100% at 50% 0%,
-    /* Leans 35% toward the LightPillar violet so the glow and the pillar read as one light. */
-    color-mix(
-        in oklab,
-        color-mix(in oklab, var(--screen) 65%, #5227ff) var(--glow-strength),
-        transparent
-      )
-      0%,
+    color-mix(in oklab, var(--screen) var(--glow-strength), transparent) 0%,
     transparent 70%
   );
 }

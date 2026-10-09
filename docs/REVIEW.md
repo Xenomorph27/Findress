@@ -380,3 +380,25 @@ suite and Lighthouse 12.
 | 23  | Reduced motion                                 | PASS          | no canvases on `/login`; globe still; idle rAF 0                                                                                                                                                                                       |
 | 24  | 360 px, no horizontal scroll                   | PASS          |                                                                                                                                                                                                                                        |
 | 25  | Screenshots                                    | PASS          | `docs/screenshots/` (motion on, GPU): login, home, explore, c_icml-2026, j_jmlr, insights, workspace, sources × dark/light × 390/1440, plus `login-transition-dark-1440.png` / `login-transition-light-390.png`                        |
+
+## Update 2026-10-09 (e) — login without globe/laser, LightPillar only on /explore
+
+- **Login:** the Galaxy starfield and the card only. RippleDistortion, LaserFlow and
+  `public/hero-placeholder.jpg` are deleted (nothing else used them; `three` stays for LightPillar,
+  `ogl` for Galaxy and CrystalizedBall). The card gains a soft pink-violet halo on every side.
+- **LightPillar now matches reactbits.dev.** Our copy was byte-identical to the registry, yet
+  rendered a smooth blurry band. Cause: the registry passes `Float32Array(4)` to the `float`
+  uniforms `uWaveSin`/`uWaveCos`; the live demo bundle passes `Math.sin(0.4)`/`Math.cos(0.4)`.
+  With plain numbers our pillar shows the same twisting strands. Props are copied from the demo's
+  live state (glow 0.002 and rotation 25°, not the component defaults 0.005 and 0°), `screen` over
+  `#120F17`, quality high, and no masks, intensity cuts or blend tricks.
+  Side by side: `docs/screenshots/lightpillar-demo-vs-explore-1440.png`.
+- **Only on `/explore`.** Removed from `AppShell`. Every other page is back to its pre-pillar look
+  (diffed against `1d90d07`: surfaces, hero blob, route glow and muted text restored). Two kept
+  differences are AA-only: `dimmed` instead of opacity fades on past/closed items, and opaque
+  countdown chips. The footer stays simple (Strands was removed on request).
+- **Glass on `/explore`:** `glass-panel` utility. Lightning CSS dropped the unprefixed
+  `backdrop-filter` when both prefixed and unprefixed lines were written, so only the
+  unprefixed line is authored now. AA: 254/254 texts pass in dark at 1440 and 390; light passes.
+- Login end to end: wrong password message, 5th failure → "Try again in 15:00" with the field
+  disabled, correct password → PixelSwap → `/explore`.
