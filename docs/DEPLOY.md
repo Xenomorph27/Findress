@@ -108,3 +108,16 @@ at a time, so each call stays inside Vercel's 300 s function limit. You can also
   calendar feed and static files requires the login session.
 - The lockout keys on the first `X-Forwarded-For` hop, which Vercel sets. Behind another proxy,
   make sure that proxy overwrites the header.
+
+## Install on Vercel (pnpm build scripts)
+
+- `package.json` pins `"packageManager": "pnpm@12.10.1"`. To make Vercel use exactly that version,
+  add the environment variable `ENABLE_EXPERIMENTAL_COREPACK=1` (Project → Settings → Environment
+  Variables, all environments). Without it Vercel picks a pnpm from the lockfile version.
+- `pnpm-workspace.yaml` decides every dependency build script, so CI never stops on
+  `ERR_PNPM_IGNORED_BUILDS`: only `esbuild` runs its script; `sharp`, `unrs-resolver`,
+  `embedded-postgres` and all `@embedded-postgres/*` platform packages are ignored. Both the pnpm 11+
+  key (`allowBuilds`) and the pnpm 10 keys (`onlyBuiltDependencies` / `ignoredBuiltDependencies`)
+  are set. If a future dependency adds a build script, add it there (true/false) instead of
+  running `pnpm approve-builds` interactively.
+- `embedded-postgres` is a devDependency used only by `pnpm db:local`; nothing in `src/` imports it.
