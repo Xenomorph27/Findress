@@ -89,7 +89,8 @@ at a time, so each call stays inside Vercel's 300 s function limit. You can also
 
 2. **Login.** Open the site. You should land on `/login` (galaxy, laser onto the card). Sign in with
    `APP_PASSWORD`; the white→dark pixel transition plays and you land on the page you asked for.
-   Five wrong passwords lock that IP for 15 minutes.
+   Five wrong passwords lock that IP for 15 minutes. Every fresh visit (typed URL, bookmark, new tab) starts on `/login`; a browser that is
+   still signed in sees `********` in the field and just clicks Sign in (Backspace clears it).
 3. **Chat.** Open a conference (e.g. `/c/icml-2026`) and ask "Elaborate the problem statement". The
    answer should stream, cite the CFP, and use tools (event lookup, page fetch). If it says
    `GOOGLE_GENERATIVE_AI_API_KEY is not set`, add the key and redeploy.

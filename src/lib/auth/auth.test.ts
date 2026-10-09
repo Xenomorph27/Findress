@@ -71,15 +71,30 @@ describe("gate: logged in", () => {
       expect(gateDecision(p, "", true)).toEqual({ action: "next" });
   });
 
-  it("bounces /login to the sanitised next path", () => {
-    expect(gateDecision("/login", "?next=/j/jmlr", true)).toEqual({
-      action: "redirect",
-      location: "/j/jmlr",
-    });
-    expect(gateDecision("/login", "?next=https://evil.example", true)).toEqual({
-      action: "redirect",
-      location: "/",
-    });
+  it("lets a signed-in visitor see /login (it resumes the saved sign-in)", () => {
+    expect(gateDecision("/login", "?next=/j/jmlr", true)).toEqual({ action: "next" });
+  });
+});
+
+describe("gate: every fresh entry starts on /login", () => {
+  it("sends typed URLs, bookmarks and new tabs to /login, signed in or not", () => {
+    for (const hasSession of [true, false]) {
+      expect(gateDecision("/", "", hasSession, true)).toEqual({
+        action: "redirect",
+        location: "/login",
+      });
+      expect(gateDecision("/explore", "?tab=journals", hasSession, true)).toEqual({
+        action: "redirect",
+        location: `/login?next=${encodeURIComponent("/explore?tab=journals")}`,
+      });
+    }
+  });
+
+  it("leaves in-app navigation, /login itself, APIs and public routes alone", () => {
+    expect(gateDecision("/explore", "", true, false)).toEqual({ action: "next" });
+    expect(gateDecision("/login", "", true, true)).toEqual({ action: "next" });
+    expect(gateDecision("/api/events", "", true, true)).toEqual({ action: "next" });
+    expect(gateDecision("/api/ingest", "", false, true)).toEqual({ action: "next" });
   });
 });
 

@@ -11,7 +11,14 @@ export async function proxy(request: NextRequest) {
   const token = request.cookies.get(SESSION_COOKIE)?.value;
   const hasSession = await verifySessionToken(token, process.env.AUTH_SECRET);
   const { pathname, search } = request.nextUrl;
-  const decision = gateDecision(pathname, search, hasSession);
+  // A fresh top-level page load (typed URL, bookmark, new tab, link from elsewhere), as opposed to
+  // navigation inside the app or a fetch: Fetch Metadata headers tell them apart.
+  const h = request.headers;
+  const entry =
+    h.get("sec-fetch-mode") === "navigate" &&
+    h.get("sec-fetch-dest") === "document" &&
+    ["none", "cross-site"].includes(h.get("sec-fetch-site") ?? "");
+  const decision = gateDecision(pathname, search, hasSession, entry);
 
   if (decision.action === "next") return NextResponse.next();
   if (decision.action === "unauthorized") {

@@ -12,6 +12,9 @@ import { SITE_TAGLINE } from "@/lib/site";
 import { LoginTransition } from "./login-transition";
 import { LoginScene } from "./login-scene";
 
+/** What the field shows for a saved sign-in. A placeholder, never the password. */
+const SAVED_MASK = "********";
+
 interface LoginError {
   message: string;
   /** Epoch ms when a lockout ends. */
@@ -33,9 +36,32 @@ export function LoginScreen({ heroSrc }: { heroSrc: string }) {
   const [error, setError] = useState<LoginError | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const [signedInTo, setSignedInTo] = useState<string | null>(null);
+  // This browser still holds a valid session: the field shows ******** (a placeholder, never the
+  // password) and Sign in just resumes it. Backspace, Delete or typing clears it.
+  const [saved, setSaved] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const cardRef = useRef<HTMLFormElement>(null);
   const ids = { password: useId(), remember: useId(), error: useId() };
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/auth/session", { cache: "no-store" })
+      .then((r) => r.json() as Promise<{ owner?: boolean }>)
+      .then((d) => {
+        if (cancelled || !d.owner) return;
+        setSaved(true);
+        setPassword((p) => p || SAVED_MASK);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const clearSaved = () => {
+    setSaved(false);
+    setPassword("");
+  };
 
   // Lockout countdown.
   const lockedMs = error?.lockedUntil ? Math.max(0, error.lockedUntil - now) : 0;
@@ -69,7 +95,9 @@ export function LoginScreen({ heroSrc }: { heroSrc: string }) {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password, remember, next }),
+        body: JSON.stringify(
+          saved ? { resume: true, remember, next } : { password, remember, next },
+        ),
       });
       const data = (await res.json().catch(() => ({}))) as {
         ok?: boolean;
@@ -86,6 +114,7 @@ export function LoginScreen({ heroSrc }: { heroSrc: string }) {
         else setSignedInTo(to);
         return;
       }
+      setSaved(false);
       setPassword("");
       setError({
         message: data.message ?? "Sign-in failed. Try again.",
@@ -135,7 +164,18 @@ export function LoginScreen({ heroSrc }: { heroSrc: string }) {
               required
               disabled={locked}
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onKeyDown={(e) => {
+                if (saved && (e.key === "Backspace" || e.key === "Delete")) {
+                  e.preventDefault();
+                  clearSaved();
+                }
+              }}
+              onChange={(e) => {
+                if (!saved) return setPassword(e.target.value);
+                // Typing over the placeholder starts a fresh password.
+                setSaved(false);
+                setPassword(e.target.value.replace(SAVED_MASK, ""));
+              }}
               aria-invalid={error && !locked ? true : undefined}
               className="border-input bg-background/60 placeholder:text-muted-foreground focus-visible:border-screen h-11 w-full rounded-lg border pr-11 pl-3 text-sm outline-none disabled:opacity-60"
             />

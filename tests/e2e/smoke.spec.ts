@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { open } from "./open";
 
 /**
  * Smoke tests against a running build (pnpm build && pnpm test:e2e).
@@ -6,15 +7,17 @@ import { expect, test } from "@playwright/test";
  */
 
 test("landing renders hero, search and next deadlines", async ({ page }) => {
-  await page.goto("/");
+  await open(page, "/");
   await expect(page.getByRole("heading", { level: 1 })).toContainText("FIndress");
-  await expect(page.getByText("Every AI/ML venue on Earth.")).toBeVisible();
+  await expect(
+    page.getByText("Every AI/ML venue on Earth.").filter({ visible: true }),
+  ).toBeVisible();
   await expect(page.getByRole("search")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Next deadlines" })).toBeVisible();
 });
 
 test("explore filters sync to the URL and search narrows results", async ({ page, isMobile }) => {
-  await page.goto("/explore");
+  await open(page, "/explore");
   await expect(page.getByRole("heading", { name: "Explore" })).toBeVisible();
   const search = page.getByRole("searchbox", { name: "Search venues" });
   await search.fill("zzzz-no-such-venue");
@@ -69,9 +72,9 @@ test.describe("signed out", () => {
 });
 
 test("insights and sources render", async ({ page }) => {
-  await page.goto("/insights");
+  await open(page, "/insights");
   await expect(page.getByRole("heading", { name: "The shape of the year" })).toBeVisible();
-  await page.goto("/sources");
+  await open(page, "/sources");
   await expect(page.getByRole("heading", { name: "Sources", level: 1 })).toBeVisible();
 });
 
@@ -84,7 +87,7 @@ test("no horizontal overflow on key pages", async ({ page }) => {
     "/insights",
     "/sources",
   ]) {
-    await page.goto(path);
+    await open(page, path);
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
     );
@@ -93,7 +96,7 @@ test("no horizontal overflow on key pages", async ({ page }) => {
 });
 
 test("journals tab, special issues tab and a journal page", async ({ page, request }) => {
-  await page.goto("/explore?tab=journals");
+  await open(page, "/explore?tab=journals");
   await expect(page.getByRole("tab", { name: "Journals" })).toHaveAttribute(
     "aria-selected",
     "true",
@@ -102,7 +105,7 @@ test("journals tab, special issues tab and a journal page", async ({ page, reque
   await page.getByRole("tab", { name: "Special issues" }).click();
   await expect(page).toHaveURL(/tab=special/);
 
-  await page.goto("/j/jmlr");
+  await open(page, "/j/jmlr");
   await expect(page.getByRole("heading", { level: 1, name: "JMLR" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Aims & scope" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Metrics" })).toBeVisible();
@@ -123,7 +126,7 @@ test("route tint follows client-side navigation", async ({ page, isMobile }) => 
         .trim()
         .toLowerCase(),
     );
-  await page.goto("/insights");
+  await open(page, "/insights");
   const nav = page.getByRole("navigation", { name: "Main" });
   for (const [label, color] of [
     ["Sources", "#38bdf8"],

@@ -19,16 +19,28 @@ export function isPublicPath(pathname: string): boolean {
   return PUBLIC_EXACT.has(pathname) || PUBLIC_PREFIXES.some((p) => pathname.startsWith(p));
 }
 
-export function gateDecision(pathname: string, search: string, hasSession: boolean): GateDecision {
+/**
+ * `entry`: a top-level page load that did not come from inside the app (typed URL, bookmark, new
+ * tab, link from another site). Every entry starts on /login, signed in or not; a signed-in
+ * visitor finds the password field pre-marked and just clicks Sign in. Navigation inside the app
+ * (client-side, same-origin) is never sent back to /login.
+ */
+export function gateDecision(
+  pathname: string,
+  search: string,
+  hasSession: boolean,
+  entry = false,
+): GateDecision {
   // The old gate's URL keeps working.
   if (pathname === "/unlock") {
     const next = new URLSearchParams(search).get("next");
     return { action: "redirect", location: loginUrl(next) };
   }
-  if (pathname === "/login" && hasSession) {
-    return { action: "redirect", location: safeNextPath(new URLSearchParams(search).get("next")) };
+  if (isPublicPath(pathname)) return { action: "next" };
+  if (entry && !pathname.startsWith("/api/")) {
+    return { action: "redirect", location: loginUrl(pathname + search) };
   }
-  if (hasSession || isPublicPath(pathname)) return { action: "next" };
+  if (hasSession) return { action: "next" };
   if (pathname.startsWith("/api/")) return { action: "unauthorized" };
   return { action: "redirect", location: loginUrl(pathname + search) };
 }

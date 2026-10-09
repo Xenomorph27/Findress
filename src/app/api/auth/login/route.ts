@@ -11,6 +11,7 @@ import { safeNextPath } from "@/lib/auth/next-path";
 import {
   cookieSecureFor,
   createSessionToken,
+  isOwnerRequest,
   passwordMatches,
   SESSION_MAX_AGE_S,
   SESSION_ONLY_TOKEN_S,
@@ -20,14 +21,35 @@ import { getDb } from "@/lib/db";
 
 /**
  * POST /api/auth/login { password, remember, next } → sets the signed session cookie.
+ * POST /api/auth/login { resume: true, remember, next } → continues the session this browser
+ *   already holds (the "********" field on /login). Only a valid signed session cookie can be
+ *   resumed; without one the caller must send the password.
  * 5 wrong passwords per IP → 429 for 15 minutes (state in Postgres). The password is never
  * logged or echoed.
  */
 const Body = z.object({
-  password: z.string().min(1).max(500),
+  password: z.string().min(1).max(500).optional(),
+  resume: z.boolean().optional().default(false),
   remember: z.boolean().optional().default(false),
   next: z.string().max(2000).optional(),
 });
+
+/** 200 with a fresh session cookie (30 days with remember me, else a browser-session cookie). */
+async function signedIn(request: Request, secret: string, remember: boolean, next?: string) {
+  const token = await createSessionToken(
+    secret,
+    remember ? SESSION_MAX_AGE_S : SESSION_ONLY_TOKEN_S,
+  );
+  return Response.json(
+    { ok: true, next: safeNextPath(next) },
+    {
+      headers: {
+        "Cache-Control": "no-store",
+        "Set-Cookie": sessionCookie(token, { remember, secure: cookieSecureFor(request.url) }),
+      },
+    },
+  );
+}
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const noStore = { "Cache-Control": "no-store" };
@@ -54,6 +76,26 @@ export async function POST(request: Request) {
   }
   const parsed = Body.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
+    return Response.json(
+      { error: "bad-request", message: "Enter your password." },
+      { status: 400, headers: noStore },
+    );
+  }
+  const { remember, next: nextPath } = parsed.data;
+
+  if (parsed.data.resume) {
+    if (!(await isOwnerRequest(request))) {
+      return Response.json(
+        {
+          error: "session-expired",
+          message: "Your saved sign-in has expired. Type your password.",
+        },
+        { status: 401, headers: noStore },
+      );
+    }
+    return signedIn(request, secret, remember, nextPath);
+  }
+  if (!parsed.data.password) {
     return Response.json(
       { error: "bad-request", message: "Enter your password." },
       { status: 400, headers: noStore },
@@ -87,18 +129,5 @@ export async function POST(request: Request) {
   }
 
   if (db) await clearAttempts(db, ip);
-  const remember = parsed.data.remember;
-  const token = await createSessionToken(
-    secret,
-    remember ? SESSION_MAX_AGE_S : SESSION_ONLY_TOKEN_S,
-  );
-  return Response.json(
-    { ok: true, next: safeNextPath(parsed.data.next) },
-    {
-      headers: {
-        ...noStore,
-        "Set-Cookie": sessionCookie(token, { remember, secure: cookieSecureFor(request.url) }),
-      },
-    },
-  );
+  return signedIn(request, secret, remember, nextPath);
 }
