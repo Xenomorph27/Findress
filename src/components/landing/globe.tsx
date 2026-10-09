@@ -19,6 +19,7 @@ import { TypeBadge } from "@/components/event/chips";
 import { CountdownChip } from "@/components/event/countdown-chip";
 import { nearestWithin, phiFacing, project, unproject } from "@/lib/landing/globe-math";
 import { exploreHrefFor, type VenueCluster } from "@/lib/landing/venues";
+import { useDeferredStart } from "@/lib/hooks/use-deferred-start";
 import { useHasWebGL2, usePrefersReducedMotion } from "@/lib/hooks/use-webgl";
 import { formatDateRange } from "@/lib/time/format";
 import { cn } from "@/lib/utils";
@@ -69,7 +70,9 @@ export function Globe({ venues, highlight }: Props) {
   const { resolvedTheme } = useTheme();
   const dark = resolvedTheme !== "light";
   const reduceMotion = usePrefersReducedMotion();
-  const webgl2 = useHasWebGL2();
+  // Decorative WebGL starts on first interaction or 3 s after load (null until then).
+  const started = useDeferredStart();
+  const webgl2 = useHasWebGL2(started);
 
   const [box, setBox] = useState({ w: 0, h: 0 });
   const [active, setActive] = useState<VenueCluster | null>(null); // hovered or focused
@@ -124,7 +127,7 @@ export function Globe({ venues, highlight }: Props) {
   // The globe itself + the draw loop.
   useEffect(() => {
     const host = hostRef.current;
-    if (!host || !size || webgl2 === false) return;
+    if (!host || !size || !webgl2) return;
     const canvas = document.createElement("canvas");
     canvas.setAttribute("aria-hidden", "true");
     canvas.style.cssText =

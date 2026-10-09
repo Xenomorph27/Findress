@@ -17,8 +17,7 @@ export function ExplorerSkeleton() {
         ))}
       </div>
       <div className="min-w-0 flex-1">
-        <Skeleton className="h-11 w-44" />
-        <Skeleton className="mt-3 h-4 w-56" />
+        <Skeleton className="h-4 w-56" />
         <Skeleton className="mt-6 h-12 w-full rounded-xl" />
         <div className="border-hairline mt-3 overflow-hidden rounded-xl border">
           {Array.from({ length: 8 }).map((_, i) => (

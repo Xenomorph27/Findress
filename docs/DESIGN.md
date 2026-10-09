@@ -142,8 +142,9 @@ AA: body text is at least 14.5:1 and muted text at least 5.4:1 on every layer. M
 
 ## Signature elements
 
-1. **Hero globe** (`cobe`): slowly rotating, dotted, points at upcoming venues glowing in the accent;
-   hovering a "next deadline" card pulses its point. Respect reduced motion (static render).
+1. **Crystal globe** (`cobe` inside React Bits CrystalizedBall): slowly rotating, dotted, venue
+   clusters glowing; drag, hover, click for a venue popover; hovering a "next deadline" card pulses
+   its point. Reduced motion: no spin, still ball. See WebGL scenes.
 2. **Live countdowns**: mono digits that tick each second for deadlines < 72h; colour follows heat scale.
 3. **Timeline ribbon** on detail pages: horizontal milestones on a thin luminous line, "today" marker,
    passed milestones dimmed.
@@ -153,9 +154,49 @@ AA: body text is at least 14.5:1 and muted text at least 5.4:1 on every layer. M
 7. **Assistant panel**: feels native, not a bubble widget — a docked column with suggested-prompt chips,
    streaming text with a soft caret, citations rendered as small source pills.
 
+## WebGL scenes (React Bits)
+
+Four React Bits components live in `src/components/react-bits/`. They were installed unchanged from
+the registry (`npx shadcn@latest add @react-bits/<Name>-TS-TW`). Only `Strands.tsx` carries the
+allowed edits: it pauses off-screen, in hidden tabs and under reduced motion, and uses a
+ResizeObserver. The folder is excluded from Prettier (`.prettierignore`) and ESLint (`pnpm lint`
+passes `--ignore-pattern`), so the vendored source stays as published. It isn't git-ignored, so
+Tailwind scans it; no `@source` is needed.
+
+| Where               | Component                                                             | Notes                                                                         |
+| ------------------- | --------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `/` hero            | CrystalizedBall (`plasma`, `#F25BD0`, size 0.7) behind the cobe globe | "Crystal globe": the ball is decoration; the globe does all the interaction   |
+| `/login` left panel | RippleDistortion over `public/hero.jpg`                               | Uses `hero-placeholder.jpg` until a real `hero.jpg` exists (checked at build) |
+| after sign-in       | PixelSwap, white → `#0a0e16`, full screen                             | `trigger="manual"`, then `router.replace(next)`; reduced motion skips it      |
+| site footer         | Strands band, 180px mobile / 260px desktop                            | On `--chrome`, masked in from the top; text sits on a chrome scrim            |
+
+Rules for every WebGL scene:
+
+- Load with `next/dynamic({ ssr: false })`. Only the page that needs a canvas mounts one: the ball
+  only on `/`, the ripple only on `/login`, and Strands once the footer is within 400px of the
+  viewport.
+- `useWebGLMode()` returns `"static"` without WebGL2 or under `prefers-reduced-motion`, and the
+  scene then shows still art: a CSS glow ball, the greyscale hero image, or a blurred gradient band.
+- Decorative scenes start late (`useDeferredStart`): on the first pointer, key, touch or scroll, or
+  3s after load. This keeps shader compiles off the critical path (Lighthouse mobile ≥ 85).
+- **Crystal globe interaction:**
+  - Drag rotates, with inertia.
+  - Hover shows a tooltip: city, country and event count.
+  - A click converts the point to lat/lng through cobe's projection
+    (`src/lib/landing/globe-math.ts`, unit-tested) and opens a popover for the nearest venue cluster
+    within 5°. Open ocean does nothing.
+  - The popover lists acronym, dates and next deadline, links to `/c/…`, and ends with "See all"
+    (→ `/explore?country=…&q=city`).
+  - Keyboard: arrows rotate, Tab walks a "Browse by location" list (the top 30 cities), and Enter
+    opens the popover.
+  - Markers sit on the surface (`markerElevation: 0`), and the globe fits its box from 360 to 1920px.
+    On mobile it sits below the hero text.
+- cobe wraps its canvas in its own div, so React renders an empty host and the canvas is created
+  inside it imperatively.
+
 ## Motion (Framer Motion)
 
-- 150–250ms ease-out for UI; list items stagger in 20ms on first load only; layout animations when
+- 150–250ms ease-out for UI; list items stagger in 20ms on first load only (CSS `row-in`, so it starts at first paint); layout animations when
   filters change; shared-element transition from list row → detail header (acronym).
 - Nothing loops except the globe and the < 72h countdown.
 

@@ -141,6 +141,9 @@ export function Explorer({
   const router = useRouter();
   const reduceMotion = useReducedMotion();
   const isDesktop = useMediaQuery("(min-width: 1024px)", true);
+  // The desktop rail is CSS-hidden on phones; rendering it only on desktop (after hydration)
+  // spares mobile from hydrating hundreds of filter chips nobody sees.
+  const showRail = useMediaQuery("(min-width: 1024px)", false);
   const [filters, setFilters] = useState<Filters>(initialFilters);
   const [query, setQuery] = useState(initialFilters.q);
   const deferredQuery = useDeferredValue(query);
@@ -373,17 +376,14 @@ export function Explorer({
         aria-label="Filters"
         className="bg-chrome/80 sticky top-20 hidden max-h-[calc(100dvh-6rem)] w-[268px] shrink-0 scrollbar-none self-start overflow-y-auto rounded-2xl px-4 pt-5 pb-8 lg:block"
       >
-        {rail}
+        {showRail && rail}
       </aside>
 
       <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-end justify-between gap-3 pb-6">
-          <div className="min-w-0">
-            <h1 className="font-heading text-3xl leading-tight md:text-5xl">Explore</h1>
-            <p className="text-muted-foreground mt-2 text-sm" aria-live="polite">
-              {summary}
-            </p>
-          </div>
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-6">
+          <p className="text-muted-foreground min-w-0 text-sm" aria-live="polite">
+            {summary}
+          </p>
           <div className="flex items-center gap-2">
             {assistant}
             <TimezoneSelect />
@@ -540,14 +540,10 @@ export function Explorer({
                       transform: `translateY(${v.start - virtualizer.options.scrollMargin}px)`,
                     }}
                   >
-                    <motion.div
-                      initial={stagger ? { opacity: 0, y: 6 } : false}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{
-                        duration: 0.2,
-                        ease: "easeOut",
-                        delay: stagger ? v.index * 0.02 : 0,
-                      }}
+                    {/* First-load stagger in CSS: starts at first paint, costs no hydration work. */}
+                    <div
+                      className={stagger ? "row-in" : undefined}
+                      style={stagger ? { animationDelay: `${v.index * 20}ms` } : undefined}
                     >
                       {item.kind === "event" ? (
                         <ResultRow row={item.row} {...common} />
@@ -556,7 +552,7 @@ export function Explorer({
                       ) : (
                         <SpecialIssueResultRow row={item.row} {...common} />
                       )}
-                    </motion.div>
+                    </div>
                   </div>
                 );
               })}

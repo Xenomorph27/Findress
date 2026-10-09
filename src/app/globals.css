@@ -320,6 +320,17 @@
   }
 }
 
+/* Explore list: rows rise in on first load only (20ms stagger, set inline). */
+@keyframes row-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+.row-in {
+  animation: row-in 200ms ease-out both;
+}
+
 /* Headings and heading-like labels (acronyms, titles): Geist Sans 600, slightly tight. */
 @utility font-heading {
   font-family: var(--font-sans);

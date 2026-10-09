@@ -50,11 +50,14 @@ export function usePrefersReducedMotion(): boolean {
   );
 }
 
-/** WebGL2 availability alone. */
-export function useHasWebGL2(): boolean | null {
+/**
+ * WebGL2 availability alone; null until `enabled` (probing creates a GL context, which is a long
+ * task on slow devices, so callers probe only once they are about to draw).
+ */
+export function useHasWebGL2(enabled = true): boolean | null {
   return useSyncExternalStore(
     () => () => {},
-    () => hasWebGL2(),
+    () => (enabled ? hasWebGL2() : null),
     () => null,
   );
 }

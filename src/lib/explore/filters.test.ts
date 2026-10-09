@@ -202,3 +202,29 @@ describe("nextDeadline", () => {
     expect(nextDeadline(by("tba"), NOW)).toBeNull();
   });
 });
+
+describe("packObjects", () => {
+  it("round-trips rows through the columnar payload", async () => {
+    const { packObjects, unpackObjects } = await import("./pack");
+    const rows = [
+      { id: 1, slug: "a", topics: ["x"], parent: null, lat: 1.5 },
+      { id: 2, slug: "b", topics: [], parent: { slug: "a" }, lat: null },
+    ];
+    const packed = packObjects(rows);
+    expect(packed.k).toEqual(["id", "slug", "topics", "parent", "lat"]);
+    expect(unpackObjects(packed)).toEqual(rows);
+    expect(unpackObjects(packObjects([]))).toEqual([]);
+  });
+
+  it("round-trips explorer rows (deadline and parent tuples; sources stay server-side)", async () => {
+    const { packExplorerRows, unpackExplorerRows } = await import("./pack");
+    const r = {
+      ...row({ slug: "w-2027" }),
+      deadlines: [{ kind: "paper" as const, at: 1_800_000_000_000, label: "Submission deadline" }],
+      parent: { slug: "icml-2027", acronym: "ICML", year: 2027 },
+      sources: ["ccfddl"],
+    };
+    const [back] = unpackExplorerRows(packExplorerRows([r]));
+    expect(back).toEqual({ ...r, sources: [] });
+  });
+});

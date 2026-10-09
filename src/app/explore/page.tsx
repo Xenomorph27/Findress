@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { GlobalAssistant } from "@/components/assistant/global-assistant";
-import { Explorer } from "@/components/explore/explorer";
+import { PackedExplorer } from "@/components/explore/packed-explorer";
 import { ExplorerSkeleton } from "@/components/explore/explorer-skeleton";
 import { Container } from "@/components/shell/states";
 import { getExplorerRows, withDbFallback } from "@/lib/data/events";
 import { getJournalRows, getSpecialIssueRows } from "@/lib/data/journals";
 import { inDefaultScope, parseFilters } from "@/lib/explore/filters";
+import { packExplorerRows, packObjects } from "@/lib/explore/pack";
 
 export const metadata: Metadata = {
   title: "Explore",
@@ -41,9 +42,9 @@ async function ExplorerLoader({
   const dataState =
     res.error == null ? "ok" : res.error === "not-configured" ? "not-configured" : "error";
   return (
-    <Explorer
-      rows={rows}
-      journals={journalRes.data}
+    <PackedExplorer
+      packedRows={packExplorerRows(rows)}
+      packedJournals={packObjects(journalRes.data)}
       specials={specialRes.data}
       scope={full ? "full" : "upcoming"}
       initialFilters={filters}
@@ -57,6 +58,14 @@ async function ExplorerLoader({
 export default function ExplorePage(props: PageProps<"/explore">) {
   return (
     <Container>
+      {/* Static shell: the title and intro paint at first byte, before the row data streams in. */}
+      <header className="pt-8 md:pt-10">
+        <h1 className="font-heading text-3xl leading-tight md:text-5xl">Explore</h1>
+        <p className="text-muted-foreground mt-3 max-w-2xl text-base">
+          Every AI/ML conference, workshop, journal and special issue in one list. Filter by
+          deadline, subfield, rank, open access and place.
+        </p>
+      </header>
       <Suspense fallback={<ExplorerSkeleton />}>
         <ExplorerLoader searchParams={props.searchParams} />
       </Suspense>

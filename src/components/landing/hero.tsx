@@ -10,7 +10,11 @@ import type { LandingData } from "@/lib/data/landing";
 import { SITE_TAGLINE } from "@/lib/site";
 import { formatInZone } from "@/lib/time/format";
 
-const Globe = dynamic(() => import("./globe").then((m) => m.Globe), { ssr: false });
+// Browser-only; the placeholder holds the globe box so nothing shifts when it arrives.
+const Globe = dynamic(() => import("./globe").then((m) => m.Globe), {
+  ssr: false,
+  loading: () => <div className="h-[360px] w-full sm:h-[460px] lg:h-[600px]" />,
+});
 
 export function Hero({ data }: { data: LandingData }) {
   const [highlight, setHighlight] = useState<{ lat: number; lng: number } | null>(null);
