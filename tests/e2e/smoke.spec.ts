@@ -126,10 +126,10 @@ test("route tint follows client-side navigation", async ({ page, isMobile }) => 
   await page.goto("/insights");
   const nav = page.getByRole("navigation", { name: "Main" });
   for (const [label, color] of [
-    ["Sources", "#8a94a6"],
-    ["Explore", "#38bdf8"],
+    ["Sources", "#38bdf8"],
+    ["Explore", "#f25bd0"],
     ["Workspace", "#f5b84b"],
-    ["Explore", "#38bdf8"],
+    ["Explore", "#f25bd0"],
   ] as const) {
     await nav.getByRole("link", { name: label }).click();
     await page.waitForURL(`**/${label.toLowerCase()}`);

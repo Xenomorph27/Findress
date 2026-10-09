@@ -7,16 +7,16 @@
  * its layout, and AppShell picks the accent with :has(), so the right tint is already in the
  * prerendered HTML. (Reading the URL in the shell would need a Suspense boundary under
  * cacheComponents.) Nav neighbours are >= 49° apart in OKLCH hue:
- * Explore 233° · Insights 177° · Workspace 79° · Sources (near-grey).
+ * Explore 338° · Insights 177° · Workspace 79° · Sources 233°.
  */
 export const ROUTE_ACCENTS = {
   "": "#2EE6C5", // landing — teal
-  explore: "#38BDF8", // cyan
-  c: "#38BDF8", // conference detail — cyan, same family as explore
+  explore: "#F25BD0", // pink/purple, the sign-in glow
+  c: "#38BDF8", // conference detail — cyan
   j: "#A78BFA", // journals — violet
   insights: "#2EE6C5", // teal
   workspace: "#F5B84B", // amber
-  sources: "#8A94A6", // grey
+  sources: "#38BDF8", // cyan (Explore's old accent)
   login: "#F25BD0", // pink, matches the crystal ball
 } as const;
 

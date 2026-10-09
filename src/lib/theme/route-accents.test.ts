@@ -4,12 +4,12 @@ import { accentForPath, accentForSegment, ROUTE_ACCENTS, routeAccentCss } from "
 describe("route accents", () => {
   it("maps each route to its accent", () => {
     expect(accentForPath("/")).toBe("#2EE6C5");
-    expect(accentForPath("/explore")).toBe("#38BDF8");
+    expect(accentForPath("/explore")).toBe("#F25BD0");
     expect(accentForPath("/c/icml-2026")).toBe("#38BDF8");
     expect(accentForPath("/j/jmlr")).toBe("#A78BFA");
     expect(accentForPath("/insights")).toBe("#2EE6C5");
     expect(accentForPath("/workspace")).toBe("#F5B84B");
-    expect(accentForPath("/sources")).toBe("#8A94A6");
+    expect(accentForPath("/sources")).toBe("#38BDF8");
     expect(accentForPath("/login")).toBe("#F25BD0");
   });
 

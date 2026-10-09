@@ -84,18 +84,19 @@ root. The accent comes from the route's first segment (`useSelectedLayoutSegment
 static, so prerendered shells already carry the right tint. Everything below reads
 `var(--screen)`; there is no prop threading.
 
-| Route              | Accent                                    |
-| ------------------ | ----------------------------------------- |
-| `/` landing        | `#2EE6C5` teal                            |
-| `/explore`, `/c/*` | `#38BDF8` cyan                            |
-| `/j/*`             | `#A78BFA` violet                          |
-| `/insights`        | `#2EE6C5` teal                            |
-| `/workspace`       | `#F5B84B` amber                           |
-| `/sources`         | `#8A94A6` grey                            |
-| `/login`           | `#F25BD0` pink (matches the crystal ball) |
+| Route        | Accent                                    |
+| ------------ | ----------------------------------------- |
+| `/` landing  | `#2EE6C5` teal                            |
+| `/explore`   | `#F25BD0` pink/purple (the sign-in glow)  |
+| `/c/*`       | `#38BDF8` cyan                            |
+| `/j/*`       | `#A78BFA` violet                          |
+| `/insights`  | `#2EE6C5` teal                            |
+| `/workspace` | `#F5B84B` amber                           |
+| `/sources`   | `#38BDF8` cyan                            |
+| `/login`     | `#F25BD0` pink (matches the crystal ball) |
 
-Nav neighbours stay at least 49° apart in OKLCH hue: Explore 233°, Insights 177°, Workspace 79°,
-and Sources is near-grey. Elsewhere 24° is enough.
+Nav neighbours stay at least 49° apart in OKLCH hue: Explore 338°, Insights 177°, Workspace 79°,
+Sources 233° (gaps 161°, 98°, 154°). Elsewhere 24° is enough.
 
 **B. Tint ladder.** Every tint is `color-mix(in oklab, var(--screen) N%, transparent)`. Oklab makes
 11% amber and 11% violet look equally strong, so one ladder fits every hue. Mixing against
