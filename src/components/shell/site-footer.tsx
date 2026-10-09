@@ -4,7 +4,7 @@ import { OrbitMark } from "./wordmark";
 
 export function SiteFooter() {
   return (
-    <footer className="border-hairline mt-24 border-t">
+    <footer className="bg-chrome mt-24">
       <div className="text-muted-foreground mx-auto flex max-w-[1280px] flex-col gap-4 px-4 py-8 text-sm md:flex-row md:items-center md:justify-between md:px-8">
         <div className="flex items-center gap-2">
           <OrbitMark className="size-4" />

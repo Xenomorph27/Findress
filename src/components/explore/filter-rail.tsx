@@ -48,8 +48,8 @@ function Chip({
       className={cn(
         "inline-flex h-7 items-center gap-1.5 rounded-full border px-2.5 text-xs transition-colors",
         active
-          ? "border-aurora-2/60 bg-aurora-2/12 text-foreground shadow-[inset_0_0_0_1px_color-mix(in_oklab,var(--aurora-2)_25%,transparent)]"
-          : "border-hairline text-muted-foreground hover:border-hairline-strong hover:text-foreground",
+          ? "border-screen/60 tint-selected text-foreground"
+          : "border-hairline text-muted-foreground hover:border-hairline-strong hover:text-foreground tint-row-hover",
       )}
     >
       {children}

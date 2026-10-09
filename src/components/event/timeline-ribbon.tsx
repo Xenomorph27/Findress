@@ -100,10 +100,7 @@ export function TimelineRibbon({
       : formatInZone(m.at, zone, "MMM d, yyyy · HH:mm");
 
   return (
-    <section
-      aria-labelledby="timeline-title"
-      className="border-hairline bg-surface/50 rounded-2xl border p-5 md:p-6"
-    >
+    <section aria-labelledby="timeline-title" className="bg-surface lift rounded-2xl p-5 md:p-6">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 id="timeline-title" className="font-heading text-xl">

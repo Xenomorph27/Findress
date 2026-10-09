@@ -92,10 +92,10 @@ export function JournalResultRow({
       data-slug={row.slug}
       onClick={onOpen}
       onMouseEnter={onSelect}
-      className={cn(ROW_GRID, selected ? "bg-surface-2/70" : "hover:bg-surface-2/40")}
+      className={cn(ROW_GRID, selected ? "tint-selected" : "tint-row-hover")}
     >
       {selected && (
-        <span aria-hidden className="bg-aurora absolute inset-y-2 left-0 w-0.5 rounded-full" />
+        <span aria-hidden className="bg-screen absolute inset-y-2 left-0 w-0.5 rounded-full" />
       )}
       <div className="hidden md:block">
         <RollingCell row={row} now={now} />
@@ -198,12 +198,12 @@ export function SpecialIssueResultRow({
       onMouseEnter={onSelect}
       className={cn(
         ROW_GRID,
-        selected ? "bg-surface-2/70" : "hover:bg-surface-2/40",
+        selected ? "tint-selected" : "tint-row-hover",
         status === "closed" && "opacity-70",
       )}
     >
       {selected && (
-        <span aria-hidden className="bg-aurora absolute inset-y-2 left-0 w-0.5 rounded-full" />
+        <span aria-hidden className="bg-screen absolute inset-y-2 left-0 w-0.5 rounded-full" />
       )}
       <div className="hidden md:block">
         <div className="flex flex-col items-start gap-1">
@@ -284,7 +284,7 @@ export function JournalCard({
   return (
     <article
       onClick={onOpen}
-      className="group bg-surface/70 hover:bg-surface relative flex cursor-pointer flex-col gap-4 rounded-xl p-5 transition-colors"
+      className="group bg-surface lift tint-col-hover relative flex cursor-pointer flex-col gap-4 rounded-xl p-5 transition-colors"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
@@ -330,7 +330,7 @@ export function SpecialIssueCard({
     <article
       onClick={onOpen}
       className={cn(
-        "group bg-surface/70 hover:bg-surface relative flex cursor-pointer flex-col gap-4 rounded-xl p-5 transition-colors",
+        "group bg-surface lift tint-col-hover relative flex cursor-pointer flex-col gap-4 rounded-xl p-5 transition-colors",
         status === "closed" && "opacity-75",
       )}
     >

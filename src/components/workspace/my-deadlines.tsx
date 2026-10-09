@@ -51,7 +51,7 @@ export function MyDeadlines({ items, now }: { items: WorkspaceItem[]; now: numbe
                 />
                 <Link
                   href={item.href}
-                  className="hover:bg-surface-2/50 flex flex-wrap items-center justify-between gap-2 rounded-lg px-2 py-1.5"
+                  className="tint-row-hover flex flex-wrap items-center justify-between gap-2 rounded-lg px-2 py-1.5"
                 >
                   <span className="min-w-0">
                     <span className="font-medium">

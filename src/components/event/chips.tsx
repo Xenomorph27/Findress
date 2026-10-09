@@ -96,7 +96,7 @@ export function TopicChip({
         chipBase,
         "rounded-full px-2",
         active
-          ? "border-aurora-2/50 bg-aurora-2/10 text-foreground"
+          ? "border-screen/50 tint-selected text-foreground"
           : "border-hairline bg-surface-2/60 text-muted-foreground",
         className,
       )}

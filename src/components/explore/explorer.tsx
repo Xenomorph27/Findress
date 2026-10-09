@@ -371,7 +371,7 @@ export function Explorer({
     <div className="flex gap-8 pt-6">
       <aside
         aria-label="Filters"
-        className="sticky top-20 hidden max-h-[calc(100dvh-6rem)] w-[268px] shrink-0 scrollbar-none self-start overflow-y-auto pr-2 pb-8 lg:block"
+        className="bg-chrome/80 sticky top-20 hidden max-h-[calc(100dvh-6rem)] w-[268px] shrink-0 scrollbar-none self-start overflow-y-auto rounded-2xl px-4 pt-5 pb-8 lg:block"
       >
         {rail}
       </aside>
@@ -425,7 +425,7 @@ export function Explorer({
           >
             <SlidersHorizontal /> Filters
             {activeCount > 0 && (
-              <span className="bg-aurora-2/15 text-foreground rounded-full px-1.5 font-mono text-xs">
+              <span className="tint-selected text-foreground rounded-full px-1.5 font-mono text-xs">
                 {activeCount}
               </span>
             )}
@@ -613,7 +613,7 @@ function TabBar({ value, onChange }: { value: ExploreTab; onChange: (t: ExploreT
     <div
       role="tablist"
       aria-label="What to explore"
-      className="bg-surface/60 mb-4 flex w-full flex-wrap gap-1 rounded-xl p-1 sm:w-fit sm:flex-nowrap"
+      className="tint-surface mb-4 flex w-full flex-wrap gap-1 rounded-xl p-1 sm:w-fit sm:flex-nowrap"
     >
       {EXPLORE_TABS.map((t, i) => {
         const active = t.value === value;
@@ -634,8 +634,8 @@ function TabBar({ value, onChange }: { value: ExploreTab; onChange: (t: ExploreT
             className={cn(
               "h-8 shrink-0 rounded-lg px-3 text-sm whitespace-nowrap transition-colors",
               active
-                ? "bg-surface-2 text-foreground shadow-[inset_0_0_0_1px_var(--hairline-strong)]"
-                : "text-muted-foreground hover:text-foreground",
+                ? "tint-selected text-foreground"
+                : "text-muted-foreground hover:text-foreground tint-row-hover",
             )}
           >
             {t.label}

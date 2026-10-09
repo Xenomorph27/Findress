@@ -101,7 +101,7 @@ export function VenueMap({
             })}
         </svg>
         {hover && (
-          <div className="border-hairline bg-popover pointer-events-none absolute top-3 left-3 rounded-lg border px-3 py-2 text-xs shadow-lg">
+          <div className="border-hairline bg-popover lift pointer-events-none absolute top-3 left-3 rounded-lg border px-3 py-2 text-xs">
             <p className="text-foreground">{hover.label}</p>
             <p className="text-muted-foreground font-mono">
               {hover.count} venue{hover.count === 1 ? "" : "s"}

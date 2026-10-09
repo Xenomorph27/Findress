@@ -87,12 +87,12 @@ export function ResultRow({
       onMouseEnter={onSelect}
       className={cn(
         "group relative grid cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 rounded-lg px-3 py-4 transition-colors md:grid-cols-[112px_minmax(0,1fr)_150px_170px_auto] md:px-4",
-        selected ? "bg-surface-2/70" : "hover:bg-surface-2/40",
+        selected ? "tint-selected" : "tint-row-hover",
         ["tba", "past"].includes(editionStatus(row, now)) && "opacity-70",
       )}
     >
       {selected && (
-        <span aria-hidden className="bg-aurora absolute inset-y-2 left-0 w-0.5 rounded-full" />
+        <span aria-hidden className="bg-screen absolute inset-y-2 left-0 w-0.5 rounded-full" />
       )}
       <div className="hidden md:block">
         <DeadlineCell row={row} now={now} />
@@ -177,7 +177,7 @@ export function ResultCard({
     <article
       onClick={onOpen}
       className={cn(
-        "group bg-surface/70 hover:bg-surface relative flex cursor-pointer flex-col gap-4 rounded-xl p-5 transition-colors",
+        "group bg-surface lift tint-col-hover relative flex cursor-pointer flex-col gap-4 rounded-xl p-5 transition-colors",
         ["tba", "past"].includes(editionStatus(row, now)) && "opacity-75",
       )}
     >

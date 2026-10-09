@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Hero } from "@/components/landing/hero";
 import { Container } from "@/components/shell/states";
 import { withDbFallback } from "@/lib/data/events";
+import { RouteAccent } from "@/components/shell/app-shell";
 import { getLandingData, type LandingData } from "@/lib/data/landing";
 
 const EMPTY: LandingData = {
@@ -50,6 +51,7 @@ export default async function HomePage() {
   const res = await withDbFallback(EMPTY, getLandingData);
   return (
     <>
+      <RouteAccent route="" />
       <Hero data={res.data} />
       <Container className="pt-20">
         <ul className="border-hairline bg-hairline grid gap-px overflow-hidden rounded-2xl border sm:grid-cols-2 lg:grid-cols-4">
@@ -57,7 +59,7 @@ export default async function HomePage() {
             <li key={f.title} className="bg-background">
               <Link
                 href={f.href}
-                className="group hover:bg-surface/70 flex h-full flex-col gap-3 p-6 transition-colors"
+                className="group tint-col-hover flex h-full flex-col gap-3 p-6 transition-colors"
               >
                 <f.icon className="text-aurora-ink size-5" aria-hidden />
                 <h2 className="font-heading text-xl leading-tight">{f.title}</h2>

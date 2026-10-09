@@ -21,7 +21,7 @@ export function BarList({
         <li key={i.key}>
           <Link
             href={i.href}
-            className="group hover:bg-surface-2/60 grid grid-cols-[minmax(84px,30%)_1fr] items-center gap-3 rounded-md px-1 py-1"
+            className="group tint-row-hover grid grid-cols-[minmax(84px,30%)_1fr] items-center gap-3 rounded-md px-1 py-1"
           >
             <span
               className={cn(

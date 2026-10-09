@@ -21,7 +21,7 @@ interface TipProps {
 function Tip({ active, label, payload }: TipProps) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="border-hairline bg-popover rounded-lg border px-3 py-2 text-xs shadow-lg">
+    <div className="border-hairline bg-popover lift rounded-lg border px-3 py-2 text-xs">
       <p className="text-foreground mb-1 font-mono">{label}</p>
       {[...payload]
         .sort((a, b) => b.value - a.value)

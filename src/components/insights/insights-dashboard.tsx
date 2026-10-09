@@ -69,7 +69,7 @@ export function InsightsDashboard({
             className={cn(
               "h-8 rounded-full border px-3 text-xs transition-colors",
               subfield === s.id
-                ? "border-aurora-2/60 bg-aurora-2/12 text-foreground"
+                ? "border-screen/60 tint-selected text-foreground"
                 : "border-hairline text-muted-foreground hover:border-hairline-strong hover:text-foreground",
             )}
           >

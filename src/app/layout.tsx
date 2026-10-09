@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { CommandPaletteProvider } from "@/components/command/command-palette-provider";
+import { AppShell } from "@/components/shell/app-shell";
 import { SiteFooter } from "@/components/shell/site-footer";
 import { SiteHeader } from "@/components/shell/site-header";
 import { ThemeProvider } from "@/components/theme/theme-provider";
@@ -33,8 +34,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: dark)", color: "#07090f" },
-    { media: "(prefers-color-scheme: light)", color: "#f7f7f4" },
+    { media: "(prefers-color-scheme: dark)", color: "#080c14" },
+    { media: "(prefers-color-scheme: light)", color: "#efefea" },
   ],
 };
 
@@ -45,7 +46,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} antialiased`}
     >
-      <body className="flex min-h-dvh flex-col">
+      <body>
         <ThemeProvider>
           <TimezoneProvider>
             <TooltipProvider delayDuration={250}>
@@ -56,12 +57,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                 >
                   Skip to content
                 </a>
-                <div className="starfield" aria-hidden />
-                <SiteHeader />
-                <main id="main" className="flex-1">
-                  {children}
-                </main>
-                <SiteFooter />
+                <AppShell>
+                  <SiteHeader />
+                  <main id="main" className="glow-screen flex-1">
+                    {children}
+                  </main>
+                  <SiteFooter />
+                </AppShell>
               </CommandPaletteProvider>
             </TooltipProvider>
           </TimezoneProvider>

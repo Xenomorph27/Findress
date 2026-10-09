@@ -59,7 +59,7 @@ function Section({
 
 function Stat({ label, value, hint }: { label: string; value: React.ReactNode; hint?: string }) {
   return (
-    <div className="bg-surface/60 min-w-0 rounded-xl px-4 py-3">
+    <div className="bg-surface lift min-w-0 rounded-xl px-4 py-3">
       <dt className="text-muted-foreground text-xs">{label}</dt>
       <dd className="tabular mt-0.5 font-mono text-xl leading-tight">{value ?? "—"}</dd>
       {hint && <p className="text-muted-foreground mt-0.5 text-xs">{hint}</p>}
@@ -322,7 +322,7 @@ function Metrics({ j }: { j: JournalDetail }) {
         <table className="w-full text-sm">
           <caption className="sr-only">Journal metrics with their source</caption>
           <thead>
-            <tr className="text-muted-foreground text-left text-xs">
+            <tr className="tint-header hairline-screen text-muted-foreground text-left text-xs">
               <th className="py-1.5 font-normal">Metric</th>
               <th className="py-1.5 text-right font-normal">Value</th>
               <th className="hidden py-1.5 pl-4 font-normal sm:table-cell">Source</th>
@@ -405,7 +405,7 @@ function Sources({ j }: { j: JournalDetail }) {
     <Section id="sources" title="Sources">
       <ul className="space-y-3">
         {refs.map((r) => (
-          <li key={r.label} className="bg-surface/50 rounded-xl p-4 text-sm">
+          <li key={r.label} className="bg-surface lift rounded-xl p-4 text-sm">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="font-medium">{r.label}</span>
               {r.href && (

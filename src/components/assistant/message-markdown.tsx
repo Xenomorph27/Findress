@@ -93,7 +93,7 @@ export function MessageMarkdown({ text, cfpUrl }: { text: string; cfpUrl?: strin
       </div>
     ),
     th: ({ children }) => (
-      <th className="border-hairline border-b px-2 py-1 text-left font-medium">{children}</th>
+      <th className="tint-header hairline-screen px-2 py-1 text-left font-medium">{children}</th>
     ),
     td: ({ children }) => (
       <td className="border-hairline border-b px-2 py-1 align-top">{children}</td>

@@ -228,7 +228,7 @@ function Workshops({ e }: { e: EventDetail }) {
           <li key={c.slug}>
             <Link
               href={`/c/${c.slug}`}
-              className="hover:bg-surface-2/50 flex items-center justify-between gap-3 rounded-lg px-3 py-3 transition-colors"
+              className="tint-row-hover flex items-center justify-between gap-3 rounded-lg px-3 py-3 transition-colors"
             >
               <span className="flex min-w-0 items-baseline gap-2">
                 <span className="font-heading shrink-0 text-base">{c.acronym}</span>
@@ -292,9 +292,9 @@ function History({ e }: { e: EventDetail }) {
             <AcceptanceChart data={e.acceptance} />
             <details className="text-muted-foreground mt-2 text-xs">
               <summary className="hover:text-foreground cursor-pointer">Table view</summary>
-              <table className="mt-2 w-full font-mono">
+              <table className="mt-2 w-full">
                 <thead>
-                  <tr className="text-left">
+                  <tr className="tint-header hairline-screen text-left">
                     <th className="py-1 font-normal">Year</th>
                     <th className="py-1 text-right font-normal">Submitted</th>
                     <th className="py-1 text-right font-normal">Accepted</th>
@@ -303,7 +303,7 @@ function History({ e }: { e: EventDetail }) {
                 </thead>
                 <tbody>
                   {e.acceptance.map((a) => (
-                    <tr key={a.year} className="border-hairline border-t">
+                    <tr key={a.year} className="border-hairline border-t font-mono">
                       <td className="py-1">{a.year}</td>
                       <td className="tabular py-1 text-right">
                         {a.submitted?.toLocaleString() ?? "—"}
@@ -341,7 +341,10 @@ function Sources({ e }: { e: EventDetail }) {
           const meta = SOURCE_META[r.source as SourceName];
           const used = winners.get(r.source) ?? [];
           return (
-            <li key={`${r.source}-${r.sourceId}`} className="bg-surface/50 rounded-xl p-4 text-sm">
+            <li
+              key={`${r.source}-${r.sourceId}`}
+              className="bg-surface lift rounded-xl p-4 text-sm"
+            >
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="font-medium">{meta?.label ?? r.source}</span>
                 {r.url && (
@@ -362,7 +365,7 @@ function Sources({ e }: { e: EventDetail }) {
           );
         })}
         {e.cfpUrl && (
-          <li className="bg-surface/50 rounded-xl p-4 text-sm">
+          <li className="bg-surface lift rounded-xl p-4 text-sm">
             <span className="font-medium">Official CFP page</span>
             <p className="text-muted-foreground mt-1 text-xs">
               CFP text, topics and submission essentials · {e.cfpUrl}

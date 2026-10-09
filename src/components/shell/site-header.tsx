@@ -35,12 +35,14 @@ function DesktopNavLinks({ pathname }: { pathname: string | null }) {
             aria-current={active ? "page" : undefined}
             className={cn(
               "relative rounded-md px-3 py-1.5 text-sm transition-colors",
-              active ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+              active
+                ? "tint-selected text-foreground"
+                : "text-muted-foreground hover:text-foreground tint-row-hover",
             )}
           >
             {item.label}
             {active && (
-              <span aria-hidden className="bg-aurora absolute inset-x-3 -bottom-[11px] h-px" />
+              <span aria-hidden className="bg-screen absolute inset-x-3 -bottom-[11px] h-0.5" />
             )}
           </Link>
         );
@@ -71,8 +73,8 @@ function MobileNavLinks({
           className={cn(
             "rounded-md px-3 py-2.5 text-base",
             isActive(pathname, item.href)
-              ? "bg-surface-2 text-foreground"
-              : "text-muted-foreground hover:text-foreground",
+              ? "tint-selected text-foreground"
+              : "text-muted-foreground hover:text-foreground tint-row-hover",
           )}
         >
           {item.label}
@@ -91,7 +93,7 @@ export function SiteHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <header className="border-hairline bg-background/70 sticky top-0 z-40 border-b backdrop-blur-xl">
+    <header className="border-hairline bg-chrome-header/85 sticky top-0 z-40 border-b backdrop-blur-xl">
       <div className="mx-auto flex h-14 max-w-[1280px] items-center gap-6 px-4 md:px-8">
         <Wordmark />
         <nav aria-label="Main" className="hidden items-center gap-1 md:flex">

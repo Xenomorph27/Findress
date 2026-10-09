@@ -53,11 +53,11 @@ export function LegendItem({ color, label }: { color: string; label: string }) {
 
 export function SimpleTable({ head, rows }: { head: string[]; rows: (string | number)[][] }) {
   return (
-    <table className="w-full font-mono">
+    <table className="w-full">
       <thead>
-        <tr className="text-left">
+        <tr className="tint-header hairline-screen text-left">
           {head.map((h, i) => (
-            <th key={h} className={cn("py-1 font-normal", i > 0 && "text-right")}>
+            <th key={h} className={cn("px-1 py-1 font-normal", i > 0 && "text-right")}>
               {h}
             </th>
           ))}
@@ -67,7 +67,15 @@ export function SimpleTable({ head, rows }: { head: string[]; rows: (string | nu
         {rows.map((r, i) => (
           <tr key={i} className="border-hairline border-t">
             {r.map((c, j) => (
-              <td key={j} className={cn("py-1", j > 0 && "tabular text-right")}>
+              <td
+                key={j}
+                className={cn(
+                  "px-1 py-1",
+                  j > 0 && "text-right",
+                  // Mono for numbers and dates only; labels stay in Sans.
+                  (typeof c === "number" || /^d/.test(String(c))) && "font-mono",
+                )}
+              >
                 {c}
               </td>
             ))}

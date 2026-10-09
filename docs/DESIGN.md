@@ -16,10 +16,11 @@ Dark mode is the hero; light mode must be equally finished (toggle + system defa
 
 Colour tokens (CSS variables on `:root`, mapped into Tailwind):
 
-- `--bg` deep ink `#07090F`, `--surface` `#0D1119`, `--surface-2` `#141A24`, hairline borders `rgba(255,255,255,0.07)`
+- Chrome `#03050A` / header `#080C14`, `--bg` deep ink `#0A0E16`, `--surface` `#0D121B`, `--surface-2` `#151B26`, hairline borders `rgba(255,255,255,0.07)` (see Lighting system)
 - `--text` `#E8ECF3`, `--muted` `#8A94A6`
 - Accent **Aurora**: a teal→cyan→soft violet gradient (`#2EE6C5 → #38BDF8 → #A78BFA`), used sparingly:
-  focus rings, active filters, the globe's points, primary buttons, chart highlights.
+  focus rings, the globe's points, primary buttons, chart highlights. Per-route tints (active filters, selection,
+  nav) come from `--screen` (see Lighting system).
 - Deadline heat scale (countdown chips + calendar): calm `#38BDF8` → warm `#F5B84B` → hot `#FF5D73`; passed `#4B5563`.
 - Light mode: paper `#F7F7F4`, ink `#0E1116`, same accents slightly deepened for AA contrast.
 
@@ -73,6 +74,72 @@ Clean, minimal, calm. Two families, three weights, six sizes, enforced in `src/a
   `space-y-8`. Keep borders for inputs, buttons, the sticky mobile toolbar, popovers, and table
   rows where alignment needs them.
 
+## Lighting system
+
+Replaces the star-field. Implemented in `src/app/globals.css`, `src/lib/theme/route-accents.ts` and
+`src/components/shell/app-shell.tsx`.
+
+**A. One accent per route: `--screen`.** `AppShell` sets `style={{"--screen": accent}}` once on the
+root. The accent comes from the route's first segment (`useSelectedLayoutSegment`), which is
+static, so prerendered shells already carry the right tint. Everything below reads
+`var(--screen)`; there is no prop threading.
+
+| Route              | Accent                                    |
+| ------------------ | ----------------------------------------- |
+| `/` landing        | `#2EE6C5` teal                            |
+| `/explore`, `/c/*` | `#38BDF8` cyan                            |
+| `/j/*`             | `#A78BFA` violet                          |
+| `/insights`        | `#2EE6C5` teal                            |
+| `/workspace`       | `#F5B84B` amber                           |
+| `/sources`         | `#8A94A6` grey                            |
+| `/login`           | `#F25BD0` pink (matches the crystal ball) |
+
+Nav neighbours stay at least 49° apart in OKLCH hue: Explore 233°, Insights 177°, Workspace 79°,
+and Sources is near-grey. Elsewhere 24° is enough.
+
+**B. Tint ladder.** Every tint is `color-mix(in oklab, var(--screen) N%, transparent)`. Oklab makes
+11% amber and 11% violet look equally strong, so one ladder fits every hue. Mixing against
+transparent means the same class works on any surface. Tints are gradient layers
+(`background-image`), so they stack over solid cards too.
+
+| Class                         | Strength  | Use                                                               |
+| ----------------------------- | --------- | ----------------------------------------------------------------- |
+| `tint-surface`                | 3%        | working surfaces, segmented controls                              |
+| `tint-col` / `tint-col-hover` | 5%        | column hover, Kanban drop target, card hover                      |
+| `tint-header`                 | 9%        | table header rows                                                 |
+| `tint-row-hover`              | 11%       | list rows, nav links, menu rows (hover)                           |
+| `tint-selected`               | 21%       | selected row, active tab, active nav, active filter, count badges |
+| `hairline-screen`             | 100%, 2px | header hairline only (under table headers)                        |
+
+`tint-selected` also raises `--muted-foreground` to `--muted-on-tint` (dark `#a9b2c1`, light
+`#4a5262`), so secondary text stays at or above 4.5:1 on the strongest tint of every accent. There
+are no ad-hoc `hover:bg-*` colours. Selection markers use `bg-screen` / `border-screen`.
+
+**C. Atmosphere glow.** `.glow-screen` is on `<main>` on every page. It is a 220px radial wash of the
+screen hue from the top, with `isolation: isolate` so the `z-index:-1` layer can't escape. It ends
+at 70%, so the lower page and the data stay neutral. Strength is 13% in dark and 7% in light
+(about half).
+
+**D. Grain.** A fixed inline-SVG `feTurbulence` film on `body::after`, at opacity 0.035 with
+`pointer-events: none`. 0.06 looks dirty; 0.02 does nothing.
+
+**E. Lift.** Raised surfaces use `lift`: cards, sheets, popovers, dialogs, selects, chart tooltips
+and the login card. In dark it is `inset 0 1px 0 0 rgba(255,255,255,.055), 0 1px 2px rgba(0,0,0,.45)`.
+In light it is `inset 0 1px 0 0 rgba(255,255,255,.7), 0 1px 2px rgba(14,17,22,.1)`. No big soft shadows.
+
+**F. Chrome darker than content.** In dark mode the data reads as the lit surface.
+
+| Layer                                       | Dark      | Light     |
+| ------------------------------------------- | --------- | --------- |
+| `--chrome` (footer, explore filter sidebar) | `#03050a` | `#e9e9e4` |
+| `--chrome-header` (header/nav)              | `#080c14` | `#efefea` |
+| `--bg` (page content)                       | `#0a0e16` | `#f7f7f4` |
+| `--surface` (panels, cards)                 | `#0d121b` | `#ffffff` |
+| `--surface-2`                               | `#151b26` | `#f0f0eb` |
+
+AA: body text is at least 14.5:1 and muted text at least 5.4:1 on every layer. Muted text on the
+21% selected tint is at least 4.9:1 (via `--muted-on-tint`).
+
 ## Signature elements
 
 1. **Hero globe** (`cobe`): slowly rotating, dotted, points at upcoming venues glowing in the accent;
@@ -82,7 +149,7 @@ Clean, minimal, calm. Two families, three weights, six sizes, enforced in `src/a
    passed milestones dimmed.
 4. **Command palette** (`⌘K` / `Ctrl+K`, shadcn `Command`): jump to any event, filter, or ask the assistant.
 5. **Glass side sheet** for previews: subtle backdrop blur, 1px hairline border, soft inner glow.
-6. **Ambient background**: very faint star-field noise + one slow aurora gradient blob behind the hero only.
+6. **Ambient background**: the lighting system below (route tint, top glow, grain), plus one slow aurora gradient blob behind the hero only. The old star-field is gone.
 7. **Assistant panel**: feels native, not a bubble widget — a docked column with suggested-prompt chips,
    streaming text with a soft caret, citations rendered as small source pills.
 

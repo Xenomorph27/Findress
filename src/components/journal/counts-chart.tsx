@@ -21,7 +21,7 @@ function TooltipBody({
 }) {
   if (!active || !payload?.[0]) return null;
   return (
-    <div className="border-hairline bg-popover rounded-lg border px-3 py-2 text-xs shadow-lg">
+    <div className="border-hairline bg-popover lift rounded-lg border px-3 py-2 text-xs">
       <p className="font-mono">{label}</p>
       <p className="mt-1">
         <span className="font-mono">{payload[0].value.toLocaleString()}</span>{" "}
@@ -96,9 +96,9 @@ export function JournalCountsChart({ data }: { data: Point[] }) {
       </div>
       <details className="text-muted-foreground mt-2 text-xs">
         <summary className="hover:text-foreground cursor-pointer">Table view</summary>
-        <table className="mt-2 w-full font-mono">
+        <table className="mt-2 w-full">
           <thead>
-            <tr className="text-left">
+            <tr className="tint-header hairline-screen text-left">
               <th className="py-1 font-normal">Year</th>
               <th className="py-1 text-right font-normal">Works</th>
               <th className="py-1 text-right font-normal">Citations</th>
@@ -106,7 +106,7 @@ export function JournalCountsChart({ data }: { data: Point[] }) {
           </thead>
           <tbody>
             {[...data].reverse().map((d) => (
-              <tr key={d.year} className="border-hairline border-t">
+              <tr key={d.year} className="border-hairline border-t font-mono">
                 <td className="py-1">{d.year}</td>
                 <td className="tabular py-1 text-right">{d.works.toLocaleString()}</td>
                 <td className="tabular py-1 text-right">{d.citations.toLocaleString()}</td>

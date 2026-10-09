@@ -23,7 +23,7 @@ function TooltipBody({
   const p = payload?.[0]?.payload;
   if (!active || !p) return null;
   return (
-    <div className="border-hairline bg-popover rounded-lg border px-3 py-2 text-xs shadow-lg">
+    <div className="border-hairline bg-popover lift rounded-lg border px-3 py-2 text-xs">
       <p className="text-foreground font-mono">{p.year}</p>
       <p className="mt-1">
         <span className="text-muted-foreground">Acceptance </span>

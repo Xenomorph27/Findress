@@ -52,8 +52,8 @@ function Card({
   return (
     <div
       className={cn(
-        "group border-hairline bg-surface rounded-xl border p-3 text-sm shadow-sm transition-shadow",
-        dragging && "ring-aurora-2/50 shadow-lg ring-1",
+        "group border-hairline bg-surface lift rounded-xl border p-3 text-sm transition-shadow",
+        dragging && "ring-screen/60 ring-1",
       )}
     >
       <div className="flex items-start justify-between gap-2">
@@ -159,7 +159,7 @@ function Column({
       aria-label={`${STATUS_LABEL[status]} (${items.length})`}
       className={cn(
         "border-hairline bg-surface/40 flex w-[260px] shrink-0 flex-col rounded-2xl border p-2.5 transition-colors",
-        isOver && "border-aurora-2/50 bg-aurora-2/5",
+        isOver && "border-screen/50 tint-col",
       )}
     >
       <header className="mb-2 flex items-center justify-between px-1">

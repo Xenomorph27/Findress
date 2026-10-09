@@ -31,7 +31,7 @@ function DotTooltip({ active, payload }: { active?: boolean; payload?: { payload
   const d = payload?.[0]?.payload;
   if (!active || !d) return null;
   return (
-    <div className="border-hairline bg-popover rounded-lg border px-3 py-2 text-xs shadow-lg">
+    <div className="border-hairline bg-popover lift rounded-lg border px-3 py-2 text-xs">
       <p className="font-medium">{d.abbreviation}</p>
       <p className="text-muted-foreground mt-1">
         APC <span className="text-foreground font-mono">${d.apc.toLocaleString()}</span> · h-index{" "}
@@ -190,7 +190,7 @@ export function JournalInsightsPanel({
                 <a
                   href={c.href}
                   {...(c.external ? { target: "_blank", rel: "noreferrer" } : {})}
-                  className="hover:bg-surface-2/50 flex flex-wrap items-center justify-between gap-3 rounded-md px-1 py-2.5"
+                  className="tint-row-hover flex flex-wrap items-center justify-between gap-3 rounded-md px-1 py-2.5"
                 >
                   <span className="min-w-0 flex-1">
                     <span className="font-heading text-base">{c.journal}</span>

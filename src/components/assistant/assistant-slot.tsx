@@ -43,7 +43,7 @@ export function AssistantSlot({
     <>
       <Button
         onClick={() => setOpen(true)}
-        className="fixed right-4 bottom-4 z-30 h-11 rounded-full px-4 shadow-lg"
+        className="lift fixed right-4 bottom-4 z-30 h-11 rounded-full px-4"
         aria-label={`Ask FIndress about ${label}`}
       >
         <Sparkles /> Ask FIndress
