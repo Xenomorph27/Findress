@@ -41,7 +41,7 @@ flowchart LR
 
 ```bash
 pnpm install
-pnpm db:local        # embedded Postgres on :54329 (or set DATABASE_URL to Neon)
+pnpm db:local        # PGlite (WASM Postgres) on :54329, foreground (or set DATABASE_URL to Neon)
 pnpm db:migrate
 pnpm ingest          # all steps; or --steps=ccfddl,huggingface,openreview,wikicfp,merge,cfp,
                      #   topics,geocode,journals,journal-ranks,journal-pages,special-issues

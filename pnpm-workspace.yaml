@@ -1,33 +1,13 @@
-# Dependency build scripts, decided explicitly so CI never stops on ERR_PNPM_IGNORED_BUILDS.
-# pnpm 11+ reads allowBuilds; pnpm 10 reads onlyBuiltDependencies / ignoredBuiltDependencies.
-# embedded-postgres is a devDependency for `pnpm db:local` only; its platform packages' postinstall
-# (re-creating lib symlinks) is never run. Nothing in the production build imports it.
-allowBuilds:
-  esbuild: true
-  sharp: false
-  unrs-resolver: false
-  embedded-postgres: false
-  "@embedded-postgres/darwin-arm64": false
-  "@embedded-postgres/darwin-x64": false
-  "@embedded-postgres/linux-arm": false
-  "@embedded-postgres/linux-arm64": false
-  "@embedded-postgres/linux-ia32": false
-  "@embedded-postgres/linux-ppc64": false
-  "@embedded-postgres/linux-x64": false
-  "@embedded-postgres/windows-x64": false
+# Dependency build scripts. Unapproved scripts are skipped with a warning, never a failed install
+# (also set in .npmrc, which every pnpm version reads).
+strictDepBuilds: false
 
+# Only packages that truly need their install script (pnpm 10 key):
 onlyBuiltDependencies:
   - esbuild
 
-ignoredBuiltDependencies:
-  - sharp
-  - unrs-resolver
-  - embedded-postgres
-  - "@embedded-postgres/darwin-arm64"
-  - "@embedded-postgres/darwin-x64"
-  - "@embedded-postgres/linux-arm"
-  - "@embedded-postgres/linux-arm64"
-  - "@embedded-postgres/linux-ia32"
-  - "@embedded-postgres/linux-ppc64"
-  - "@embedded-postgres/linux-x64"
-  - "@embedded-postgres/windows-x64"
+# Same decision for pnpm 11+ (allowBuilds replaces the keys above):
+allowBuilds:
+  esbuild: true
+  unrs-resolver: false
+  sharp: false

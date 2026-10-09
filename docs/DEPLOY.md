@@ -111,13 +111,14 @@ at a time, so each call stays inside Vercel's 300 s function limit. You can also
 
 ## Install on Vercel (pnpm build scripts)
 
-- `package.json` pins `"packageManager": "pnpm@12.10.1"`. To make Vercel use exactly that version,
-  add the environment variable `ENABLE_EXPERIMENTAL_COREPACK=1` (Project → Settings → Environment
-  Variables, all environments). Without it Vercel picks a pnpm from the lockfile version.
-- `pnpm-workspace.yaml` decides every dependency build script, so CI never stops on
-  `ERR_PNPM_IGNORED_BUILDS`: only `esbuild` runs its script; `sharp`, `unrs-resolver`,
-  `embedded-postgres` and all `@embedded-postgres/*` platform packages are ignored. Both the pnpm 11+
-  key (`allowBuilds`) and the pnpm 10 keys (`onlyBuiltDependencies` / `ignoredBuiltDependencies`)
-  are set. If a future dependency adds a build script, add it there (true/false) instead of
-  running `pnpm approve-builds` interactively.
-- `embedded-postgres` is a devDependency used only by `pnpm db:local`; nothing in `src/` imports it.
+- `package.json` pins `"packageManager": "pnpm@12.10.1"`, and Vercel has
+  `ENABLE_EXPERIMENTAL_COREPACK=1`, so Vercel installs with the same pnpm as local. The lockfile is
+  `lockfileVersion: 9.0`, the format pnpm 12 writes.
+- No dependency with native binaries or a needed install script is left except `esbuild`. The old
+  `embedded-postgres` devDependency (its `@embedded-postgres/linux-x64` postinstall broke the Vercel
+  install with `ERR_PNPM_IGNORED_BUILDS`) is gone; `pnpm db:local` now runs PGlite (WASM).
+- An unapproved build script can never fail the install: `strict-dep-builds=false` in `.npmrc` (read
+  by every pnpm version) and `strictDepBuilds: false` in `pnpm-workspace.yaml`. Approvals:
+  `onlyBuiltDependencies` (pnpm 10) and `allowBuilds` (pnpm 11+) both allow only `esbuild`.
+- If a deploy still reports an old error, redeploy without the build cache (Deployments → ⋯ →
+  Redeploy, untick "Use existing Build Cache").
