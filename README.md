@@ -53,7 +53,8 @@ pnpm test            # unit tests · pnpm test:e2e (against pnpm start)
 
 See `.env.example`: `DATABASE_URL`, `CRON_SECRET`, `GITHUB_TOKEN` (optional), `ENABLE_LLM_TAGGING`,
 `OPENALEX_API_KEY` / `OPENALEX_EMAIL` (optional),
-`AI_PROVIDER`, `AI_MODEL`, `ANTHROPIC_API_KEY`, `AI_GATEWAY_API_KEY`, `AI_EFFORT`,
+`AI_PROVIDER` (default `google`), `AI_MODEL` (default `gemini-3.8-flash`), `GOOGLE_GENERATIVE_AI_API_KEY`,
+`ANTHROPIC_API_KEY` / `AI_GATEWAY_API_KEY` (other providers), `AI_EFFORT`,
 `CHAT_RATE_LIMIT_PER_HOUR`, `CHAT_MAX_OUTPUT_TOKENS`, `APP_PASSWORD`, `AUTH_SECRET`,
 `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_DEFAULT_TIMEZONE`.
 

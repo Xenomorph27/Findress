@@ -260,7 +260,9 @@ export function buildTools({ tz, allowedHosts }: { tz: string; allowedHosts: str
 
     fetchPage: tool({
       description: `Fetch a web page and return its main text (Readability). Only these hosts are allowed: ${[...ALWAYS_ALLOWED, ...allowedHosts].join(", ")}. Use it for pages linked from the CFP or the journal (author guidelines, workshop pages, special-issue calls, OpenReview).`,
-      inputSchema: z.object({ url: z.url() }),
+      // A plain string (validated by isAllowedUrl): string formats like "uri" are not part of
+      // the JSON-schema subset every provider (Gemini included) accepts for tool parameters.
+      inputSchema: z.object({ url: z.string().describe("Absolute http(s) URL of the page") }),
       execute: async ({ url }) => {
         if (!isAllowedUrl(url, allowedHosts)) {
           return {
