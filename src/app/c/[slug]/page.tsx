@@ -5,7 +5,14 @@ import { Suspense, ViewTransition } from "react";
 import { AssistantSlot } from "@/components/assistant/assistant-slot";
 import { AcceptanceChart } from "@/components/event/acceptance-chart";
 import { CfpText } from "@/components/event/cfp-text";
-import { LocationLabel, ModeChip, RankChip, TopicChip, TypeBadge } from "@/components/event/chips";
+import {
+  ChipList,
+  LocationLabel,
+  ModeChip,
+  Ranks,
+  TopicLine,
+  TypeBadge,
+} from "@/components/event/chips";
 import { CollapsibleText } from "@/components/event/collapsible-text";
 import { CountdownChip } from "@/components/event/countdown-chip";
 import { EventActions } from "@/components/event/event-actions";
@@ -44,9 +51,9 @@ function Section({
   aside?: React.ReactNode;
 }) {
   return (
-    <section aria-labelledby={id} className="border-hairline border-t pt-8">
+    <section aria-labelledby={id} className="scroll-mt-24">
       <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
-        <h2 id={id} className="font-display text-2xl">
+        <h2 id={id} className="font-heading text-xl">
           {title}
         </h2>
         {aside}
@@ -80,19 +87,18 @@ function Header({ e }: { e: EventDetail }) {
           {e.acronym} {e.year}
         </span>
       </nav>
-      <div className="flex flex-wrap items-center gap-1.5">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <TypeBadge type={e.type} />
-        <RankChip system="CORE" rank={e.rankCore} />
-        <RankChip system="CCF" rank={e.rankCcf} />
+        <Ranks core={e.rankCore} ccf={e.rankCcf} />
         <ModeChip mode={e.mode} />
       </div>
       <div>
         <ViewTransition name={`acronym-${e.slug}`}>
-          <h1 className="font-display text-5xl leading-[0.95] md:text-7xl">
+          <h1 className="font-heading text-3xl leading-tight md:text-5xl">
             {e.acronym} <span className="text-muted-foreground">{e.year}</span>
           </h1>
         </ViewTransition>
-        <p className="text-muted-foreground mt-3 max-w-3xl text-lg text-balance">
+        <p className="text-muted-foreground mt-3 max-w-3xl text-base text-balance">
           {e.name ?? "Full name not announced"}
         </p>
       </div>
@@ -142,17 +148,9 @@ function CfpSection({ e }: { e: EventDetail }) {
       }
     >
       {(chips.length > 0 || e.subfields.length > 0) && (
-        <div className="mb-5 flex flex-wrap gap-1.5" aria-label="Topics of interest">
-          {e.subfields.map((s) => (
-            <TopicChip key={s} active>
-              {SUBFIELD_LABEL[s as SubfieldId] ?? s}
-            </TopicChip>
-          ))}
-          {chips.slice(0, 24).map((t) => (
-            <TopicChip key={t} className="max-w-full truncate">
-              {t}
-            </TopicChip>
-          ))}
+        <div className="mb-6 space-y-3" aria-label="Topics of interest">
+          <ChipList items={e.subfields.map((s) => SUBFIELD_LABEL[s as SubfieldId] ?? s)} active />
+          <TopicLine items={chips} />
         </div>
       )}
       {e.cfpText ? (
@@ -225,16 +223,16 @@ function Workshops({ e }: { e: EventDetail }) {
       title="Workshops & tracks"
       aside={<span className="text-muted-foreground font-mono text-xs">{e.children.length}</span>}
     >
-      <ul className="divide-hairline border-hairline divide-y overflow-hidden rounded-xl border">
+      <ul className="-mx-3 space-y-1">
         {e.children.map((c) => (
           <li key={c.slug}>
             <Link
               href={`/c/${c.slug}`}
-              className="hover:bg-surface-2/50 flex items-center justify-between gap-3 px-4 py-3 transition-colors"
+              className="hover:bg-surface-2/50 flex items-center justify-between gap-3 rounded-lg px-3 py-3 transition-colors"
             >
-              <span className="min-w-0">
-                <span className="font-display text-lg">{c.acronym}</span>
-                <span className="text-muted-foreground ml-2 truncate text-sm">{c.name}</span>
+              <span className="flex min-w-0 items-baseline gap-2">
+                <span className="font-heading shrink-0 text-base">{c.acronym}</span>
+                <span className="text-muted-foreground truncate text-sm">{c.name}</span>
               </span>
               <CountdownChip dueAt={c.nextDeadline?.at ?? null} />
             </Link>
@@ -343,10 +341,7 @@ function Sources({ e }: { e: EventDetail }) {
           const meta = SOURCE_META[r.source as SourceName];
           const used = winners.get(r.source) ?? [];
           return (
-            <li
-              key={`${r.source}-${r.sourceId}`}
-              className="border-hairline rounded-xl border p-4 text-sm"
-            >
+            <li key={`${r.source}-${r.sourceId}`} className="bg-surface/50 rounded-xl p-4 text-sm">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="font-medium">{meta?.label ?? r.source}</span>
                 {r.url && (
@@ -367,7 +362,7 @@ function Sources({ e }: { e: EventDetail }) {
           );
         })}
         {e.cfpUrl && (
-          <li className="border-hairline rounded-xl border p-4 text-sm">
+          <li className="bg-surface/50 rounded-xl p-4 text-sm">
             <span className="font-medium">Official CFP page</span>
             <p className="text-muted-foreground mt-1 text-xs">
               CFP text, topics and submission essentials · {e.cfpUrl}
@@ -393,7 +388,7 @@ async function EventContent({ params }: { params: PageProps<"/c/[slug]">["params
   if (!e) notFound();
   return (
     <div className="grid gap-10 lg:grid-cols-12">
-      <div className="min-w-0 space-y-10 lg:col-span-8">
+      <div className="min-w-0 space-y-14 lg:col-span-8">
         <Header e={e} />
         <TimelineRibbon deadlines={e.deadlines} startDate={e.startDate} endDate={e.endDate} />
         <CfpSection e={e} />

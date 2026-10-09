@@ -26,7 +26,7 @@ export function BarList({
             <span
               className={cn(
                 "text-muted-foreground group-hover:text-foreground truncate text-sm",
-                i.mono && "font-mono text-xs",
+                i.mono && "text-foreground/90 font-medium",
               )}
             >
               {i.label}

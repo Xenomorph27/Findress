@@ -47,7 +47,7 @@ async function WorkspaceContent() {
   return (
     <div className="space-y-12">
       <section aria-labelledby="pipeline-title">
-        <h2 id="pipeline-title" className="font-display mb-4 text-3xl">
+        <h2 id="pipeline-title" className="font-heading mb-4 text-xl">
           Pipeline
         </h2>
         <Kanban initial={items} now={now} />
@@ -57,13 +57,13 @@ async function WorkspaceContent() {
       </section>
       <div className="grid gap-10 lg:grid-cols-12">
         <section aria-labelledby="deadlines-title" className="lg:col-span-7">
-          <h2 id="deadlines-title" className="font-display mb-4 text-3xl">
+          <h2 id="deadlines-title" className="font-heading mb-4 text-xl">
             My upcoming deadlines
           </h2>
           <MyDeadlines items={items} now={now} />
         </section>
         <section aria-labelledby="feed-title" className="lg:col-span-5">
-          <h2 id="feed-title" className="font-display mb-4 text-3xl">
+          <h2 id="feed-title" className="font-heading mb-4 text-xl">
             Calendar
           </h2>
           <CalendarFeed feedUrl={token ? absoluteUrl(`/api/workspace/ics?token=${token}`) : null} />

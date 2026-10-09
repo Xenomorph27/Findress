@@ -4,7 +4,7 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 
 type Point = { year: number; works: number; citations: number };
 
-const tick = { fill: "var(--muted-text)", fontSize: 11, fontFamily: "var(--font-geist-mono)" };
+const tick = { fill: "var(--muted-text)", fontSize: 12, fontFamily: "var(--font-geist-mono)" };
 const compact = (v: number) =>
   v >= 1000 ? `${(v / 1000).toFixed(v >= 10_000 ? 0 : 1)}k` : String(v);
 

@@ -261,7 +261,7 @@ export function Explorer({
   }, [filters.view, hasResults, tab]);
   const virtualizer = useWindowVirtualizer({
     count: filters.view === "list" ? items.length : 0,
-    estimateSize: () => (isDesktop ? 96 : 118),
+    estimateSize: () => (isDesktop ? 104 : 132),
     overscan: 8,
     scrollMargin,
     getItemKey: (i) => items[i]?.key ?? i,
@@ -377,9 +377,9 @@ export function Explorer({
       </aside>
 
       <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-end justify-between gap-3 pb-4">
+        <div className="flex flex-wrap items-end justify-between gap-3 pb-6">
           <div className="min-w-0">
-            <h1 className="font-display text-4xl leading-none md:text-5xl">Explore</h1>
+            <h1 className="font-heading text-3xl leading-tight md:text-5xl">Explore</h1>
             <p className="text-muted-foreground mt-2 text-sm" aria-live="polite">
               {summary}
             </p>
@@ -392,8 +392,8 @@ export function Explorer({
 
         <TabBar value={tab} onChange={(t) => patch({ tab: t })} />
 
-        <div className="border-hairline bg-background/85 sticky top-14 z-20 -mx-4 flex flex-wrap items-center gap-2 border-b px-4 py-3 backdrop-blur-xl md:-mx-0 md:rounded-xl md:border md:px-3">
-          <div className="relative min-w-[200px] flex-1">
+        <div className="border-hairline bg-background/85 md:bg-surface/70 sticky top-14 z-20 -mx-4 flex flex-wrap items-center gap-2 border-b px-4 py-3 backdrop-blur-xl md:-mx-0 md:rounded-xl md:border-0 md:px-3">
+          <div className="relative min-w-[200px] flex-1 basis-full sm:basis-auto">
             <Search
               className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 z-10 size-4 -translate-y-1/2"
               aria-hidden
@@ -413,7 +413,7 @@ export function Explorer({
               aria-label="Search venues"
               className="h-9 pr-9 pl-8"
             />
-            <kbd className="border-hairline text-muted-foreground pointer-events-none absolute top-1/2 right-2 hidden -translate-y-1/2 rounded border px-1.5 font-mono text-[10px] sm:block">
+            <kbd className="border-hairline text-muted-foreground pointer-events-none absolute top-1/2 right-2 hidden -translate-y-1/2 rounded border px-1.5 font-mono text-xs sm:block">
               /
             </kbd>
           </div>
@@ -425,7 +425,7 @@ export function Explorer({
           >
             <SlidersHorizontal /> Filters
             {activeCount > 0 && (
-              <span className="bg-aurora-2/15 text-foreground rounded-full px-1.5 font-mono text-[10px]">
+              <span className="bg-aurora-2/15 text-foreground rounded-full px-1.5 font-mono text-xs">
                 {activeCount}
               </span>
             )}
@@ -485,7 +485,7 @@ export function Explorer({
           initial={reduceMotion || !mounted ? false : { opacity: 0.4 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.18, ease: "easeOut" }}
-          className="pt-3"
+          className="pt-4"
         >
           {items.length === 0 ? (
             <EmptyState title="Nothing in orbit" className="mt-6">
@@ -514,7 +514,7 @@ export function Explorer({
               ref={listRef}
               role="list"
               aria-label="Venues"
-              className="border-hairline bg-surface/40 relative overflow-hidden rounded-xl border"
+              className="relative"
               style={{ height: virtualizer.getTotalSize() }}
             >
               {virtualizer.getVirtualItems().map((v) => {
@@ -565,7 +565,7 @@ export function Explorer({
             <CardGrid items={items} now={now} onOpen={open} reduceMotion={!!reduceMotion} />
           )}
         </motion.div>
-        <p className="text-muted-foreground mt-6 hidden text-xs lg:block">
+        <p className="text-muted-foreground mt-8 hidden text-xs lg:block">
           Keyboard: <kbd className="font-mono">/</kbd> search · <kbd className="font-mono">j</kbd>/
           <kbd className="font-mono">k</kbd> move · <kbd className="font-mono">Enter</kbd> open ·{" "}
           <kbd className="font-mono">b</kbd> bookmark
@@ -578,7 +578,7 @@ export function Explorer({
           className="glass border-hairline max-h-[88dvh] overflow-y-auto px-5 pb-6"
         >
           <SheetHeader className="px-0">
-            <SheetTitle className="font-display text-2xl font-normal">Filters</SheetTitle>
+            <SheetTitle className="font-heading text-xl">Filters</SheetTitle>
           </SheetHeader>
           {rail}
           <Button className="mt-5 w-full" onClick={() => setMobileFilters(false)}>
@@ -613,7 +613,7 @@ function TabBar({ value, onChange }: { value: ExploreTab; onChange: (t: ExploreT
     <div
       role="tablist"
       aria-label="What to explore"
-      className="border-hairline bg-surface/50 mb-3 flex w-full flex-wrap gap-1 rounded-xl border p-1 sm:w-fit sm:flex-nowrap"
+      className="bg-surface/60 mb-4 flex w-full flex-wrap gap-1 rounded-xl p-1 sm:w-fit sm:flex-nowrap"
     >
       {EXPLORE_TABS.map((t, i) => {
         const active = t.value === value;
@@ -671,7 +671,7 @@ function CardGrid({
   const shown = items.slice(0, limit);
   return (
     <>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {shown.map((item, i) => (
           <motion.div
             key={item.key}

@@ -24,7 +24,7 @@ export function SheetDemo() {
         </SheetTrigger>
         <SheetContent className="glass border-hairline sm:max-w-md">
           <SheetHeader>
-            <SheetTitle className="font-display text-3xl font-normal">CVPR 2027</SheetTitle>
+            <SheetTitle className="font-heading text-3xl">CVPR 2027</SheetTitle>
             <SheetDescription>
               Glass side sheet: backdrop blur, 1px hairline border and a soft inner glow.
             </SheetDescription>

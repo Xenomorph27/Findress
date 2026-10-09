@@ -39,7 +39,7 @@ export function MyDeadlines({ items, now }: { items: WorkspaceItem[]; now: numbe
     <div className="space-y-6">
       {[...months.entries()].map(([month, list]) => (
         <section key={month} aria-label={month}>
-          <h3 className="text-muted-foreground mb-2 font-mono text-[11px] tracking-[0.16em] uppercase">
+          <h3 className="text-muted-foreground mb-3 text-xs font-medium tracking-wide uppercase">
             {month}
           </h3>
           <ol className="border-hairline-strong relative space-y-2 border-l pl-5">

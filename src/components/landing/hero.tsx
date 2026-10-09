@@ -30,15 +30,15 @@ export function Hero({ data }: { data: LandingData }) {
         />
         <div className="mx-auto grid max-w-[1280px] items-center gap-8 px-4 pt-14 pb-10 md:px-8 lg:grid-cols-12 lg:pt-20">
           <div className="lg:col-span-6">
-            <p className="text-muted-foreground font-mono text-[11px] tracking-[0.2em] uppercase">
+            <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
               AI/ML conferences &amp; workshops · live
             </p>
-            <h1 className="font-display mt-4 text-[3.4rem] leading-[0.92] tracking-[-0.02em] text-balance sm:text-7xl lg:text-[5.4rem]">
+            <h1 className="font-heading mt-5 text-3xl leading-tight text-balance sm:text-5xl">
               {first}.
               <br />
-              <span className="text-muted-foreground italic">{rest.join(". ")}</span>
+              <span className="text-muted-foreground">{rest.join(". ")}</span>
             </h1>
-            <p className="text-muted-foreground mt-6 max-w-lg text-base md:text-lg">
+            <p className="text-muted-foreground mt-6 max-w-lg text-base">
               Every deadline, ranking and call for papers across machine learning, NLP, vision,
               robotics and beyond — refreshed from open sources, with an assistant that reads each
               CFP for you.
@@ -63,7 +63,7 @@ export function Hero({ data }: { data: LandingData }) {
                 Explore <ArrowRight />
               </Button>
             </form>
-            <dl className="border-hairline mt-10 grid max-w-xl grid-cols-2 gap-4 border-t pt-6 sm:grid-cols-4">
+            <dl className="mt-12 grid max-w-xl grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-4">
               {(
                 [
                   ["Conferences", data.stats.conferences, "/explore?tab=conferences"],
@@ -74,7 +74,7 @@ export function Hero({ data }: { data: LandingData }) {
               ).map(([label, value, href]) => (
                 <div key={label}>
                   <dt className="text-muted-foreground text-xs">{label}</dt>
-                  <dd className="mt-1 text-2xl font-semibold">
+                  <dd className="mt-1 font-mono text-xl">
                     <Link href={href} className="hover:text-aurora-ink transition-colors">
                       {value.toLocaleString()}
                     </Link>
@@ -82,7 +82,7 @@ export function Hero({ data }: { data: LandingData }) {
                 </div>
               ))}
             </dl>
-            <p className="text-muted-foreground mt-3 text-xs">
+            <p className="text-muted-foreground mt-4 text-xs">
               <span className="text-foreground font-mono">{data.stats.deadlinesThisMonth}</span>{" "}
               deadlines this month ·{" "}
               <span className="text-foreground font-mono">
@@ -99,7 +99,7 @@ export function Hero({ data }: { data: LandingData }) {
 
       <section aria-labelledby="next-title" className="mx-auto max-w-[1280px] px-4 md:px-8">
         <div className="mb-4 flex items-end justify-between gap-3">
-          <h2 id="next-title" className="font-display text-3xl">
+          <h2 id="next-title" className="font-heading text-xl">
             Next deadlines
           </h2>
           <Link href="/explore" className="text-muted-foreground hover:text-foreground text-sm">
@@ -127,14 +127,14 @@ export function Hero({ data }: { data: LandingData }) {
                   className="group border-hairline bg-surface/60 hover:border-hairline-strong flex h-full flex-col gap-3 rounded-xl border p-4 transition-colors"
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <span className="font-display text-2xl leading-none">
+                    <span className="font-heading text-xl leading-none">
                       {d.acronym} <span className="text-muted-foreground">{d.year}</span>
                     </span>
                   </div>
                   <span className="text-muted-foreground line-clamp-2 text-xs">{d.name}</span>
                   <div className="mt-auto flex flex-wrap items-center justify-between gap-2">
                     <CountdownChip dueAt={d.at} label={d.kind === "abstract" ? "abs" : "paper"} />
-                    <span className="text-muted-foreground font-mono text-[11px]">
+                    <span className="text-muted-foreground font-mono text-xs">
                       {formatInZone(d.at, "UTC", "MMM d")}
                     </span>
                   </div>

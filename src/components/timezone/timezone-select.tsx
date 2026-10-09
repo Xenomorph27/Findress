@@ -20,7 +20,7 @@ export function TimezoneSelect({ className }: { className?: string }) {
       <SelectTrigger
         size="sm"
         aria-label="Display timezone"
-        className={cn("border-hairline h-8 gap-1.5 font-mono text-xs", className)}
+        className={cn("border-hairline h-8 gap-1.5 text-xs", className)}
       >
         <Globe2 className="text-muted-foreground size-3.5" aria-hidden />
         <SelectValue />
@@ -28,7 +28,7 @@ export function TimezoneSelect({ className }: { className?: string }) {
       <SelectContent>
         {!known && <SelectItem value={tz}>{tz}</SelectItem>}
         {TIMEZONE_OPTIONS.map((o) => (
-          <SelectItem key={o.value} value={o.value} className="font-mono text-xs">
+          <SelectItem key={o.value} value={o.value} className="text-xs">
             {o.label}
           </SelectItem>
         ))}

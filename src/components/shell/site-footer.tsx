@@ -9,7 +9,7 @@ export function SiteFooter() {
         <div className="flex items-center gap-2">
           <OrbitMark className="size-4" />
           <span>
-            <span className="font-display text-foreground text-base">FIndress</span> — every AI/ML
+            <span className="font-heading text-foreground text-base">FIndress</span> — every AI/ML
             venue, one view.
           </span>
         </div>

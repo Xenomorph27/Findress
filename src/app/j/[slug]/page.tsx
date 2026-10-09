@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { AssistantSlot } from "@/components/assistant/assistant-slot";
 import { CfpText } from "@/components/event/cfp-text";
-import { RankChip, TopicChip, TypeBadge } from "@/components/event/chips";
+import { ChipList, Ranks, TopicLine, TypeBadge } from "@/components/event/chips";
 import { CollapsibleText } from "@/components/event/collapsible-text";
 import { EventActions } from "@/components/event/event-actions";
 import { EventDetailSkeleton } from "@/components/event/event-detail-skeleton";
@@ -45,9 +45,9 @@ function Section({
   aside?: React.ReactNode;
 }) {
   return (
-    <section aria-labelledby={id} className="border-hairline border-t pt-8">
+    <section aria-labelledby={id} className="scroll-mt-24">
       <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
-        <h2 id={id} className="font-display text-2xl">
+        <h2 id={id} className="font-heading text-xl">
           {title}
         </h2>
         {aside}
@@ -59,10 +59,10 @@ function Section({
 
 function Stat({ label, value, hint }: { label: string; value: React.ReactNode; hint?: string }) {
   return (
-    <div className="border-hairline bg-surface/40 min-w-0 rounded-xl border px-3 py-2.5">
-      <dt className="text-muted-foreground text-[11px]">{label}</dt>
-      <dd className="tabular mt-0.5 font-mono text-lg leading-tight">{value ?? "—"}</dd>
-      {hint && <p className="text-muted-foreground mt-0.5 text-[10px]">{hint}</p>}
+    <div className="bg-surface/60 min-w-0 rounded-xl px-4 py-3">
+      <dt className="text-muted-foreground text-xs">{label}</dt>
+      <dd className="tabular mt-0.5 font-mono text-xl leading-tight">{value ?? "—"}</dd>
+      {hint && <p className="text-muted-foreground mt-0.5 text-xs">{hint}</p>}
     </div>
   );
 }
@@ -91,15 +91,14 @@ function Header({ j }: { j: JournalDetail }) {
         <span aria-hidden>/</span>
         <span className="text-foreground">{j.abbreviation}</span>
       </nav>
-      <div className="flex flex-wrap items-center gap-1.5">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <TypeBadge type="journal" />
         <OaBadge value={j.openAccess} />
-        <RankChip system="CORE" rank={j.rankCoreJournal} />
-        <RankChip system="CCF" rank={j.rankCcf} />
+        <Ranks core={j.rankCoreJournal} ccf={j.rankCcf} />
       </div>
       <div>
-        <h1 className="font-display text-5xl leading-[0.95] md:text-7xl">{j.abbreviation}</h1>
-        <p className="text-muted-foreground mt-3 max-w-3xl text-lg text-balance">
+        <h1 className="font-heading text-3xl leading-tight md:text-5xl">{j.abbreviation}</h1>
+        <p className="text-muted-foreground mt-3 max-w-3xl text-base text-balance">
           {j.name}
           {j.publisher && <span className="opacity-80"> · {j.publisher}</span>}
         </p>
@@ -175,17 +174,9 @@ function ScopeSection({ j }: { j: JournalDetail }) {
       }
     >
       {(j.subfields.length > 0 || j.topics.length > 0) && (
-        <div className="mb-5 flex flex-wrap gap-1.5" aria-label="Topics">
-          {j.subfields.map((s) => (
-            <TopicChip key={s} active>
-              {SUBFIELD_LABEL[s as SubfieldId] ?? s}
-            </TopicChip>
-          ))}
-          {j.topics.slice(0, 16).map((t) => (
-            <TopicChip key={t} className="max-w-full truncate">
-              {t}
-            </TopicChip>
-          ))}
+        <div className="mb-6 space-y-3" aria-label="Topics">
+          <ChipList items={j.subfields.map((s) => SUBFIELD_LABEL[s as SubfieldId] ?? s)} active />
+          <TopicLine items={j.topics} />
         </div>
       )}
       {j.scopeText ? (
@@ -414,7 +405,7 @@ function Sources({ j }: { j: JournalDetail }) {
     <Section id="sources" title="Sources">
       <ul className="space-y-3">
         {refs.map((r) => (
-          <li key={r.label} className="border-hairline rounded-xl border p-4 text-sm">
+          <li key={r.label} className="bg-surface/50 rounded-xl p-4 text-sm">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="font-medium">{r.label}</span>
               {r.href && (
@@ -452,7 +443,7 @@ async function JournalContent({ params }: { params: PageProps<"/j/[slug]">["para
   const openCall = j.specialIssues.find((c) => c.submissionDeadlineUtc)?.title ?? null;
   return (
     <div className="grid gap-10 lg:grid-cols-12">
-      <div className="min-w-0 space-y-10 lg:col-span-8">
+      <div className="min-w-0 space-y-14 lg:col-span-8">
         <Header j={j} />
         <ScopeSection j={j} />
         <SpecialIssues j={j} />

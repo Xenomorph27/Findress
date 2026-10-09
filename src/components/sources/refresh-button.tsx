@@ -60,7 +60,7 @@ export function RefreshButton({ step, label = "Refresh now" }: { step: string; l
         {state === "running" ? "Refreshing…" : label}
       </Button>
       {message && (
-        <p role="status" className="text-muted-foreground max-w-[260px] text-right text-[11px]">
+        <p role="status" className="text-muted-foreground max-w-[260px] text-right text-xs">
           {message}
         </p>
       )}

@@ -25,12 +25,12 @@ export function DemoCountdowns() {
           ) : (
             <CountdownChip dueAt={anchor + s.offset} size="md" />
           )}
-          <span className="text-muted-foreground font-mono text-[10px]">{s.label}</span>
+          <span className="text-muted-foreground font-mono text-xs">{s.label}</span>
         </div>
       ))}
       <div className="flex flex-col items-start gap-1.5">
         <CountdownChip dueAt={null} size="md" />
-        <span className="text-muted-foreground font-mono text-[10px]">unknown</span>
+        <span className="text-muted-foreground font-mono text-xs">unknown</span>
       </div>
     </div>
   );

@@ -27,7 +27,7 @@ export function EmptyState({
       <div className="border-hairline bg-surface grid size-11 place-items-center rounded-full border">
         <Icon className="text-muted-foreground size-5" aria-hidden />
       </div>
-      <h2 className="font-display text-2xl">{title}</h2>
+      <h2 className="font-heading text-xl">{title}</h2>
       {children && <div className="text-muted-foreground max-w-md text-sm">{children}</div>}
       {action && <div className="mt-2">{action}</div>}
     </div>
@@ -56,11 +56,11 @@ export function PageHeader({
     >
       <div className="max-w-2xl">
         {eyebrow && (
-          <p className="text-muted-foreground mb-2 font-mono text-[11px] tracking-[0.18em] uppercase">
+          <p className="text-muted-foreground mb-3 text-xs font-medium tracking-wide uppercase">
             {eyebrow}
           </p>
         )}
-        <h1 className="font-display text-4xl leading-[1.05] md:text-5xl">{title}</h1>
+        <h1 className="font-heading text-3xl leading-tight md:text-5xl">{title}</h1>
         {children && <div className="text-muted-foreground mt-3">{children}</div>}
       </div>
       {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}

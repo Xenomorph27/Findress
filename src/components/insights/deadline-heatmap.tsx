@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { InsightsSlice } from "@/lib/insights/compute";
 import { formatInZone } from "@/lib/time/format";
 import { ChartCard, SimpleTable } from "./chart-card";
@@ -31,10 +31,23 @@ export function DeadlineHeatmap({
 }) {
   const router = useRouter();
   const [hover, setHover] = useState<{ i: number; x: number; y: number } | null>(null);
+  // The SVG scales with its card; size labels in user units so they render at the 12px step.
+  const svgRef = useRef<SVGSVGElement>(null);
+  const [labelSize, setLabelSize] = useState(9);
   const start = Date.parse(`${data.start}T00:00:00Z`);
   const weeks = Math.ceil(data.counts.length / 7);
   const width = LEFT + weeks * (CELL + GAP);
   const height = TOP + 7 * (CELL + GAP);
+  useEffect(() => {
+    const el = svgRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => {
+      const rendered = entry.contentRect.width;
+      if (rendered > 0) setLabelSize((12 * width) / rendered);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [width]);
   const dayIso = (i: number) => new Date(start + i * DAY).toISOString().slice(0, 10);
 
   const go = (i: number) => {
@@ -73,6 +86,7 @@ export function DeadlineHeatmap({
     >
       <div className="relative overflow-x-auto pb-1">
         <svg
+          ref={svgRef}
           viewBox={`0 0 ${width} ${height}`}
           className="w-full min-w-[640px]"
           role="img"
@@ -84,8 +98,8 @@ export function DeadlineHeatmap({
               key={`${m.x}`}
               x={m.x}
               y={10}
-              className="fill-muted-foreground font-mono"
-              fontSize={9}
+              className="fill-muted-foreground"
+              fontSize={labelSize}
             >
               {m.label}
             </text>
@@ -95,8 +109,8 @@ export function DeadlineHeatmap({
               key={d}
               x={0}
               y={TOP + i * 2 * (CELL + GAP) + CELL - 2}
-              className="fill-muted-foreground font-mono"
-              fontSize={9}
+              className="fill-muted-foreground"
+              fontSize={labelSize}
             >
               {d}
             </text>
@@ -136,7 +150,7 @@ export function DeadlineHeatmap({
         )}
       </div>
       <div
-        className="text-muted-foreground mt-3 flex items-center justify-end gap-1.5 text-[11px]"
+        className="text-muted-foreground mt-3 flex items-center justify-end gap-1.5 text-xs"
         aria-hidden
       >
         Fewer

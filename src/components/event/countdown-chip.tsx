@@ -41,7 +41,7 @@ export function CountdownChip({ dueAt, label, size = "sm", className }: Countdow
 
   const base = cn(
     "inline-flex shrink-0 items-center gap-1.5 rounded-full border font-mono tabular whitespace-nowrap",
-    size === "sm" ? "h-6 px-2 text-[11px]" : "h-7 px-2.5 text-xs",
+    size === "sm" ? "h-6 px-2 text-xs" : "h-7 px-2.5 text-xs",
     className,
   );
 
@@ -74,7 +74,7 @@ export function CountdownChip({ dueAt, label, size = "sm", className }: Countdow
           heat === "hot" && "shadow-[0_0_8px_currentColor]",
         )}
       />
-      {label && <span className="font-sans text-[0.95em] opacity-80">{label}</span>}
+      {label && <span className="font-sans opacity-80">{label}</span>}
       <span>{text}</span>
       <span className="sr-only">{describeCountdown(dueMs, now)}</span>
     </span>

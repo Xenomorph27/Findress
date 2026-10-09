@@ -95,7 +95,7 @@ export function AcceptanceTrends({ series }: { series: InsightsSlice["acceptance
               axisLine={{ stroke: "var(--hairline-strong)" }}
               tick={{
                 fill: "var(--muted-text)",
-                fontSize: 11,
+                fontSize: 12,
                 fontFamily: "var(--font-geist-mono)",
               }}
             />
@@ -106,7 +106,7 @@ export function AcceptanceTrends({ series }: { series: InsightsSlice["acceptance
               axisLine={false}
               tick={{
                 fill: "var(--muted-text)",
-                fontSize: 11,
+                fontSize: 12,
                 fontFamily: "var(--font-geist-mono)",
               }}
             />

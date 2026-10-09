@@ -21,7 +21,7 @@ export function CalendarFeed({ feedUrl }: { feedUrl: string | null }) {
             readOnly
             value={feedUrl}
             aria-label="Private calendar feed URL"
-            className="font-mono text-xs"
+            className="text-xs"
             onFocus={(e) => e.target.select()}
           />
           <Button

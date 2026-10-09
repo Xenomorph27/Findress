@@ -108,7 +108,7 @@ export function SiteHeader() {
           >
             <Search className="size-3.5" aria-hidden />
             <span className="pr-6">Search venues…</span>
-            <kbd className="border-hairline bg-surface-2 rounded border px-1.5 font-mono text-[10px] tracking-wide">
+            <kbd className="border-hairline bg-surface-2 rounded border px-1.5 font-mono text-xs tracking-wide">
               Ctrl K
             </kbd>
           </button>
@@ -135,7 +135,7 @@ export function SiteHeader() {
             </SheetTrigger>
             <SheetContent side="right" className="glass border-hairline w-72">
               <SheetHeader>
-                <SheetTitle className="font-display text-2xl font-normal">FIndress</SheetTitle>
+                <SheetTitle className="font-heading text-xl">FIndress</SheetTitle>
               </SheetHeader>
               <nav aria-label="Mobile" className="flex flex-col gap-1 px-4">
                 <Suspense

@@ -4,7 +4,7 @@ import { CornerDownRight } from "lucide-react";
 import Link from "next/link";
 import { ViewTransition } from "react";
 import { BookmarkStar } from "@/components/event/bookmark-star";
-import { LocationLabel, RankChip, TopicChip, TypeBadge } from "@/components/event/chips";
+import { ChipList, LocationLabel, MAX_CHIPS, Ranks, TypeBadge } from "@/components/event/chips";
 import { CountdownChip } from "@/components/event/countdown-chip";
 import type { ExplorerRow } from "@/lib/data/types";
 import { editionStatus, nextDeadline, type EditionStatus } from "@/lib/explore/filters";
@@ -31,9 +31,7 @@ function DeadlineCell({ row, now }: { row: ExplorerRow; now: number }) {
   return (
     <div className="flex flex-col items-start gap-1">
       <CountdownChip dueAt={nd?.at ?? null} />
-      <span className="text-muted-foreground font-mono text-[10px] tracking-wide uppercase">
-        {deadlineCaption(row, now)}
-      </span>
+      <span className="text-muted-foreground text-xs">{deadlineCaption(row, now)}</span>
     </div>
   );
 }
@@ -44,8 +42,8 @@ export function EventTitle({ row, size = "md" }: { row: ExplorerRow; size?: "md"
       <ViewTransition name={`acronym-${row.slug}`}>
         <span
           className={cn(
-            "font-display text-foreground leading-none whitespace-nowrap",
-            size === "lg" ? "text-[1.7rem]" : "text-[1.35rem]",
+            "font-heading text-foreground leading-none whitespace-nowrap",
+            size === "lg" ? "text-xl" : "text-base",
           )}
         >
           {row.acronym} <span className="text-muted-foreground">{row.year}</span>
@@ -58,7 +56,7 @@ export function EventTitle({ row, size = "md" }: { row: ExplorerRow; size?: "md"
 function ParentLine({ row }: { row: ExplorerRow }) {
   if (!row.parent) return null;
   return (
-    <span className="text-muted-foreground inline-flex items-center gap-1 font-mono text-[11px]">
+    <span className="text-muted-foreground inline-flex items-center gap-1 text-xs">
       <CornerDownRight className="size-3" aria-hidden />
       {row.parent.acronym} {row.parent.year}
     </span>
@@ -88,7 +86,7 @@ export function ResultRow({
       onClick={onOpen}
       onMouseEnter={onSelect}
       className={cn(
-        "group border-hairline relative grid cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 border-b px-3 py-3 transition-colors md:grid-cols-[112px_minmax(0,1fr)_150px_170px_auto] md:px-4",
+        "group relative grid cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 rounded-lg px-3 py-4 transition-colors md:grid-cols-[112px_minmax(0,1fr)_150px_170px_auto] md:px-4",
         selected ? "bg-surface-2/70" : "hover:bg-surface-2/40",
         ["tba", "past"].includes(editionStatus(row, now)) && "opacity-70",
       )}
@@ -112,49 +110,39 @@ export function ResultRow({
           </Link>
           {row.type !== "conference" && <TypeBadge type={row.type} />}
           {row.communityOnly && (
-            <span className="border-hairline-strong text-muted-foreground rounded border border-dashed px-1 text-[10px]">
-              community-listed
-            </span>
+            <span className="text-muted-foreground text-xs">community-listed</span>
           )}
           <ParentLine row={row} />
         </div>
         <p className="text-muted-foreground mt-1 truncate text-sm">
           {row.name ?? "Full name not announced"}
         </p>
-        <div className="mt-1.5 hidden flex-wrap gap-1 md:flex">
-          {row.subfields.slice(0, 2).map((s) => (
-            <TopicChip key={s}>{SUBFIELD_LABEL[s as SubfieldId] ?? s}</TopicChip>
-          ))}
-          {row.topics.slice(0, 2).map((t) => (
-            <TopicChip key={t}>{t}</TopicChip>
-          ))}
-        </div>
+        <ChipList
+          items={[...row.subfields.map((s) => SUBFIELD_LABEL[s as SubfieldId] ?? s), ...row.topics]}
+          max={MAX_CHIPS - (row.type !== "conference" ? 1 : 0)}
+          className="mt-2 hidden md:flex"
+        />
       </div>
 
       <div className="-mr-1 flex items-center gap-0.5 self-start md:hidden">
         <span className="flex flex-col items-end gap-0.5">
           <CountdownChip dueAt={nextDeadline(row, now)?.at ?? null} />
           {editionStatus(row, now) !== "open" && nextDeadline(row, now) && (
-            <span className="text-muted-foreground font-mono text-[9px] tracking-wide uppercase">
-              {deadlineCaption(row, now)}
-            </span>
+            <span className="text-muted-foreground text-xs">{deadlineCaption(row, now)}</span>
           )}
         </span>
         <BookmarkStar eventId={row.id} label={`${row.acronym} ${row.year}`} />
       </div>
 
       <div className="text-muted-foreground col-span-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs md:col-span-1 md:block md:text-sm">
-        <span className="font-mono text-[12px] md:block">{dates ?? "Dates not announced"}</span>
+        <span className="font-mono text-xs md:block">{dates ?? "Dates not announced"}</span>
         <LocationLabel
           city={row.city}
           country={row.country}
           countryCode={row.countryCode}
           className="max-w-full md:hidden"
         />
-        <span className="flex gap-1 md:hidden">
-          <RankChip system="CORE" rank={row.rankCore} />
-          <RankChip system="CCF" rank={row.rankCcf} />
-        </span>
+        <Ranks core={row.rankCore} ccf={row.rankCcf} className="md:hidden" />
       </div>
 
       <div className="hidden min-w-0 text-sm md:block">
@@ -164,10 +152,7 @@ export function ResultRow({
           countryCode={row.countryCode}
           className="max-w-full"
         />
-        <div className="mt-1 flex gap-1">
-          <RankChip system="CORE" rank={row.rankCore} />
-          <RankChip system="CCF" rank={row.rankCcf} />
-        </div>
+        <Ranks core={row.rankCore} ccf={row.rankCcf} className="mt-1" />
       </div>
 
       <div className="hidden md:block">
@@ -192,7 +177,7 @@ export function ResultCard({
     <article
       onClick={onOpen}
       className={cn(
-        "group border-hairline bg-surface/70 hover:border-hairline-strong relative flex cursor-pointer flex-col gap-3 rounded-xl border p-4 transition-colors",
+        "group bg-surface/70 hover:bg-surface relative flex cursor-pointer flex-col gap-4 rounded-xl p-5 transition-colors",
         ["tba", "past"].includes(editionStatus(row, now)) && "opacity-75",
       )}
     >
@@ -216,26 +201,19 @@ export function ResultCard({
           dueAt={nd?.at ?? null}
           label={nd ? (nd.kind === "abstract" ? "abs" : "paper") : undefined}
         />
-        <span className="text-muted-foreground text-right font-mono text-[11px]">
+        <span className="text-muted-foreground text-right font-mono text-xs">
           {dates ?? "Dates TBA"}
-          {nd?.passed && (
-            <span className="block text-[9px] tracking-wide uppercase">
-              {deadlineCaption(row, now)}
-            </span>
-          )}
+          {nd?.passed && <span className="block">{deadlineCaption(row, now)}</span>}
         </span>
       </div>
-      <div className="border-hairline flex items-center justify-between gap-2 border-t pt-3 text-sm">
+      <div className="flex items-center justify-between gap-2 text-sm">
         <LocationLabel
           city={row.city}
           country={row.country}
           countryCode={row.countryCode}
           className="min-w-0"
         />
-        <span className="flex shrink-0 gap-1">
-          <RankChip system="CORE" rank={row.rankCore} />
-          <RankChip system="CCF" rank={row.rankCcf} />
-        </span>
+        <Ranks core={row.rankCore} ccf={row.rankCcf} className="shrink-0" />
       </div>
     </article>
   );

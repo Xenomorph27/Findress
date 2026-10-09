@@ -62,7 +62,7 @@ export function NotesSlot({ eventId, kind = "event" }: { eventId: number; kind?:
   return (
     <section aria-labelledby="notes-title" className="border-hairline border-t pt-8">
       <div className="mb-3 flex items-center justify-between gap-2">
-        <h2 id="notes-title" className="font-display text-2xl">
+        <h2 id="notes-title" className="font-heading text-xl">
           My notes
         </h2>
         <div className="text-muted-foreground flex items-center gap-3 text-xs">
@@ -115,7 +115,7 @@ export function NotesSlot({ eventId, kind = "event" }: { eventId: number; kind?:
             onChange={(e) => setBody(e.target.value)}
             rows={8}
             placeholder={"Ideas, co-authors, reviewer suggestions…\nMarkdown supported."}
-            className="border-hairline-strong bg-surface/40 placeholder:text-muted-foreground focus:border-aurora-2 w-full resize-y rounded-xl border px-4 py-3 font-mono text-sm leading-relaxed outline-none"
+            className="border-hairline-strong bg-surface/40 placeholder:text-muted-foreground focus:border-aurora-2 w-full resize-y rounded-xl border px-4 py-3 text-sm outline-none"
           />
         </>
       )}

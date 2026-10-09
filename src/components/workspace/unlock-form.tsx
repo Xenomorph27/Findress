@@ -49,7 +49,7 @@ export function UnlockForm() {
     >
       <div className="space-y-2">
         <OrbitMark className="size-7" />
-        <h1 className="font-display text-4xl">Unlock FIndress</h1>
+        <h1 className="font-heading text-3xl">Unlock FIndress</h1>
         <p className="text-muted-foreground text-sm">
           Your workspace, notes, bookmarks and the assistant are private. Browsing stays open to
           everyone.

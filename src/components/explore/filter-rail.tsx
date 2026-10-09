@@ -20,8 +20,8 @@ import { cn } from "@/lib/utils";
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <fieldset className="border-hairline space-y-2.5 border-b pb-5">
-      <legend className="text-muted-foreground mb-2.5 font-mono text-[10px] tracking-[0.16em] uppercase">
+    <fieldset className="space-y-2.5">
+      <legend className="text-muted-foreground mb-3 text-xs font-medium tracking-wide uppercase">
         {title}
       </legend>
       {children}
@@ -53,7 +53,7 @@ function Chip({
       )}
     >
       {children}
-      {count != null && <span className="font-mono text-[10px] opacity-60">{count}</span>}
+      {count != null && <span className="font-mono text-xs opacity-60">{count}</span>}
     </button>
   );
 }
@@ -79,7 +79,7 @@ function Toggle({
     <div className="flex items-center justify-between gap-3">
       <Label htmlFor={id} className="flex flex-col items-start gap-0.5 text-sm font-normal">
         {label}
-        {hint && <span className="text-muted-foreground text-[11px]">{hint}</span>}
+        {hint && <span className="text-muted-foreground text-xs">{hint}</span>}
       </Label>
       <Switch id={id} checked={checked} onCheckedChange={onChange} />
     </div>
@@ -199,7 +199,7 @@ function JournalRail({
     !filters.jranks.length &&
     !filters.publishers.length;
   return (
-    <div className="space-y-5">
+    <div className="space-y-8">
       <ResetHeader filters={filters} onChange={onChange} isDefault={isDefault} />
       <Section title="Open access">
         <div className="flex flex-wrap gap-1.5">
@@ -226,7 +226,7 @@ function JournalRail({
             </Chip>
           ))}
         </div>
-        <p className="text-muted-foreground text-[11px]">
+        <p className="text-muted-foreground text-xs">
           Subscription journals charge no APC; journals with an unknown fee are hidden by a limit.
         </p>
       </Section>
@@ -238,11 +238,11 @@ function JournalRail({
               active={filters.jranks.includes(r)}
               onClick={() => onChange({ jranks: toggle(filters.jranks, r) })}
             >
-              <span className="font-mono">{r.startsWith("CCF") ? r : `CORE ${r}`}</span>
+              <span>{r.startsWith("CCF") ? r : `CORE ${r}`}</span>
             </Chip>
           ))}
         </div>
-        <p className="text-muted-foreground text-[11px]">
+        <p className="text-muted-foreground text-xs">
           CORE journal ranks are the final 2020 edition; SJR quartiles are not shown (see Sources).
         </p>
       </Section>
@@ -277,7 +277,7 @@ function SpecialRail({
 }) {
   const isDefault = !filters.window && !filters.showPassed && !filters.subfields.length;
   return (
-    <div className="space-y-5">
+    <div className="space-y-8">
       <ResetHeader filters={filters} onChange={onChange} isDefault={isDefault} />
       <Section title="Deadline">
         <div className="flex flex-wrap gap-1.5" role="group" aria-label="Deadline window">
@@ -360,7 +360,7 @@ function EventRail({
     }) === JSON.stringify({ ...DEFAULT_FILTERS });
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-8">
       <ResetHeader filters={filters} onChange={onChange} isDefault={isDefault} />
 
       <Section title="Deadline">
@@ -431,9 +431,7 @@ function EventRail({
               active={filters.ranks.includes(r)}
               onClick={() => onChange({ ranks: toggle(filters.ranks, r) })}
             >
-              <span className="font-mono">
-                {r === "unranked" ? "Unranked" : r.startsWith("CCF") ? r : `CORE ${r}`}
-              </span>
+              <span>{r === "unranked" ? "Unranked" : r.startsWith("CCF") ? r : `CORE ${r}`}</span>
             </Chip>
           ))}
         </div>

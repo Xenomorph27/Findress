@@ -59,7 +59,7 @@ export function AcceptanceChart({ data }: { data: AcceptancePoint[] }) {
               axisLine={{ stroke: "var(--hairline-strong)" }}
               tick={{
                 fill: "var(--muted-text)",
-                fontSize: 11,
+                fontSize: 12,
                 fontFamily: "var(--font-geist-mono)",
               }}
             />
@@ -70,7 +70,7 @@ export function AcceptanceChart({ data }: { data: AcceptancePoint[] }) {
               axisLine={false}
               tick={{
                 fill: "var(--muted-text)",
-                fontSize: 11,
+                fontSize: 12,
                 fontFamily: "var(--font-geist-mono)",
               }}
               width={44}

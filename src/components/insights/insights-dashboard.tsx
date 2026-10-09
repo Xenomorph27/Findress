@@ -24,7 +24,7 @@ function Stat({ label, value }: { label: string; value: number }) {
   return (
     <div className="border-hairline bg-surface/50 rounded-xl border px-4 py-3">
       <p className="text-muted-foreground text-xs">{label}</p>
-      <p className="mt-1 text-2xl font-semibold">{value.toLocaleString()}</p>
+      <p className="mt-1 font-mono text-xl">{value.toLocaleString()}</p>
     </div>
   );
 }

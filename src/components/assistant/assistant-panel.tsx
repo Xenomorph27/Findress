@@ -333,10 +333,7 @@ export function AssistantPanel({
               return (
                 <div key={m.id} className="space-y-2">
                   {m.parts.filter(isToolUIPart).map((p, i) => (
-                    <p
-                      key={i}
-                      className="text-muted-foreground flex items-center gap-1.5 font-mono text-[11px]"
-                    >
+                    <p key={i} className="text-muted-foreground flex items-center gap-1.5 text-xs">
                       {p.state === "output-available" || p.state === "output-error" ? (
                         <span className="bg-aurora-1 size-1.5 rounded-full" aria-hidden />
                       ) : (
@@ -431,7 +428,7 @@ export function AssistantPanel({
                 </Button>
               )}
             </div>
-            <p className="text-muted-foreground mt-1.5 px-1 text-[10px]">
+            <p className="text-muted-foreground mt-1.5 px-1 text-xs">
               Grounded in sources · may be wrong — check the official page before you submit.
             </p>
           </form>

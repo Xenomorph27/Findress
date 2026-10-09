@@ -14,7 +14,7 @@ export function linkCitations(text: string): string {
 }
 
 const pill =
-  "mx-0.5 inline-flex h-5 items-center rounded-full border border-hairline-strong bg-surface-2/70 px-1.5 align-[1px] font-mono text-[10px] leading-none text-muted-foreground no-underline transition-colors hover:border-aurora-2/60 hover:text-foreground";
+  "mx-0.5 inline-flex h-5 items-center rounded-full border border-hairline-strong bg-surface-2/70 px-1.5 align-[1px] text-xs leading-none text-muted-foreground no-underline transition-colors hover:border-aurora-2/60 hover:text-foreground";
 
 export function MessageMarkdown({ text, cfpUrl }: { text: string; cfpUrl?: string | null }) {
   const components: Components = {
@@ -85,7 +85,7 @@ export function MessageMarkdown({ text, cfpUrl }: { text: string; cfpUrl?: strin
           {children}
         </code>
       ) : (
-        <code className="bg-surface-2 rounded px-1 py-0.5 font-mono text-[0.85em]">{children}</code>
+        <code className="bg-surface-2 rounded px-1 py-0.5 font-mono text-xs">{children}</code>
       ),
     table: ({ children }) => (
       <div className="my-2 overflow-x-auto">

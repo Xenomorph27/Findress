@@ -46,7 +46,7 @@ export function CfpText({ text }: { text: string }) {
       blocks.push(
         <h3
           key={`h-${blocks.length}`}
-          className="font-display text-foreground mt-6 mb-2 text-xl first:mt-0"
+          className="font-heading text-foreground mt-6 mb-2 text-xl first:mt-0"
         >
           {line.slice(3)}
         </h3>,
@@ -61,5 +61,5 @@ export function CfpText({ text }: { text: string }) {
   }
   flushBullets();
   flushPara();
-  return <div className="text-foreground/85 text-[15px] leading-relaxed">{blocks}</div>;
+  return <div className="text-foreground/85 text-base">{blocks}</div>;
 }

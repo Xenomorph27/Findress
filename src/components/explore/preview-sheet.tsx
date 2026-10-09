@@ -4,7 +4,14 @@ import { ArrowUpRight, CalendarPlus, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { BookmarkStar } from "@/components/event/bookmark-star";
-import { LocationLabel, ModeChip, RankChip, TopicChip, TypeBadge } from "@/components/event/chips";
+import {
+  ChipList,
+  LocationLabel,
+  ModeChip,
+  Ranks,
+  TopicLine,
+  TypeBadge,
+} from "@/components/event/chips";
 import { DeadlineList } from "@/components/event/deadline-list";
 import { TimezoneSelect } from "@/components/timezone/timezone-select";
 import { Button } from "@/components/ui/button";
@@ -59,7 +66,7 @@ export function PreviewSheet({ row, onClose }: { row: ExplorerRow | null; onClos
             <SheetHeader className="border-hairline gap-3 border-b p-6 pb-5">
               <div className="flex items-start justify-between gap-3 pr-8">
                 <div>
-                  <SheetTitle className="font-display text-4xl leading-none font-normal">
+                  <SheetTitle className="font-heading text-3xl leading-tight">
                     {row.acronym} <span className="text-muted-foreground">{row.year}</span>
                   </SheetTitle>
                   <SheetDescription className="text-muted-foreground mt-2 text-sm">
@@ -68,10 +75,9 @@ export function PreviewSheet({ row, onClose }: { row: ExplorerRow | null; onClos
                 </div>
                 <BookmarkStar eventId={row.id} label={`${row.acronym} ${row.year}`} size="md" />
               </div>
-              <div className="flex flex-wrap items-center gap-1.5">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                 <TypeBadge type={row.type} />
-                <RankChip system="CORE" rank={row.rankCore} />
-                <RankChip system="CCF" rank={row.rankCcf} />
+                <Ranks core={row.rankCore} ccf={row.rankCcf} />
                 <ModeChip mode={row.mode} />
               </div>
               <div className="grid gap-1 text-sm">
@@ -115,15 +121,12 @@ export function PreviewSheet({ row, onClose }: { row: ExplorerRow | null; onClos
               </section>
 
               {(row.subfields.length > 0 || row.topics.length > 0) && (
-                <section aria-label="Topics" className="flex flex-wrap gap-1.5">
-                  {row.subfields.map((s) => (
-                    <TopicChip key={s} active>
-                      {SUBFIELD_LABEL[s as SubfieldId] ?? s}
-                    </TopicChip>
-                  ))}
-                  {row.topics.map((t) => (
-                    <TopicChip key={t}>{t}</TopicChip>
-                  ))}
+                <section aria-label="Topics" className="space-y-3">
+                  <ChipList
+                    items={row.subfields.map((s) => SUBFIELD_LABEL[s as SubfieldId] ?? s)}
+                    active
+                  />
+                  <TopicLine items={row.topics} />
                 </section>
               )}
 

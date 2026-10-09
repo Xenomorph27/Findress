@@ -38,7 +38,7 @@ function ThemePanel({ theme }: { theme: "dark" | "light" }) {
       )}
     >
       <div className="flex items-center justify-between">
-        <p className="text-muted-foreground font-mono text-[11px] tracking-[0.18em] uppercase">
+        <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
           {theme} theme
         </p>
         <span className="bg-aurora h-px w-16" aria-hidden />
@@ -51,14 +51,14 @@ function ThemePanel({ theme }: { theme: "dark" | "light" }) {
             <div key={token} className="border-hairline overflow-hidden rounded-lg border">
               <div className="h-10" style={{ background: `var(${token})` }} />
               <div className="px-2 py-1.5">
-                <p className="truncate text-[11px]">{label}</p>
-                <p className="text-muted-foreground font-mono text-[10px]">{token}</p>
+                <p className="truncate text-xs">{label}</p>
+                <p className="text-muted-foreground text-xs">{token}</p>
               </div>
             </div>
           ))}
           <div className="border-hairline col-span-3 overflow-hidden rounded-lg border sm:col-span-4">
             <div className="bg-aurora h-6" />
-            <p className="text-muted-foreground px-2 py-1.5 font-mono text-[10px]">
+            <p className="text-muted-foreground px-2 py-1.5 text-xs">
               aurora gradient — focus rings, active filters, primary highlights (used sparingly)
             </p>
           </div>
@@ -67,8 +67,8 @@ function ThemePanel({ theme }: { theme: "dark" | "light" }) {
 
       <div className="space-y-2">
         <h3 className="text-sm font-medium">Typography</h3>
-        <p className="font-display text-5xl leading-none">Every AI/ML venue.</p>
-        <p className="font-display text-3xl italic">NeurIPS 2026</p>
+        <p className="font-heading text-5xl leading-none">Every AI/ML venue.</p>
+        <p className="font-heading text-3xl">NeurIPS 2026</p>
         <p className="text-base">
           Geist Sans for interface and body copy — dense information that still breathes.
         </p>
@@ -121,7 +121,7 @@ function ThemePanel({ theme }: { theme: "dark" | "light" }) {
         <h3 className="text-sm font-medium">Card, input, skeleton</h3>
         <Card className="border-hairline">
           <CardHeader>
-            <CardTitle className="font-display text-2xl font-normal">ICML 2027</CardTitle>
+            <CardTitle className="font-heading text-xl">ICML 2027</CardTitle>
             <CardDescription>International Conference on Machine Learning</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">

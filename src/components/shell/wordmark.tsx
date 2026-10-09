@@ -30,7 +30,7 @@ export function Wordmark({ className }: { className?: string }) {
       aria-label="FIndress home"
     >
       <OrbitMark className="transition-transform duration-300 group-hover:rotate-12" />
-      <span className="font-display text-[1.45rem] leading-none tracking-tight">FIndress</span>
+      <span className="font-heading text-xl leading-none">FIndress</span>
     </Link>
   );
 }

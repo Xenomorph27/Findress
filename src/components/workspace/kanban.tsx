@@ -63,7 +63,7 @@ function Card({
           onPointerDown={(e) => e.stopPropagation()}
           {...(external ? { target: "_blank", rel: "noreferrer" } : {})}
         >
-          <span className="font-display text-xl leading-none">
+          <span className="font-heading text-base leading-none">
             {item.acronym}
             {item.year != null && <span className="text-muted-foreground"> {item.year}</span>}
           </span>
@@ -166,7 +166,7 @@ function Column({
         <h3 className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
           {STATUS_LABEL[status]}
         </h3>
-        <span className="text-muted-foreground font-mono text-[11px]">{items.length}</span>
+        <span className="text-muted-foreground font-mono text-xs">{items.length}</span>
       </header>
       <SortableContext items={items.map((i) => i.key)} strategy={verticalListSortingStrategy}>
         <ul ref={setNodeRef} className="flex min-h-24 flex-1 flex-col gap-2">

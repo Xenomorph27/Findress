@@ -70,8 +70,8 @@ function SourceCard({ h, now }: { h: SourceHealth; now: number }) {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-3">
-            <h2 className="font-display text-2xl">{meta?.label ?? h.source}</h2>
-            <span className="border-hairline text-muted-foreground rounded border px-1.5 font-mono text-[10px] uppercase">
+            <h2 className="font-heading text-xl">{meta?.label ?? h.source}</h2>
+            <span className="border-hairline text-muted-foreground rounded border px-1.5 text-xs font-medium uppercase">
               {meta?.kind ?? "list"}
             </span>
           </div>
@@ -127,14 +127,14 @@ function SourceCard({ h, now }: { h: SourceHealth; now: number }) {
         </div>
       </dl>
       {Object.keys(stats).length > 0 && (
-        <p className="text-muted-foreground mt-3 font-mono text-[11px]">
+        <p className="text-muted-foreground mt-3 text-xs">
           {Object.entries(stats)
             .map(([k, v]) => `${k} ${v}`)
             .join(" · ")}
         </p>
       )}
       {h.lastRun?.error && (
-        <p className="bg-surface-2/70 text-muted-foreground mt-2 rounded-lg px-3 py-2 font-mono text-[11px] break-words">
+        <p className="bg-surface-2/70 text-muted-foreground mt-2 rounded-lg px-3 py-2 text-xs break-words">
           {h.lastRun.ok === false ? "Error: " : "Warnings: "}
           {h.lastRun.error}
         </p>
@@ -176,7 +176,7 @@ async function SourcesContent() {
         ].map(([label, value]) => (
           <div key={label} className="border-hairline bg-surface/50 rounded-xl border px-4 py-3">
             <p className="text-muted-foreground text-xs">{label}</p>
-            <p className="mt-1 text-2xl font-semibold">{Number(value).toLocaleString()}</p>
+            <p className="mt-1 font-mono text-xl">{Number(value).toLocaleString()}</p>
           </div>
         ))}
       </div>

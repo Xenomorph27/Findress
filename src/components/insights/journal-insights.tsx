@@ -19,7 +19,7 @@ import { formatInZone, zoneShortLabel } from "@/lib/time/format";
 import { BarList } from "./bar-list";
 import { ChartCard, LegendItem, SERIES_VARS, SimpleTable } from "./chart-card";
 
-const tick = { fill: "var(--muted-text)", fontSize: 11, fontFamily: "var(--font-geist-mono)" };
+const tick = { fill: "var(--muted-text)", fontSize: 12, fontFamily: "var(--font-geist-mono)" };
 type Dot = JournalInsights["scatter"][number];
 // Categorical slots in fixed order: full OA = series 1, hybrid = series 2.
 const OA_SERIES = [
@@ -116,7 +116,7 @@ export function JournalInsightsPanel({
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-baseline justify-between gap-2 pt-4">
-        <h2 className="font-display text-3xl">Journals</h2>
+        <h2 className="font-heading text-xl">Journals</h2>
         <p className="text-muted-foreground text-sm">
           <span className="text-foreground font-mono">{data.totals.journals}</span> journals ·{" "}
           <span className="text-foreground font-mono">{data.totals.fullOa}</span> fully open ·{" "}
@@ -193,7 +193,7 @@ export function JournalInsightsPanel({
                   className="hover:bg-surface-2/50 flex flex-wrap items-center justify-between gap-3 rounded-md px-1 py-2.5"
                 >
                   <span className="min-w-0 flex-1">
-                    <span className="font-display text-lg">{c.journal}</span>
+                    <span className="font-heading text-base">{c.journal}</span>
                     <span className="text-muted-foreground ml-2 text-sm">{c.title}</span>
                     <span className="text-muted-foreground block font-mono text-xs">
                       {formatInZone(c.at, zone, "EEE MMM d, yyyy")} {zoneShortLabel(zone)}

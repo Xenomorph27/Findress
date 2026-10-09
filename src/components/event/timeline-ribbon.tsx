@@ -21,6 +21,8 @@ interface Milestone {
   original: string | null;
 }
 
+const RIBBON_MAX = 6;
+
 function toMilestones(
   deadlines: DetailDeadline[],
   startDate: string | null,
@@ -87,6 +89,11 @@ export function TimelineRibbon({
     }
   }
 
+  // The horizontal ribbon only reads well with a handful of milestones; longer schedules
+  // (NeurIPS has eight) use the calm vertical list at every width.
+  const ribbon = items.length <= RIBBON_MAX;
+  const day = (m: Milestone) => formatInZone(m.at, m.isEvent ? "UTC" : zone, "MMM d, yyyy");
+  const time = (m: Milestone) => (m.isEvent ? null : formatInZone(m.at, zone, "HH:mm"));
   const when = (m: Milestone) =>
     m.allDay
       ? formatInZone(m.at, "UTC", "MMM d, yyyy")
@@ -99,7 +106,7 @@ export function TimelineRibbon({
     >
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 id="timeline-title" className="font-display text-2xl">
+          <h2 id="timeline-title" className="font-heading text-xl">
             Timeline
           </h2>
           <p className="text-muted-foreground text-xs">
@@ -115,71 +122,75 @@ export function TimelineRibbon({
       ) : (
         <>
           {/* Desktop: horizontal ribbon */}
-          <div className="relative hidden pt-8 pb-2 md:block">
-            <div
-              aria-hidden
-              className="bg-hairline-strong absolute top-[47px] right-0 left-0 h-px"
-            />
-            <div
-              aria-hidden
-              className="bg-aurora absolute top-[46px] left-0 h-[3px] rounded-full opacity-70 shadow-[0_0_12px_var(--aurora-2)]"
-              style={{ width: `${todayPct ?? 0}%` }}
-            />
-            {todayPct != null && (
+          {ribbon && (
+            <div className="relative hidden pt-8 pb-2 md:block">
               <div
-                className="absolute top-0 flex -translate-x-1/2 flex-col items-center"
-                style={{ left: `${todayPct}%` }}
+                aria-hidden
+                className="bg-hairline-strong absolute top-[47px] right-0 left-0 h-px"
+              />
+              <div
+                aria-hidden
+                className="bg-aurora absolute top-[46px] left-0 h-[3px] rounded-full opacity-70 shadow-[0_0_12px_var(--aurora-2)]"
+                style={{ width: `${todayPct ?? 0}%` }}
+              />
+              {todayPct != null && (
+                <div
+                  className="absolute top-0 flex -translate-x-1/2 flex-col items-center"
+                  style={{ left: `${todayPct}%` }}
+                >
+                  <span className="bg-foreground text-background rounded-full px-1.5 text-xs font-medium tracking-wide uppercase">
+                    today
+                  </span>
+                  <span aria-hidden className="bg-foreground/60 mt-1 h-[22px] w-px" />
+                </div>
+              )}
+              <ol
+                className="relative grid"
+                style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}
               >
-                <span className="bg-foreground text-background rounded-full px-1.5 font-mono text-[9px] tracking-wider uppercase">
-                  today
-                </span>
-                <span aria-hidden className="bg-foreground/60 mt-1 h-[22px] w-px" />
-              </div>
-            )}
-            <ol
-              className="relative grid"
-              style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}
-            >
-              {items.map((m, i) => {
-                const passed = now != null && m.at < now;
-                const isNext = i === nextIdx;
-                return (
-                  <li
-                    key={m.key}
-                    className={cn(
-                      "flex flex-col items-center px-1 text-center",
-                      passed && "opacity-45",
-                    )}
-                  >
-                    <span
-                      aria-hidden
+                {items.map((m, i) => {
+                  const passed = now != null && m.at < now;
+                  const isNext = i === nextIdx;
+                  return (
+                    <li
+                      key={m.key}
                       className={cn(
-                        "border-background mt-[11px] size-3 rounded-full border-2",
-                        m.isEvent
-                          ? "bg-aurora-3"
-                          : isNext
-                            ? "bg-aurora-1 shadow-[0_0_12px_var(--aurora-1)]"
-                            : "bg-muted-foreground",
+                        "flex flex-col items-center px-1 text-center",
+                        passed && "opacity-45",
                       )}
-                    />
-                    <span className="mt-3 text-sm font-medium">{m.title}</span>
-                    {m.detail && (
-                      <span className="text-muted-foreground line-clamp-2 text-[11px]">
-                        {m.detail}
-                      </span>
-                    )}
-                    <span className="text-muted-foreground tabular mt-1 font-mono text-[11px]">
-                      {when(m)}
-                    </span>
-                    {isNext && !m.isEvent && <CountdownChip dueAt={m.at} className="mt-2" />}
-                  </li>
-                );
-              })}
-            </ol>
-          </div>
+                      title={m.detail ?? undefined}
+                    >
+                      <span
+                        aria-hidden
+                        className={cn(
+                          "border-background mt-[11px] size-3 rounded-full border-2",
+                          m.isEvent
+                            ? "bg-aurora-3"
+                            : isNext
+                              ? "bg-aurora-1 shadow-[0_0_12px_var(--aurora-1)]"
+                              : "bg-muted-foreground",
+                        )}
+                      />
+                      <span className="mt-3 text-sm font-medium">{m.title}</span>
+                      <span className="text-muted-foreground mt-1 font-mono text-xs">{day(m)}</span>
+                      {time(m) && (
+                        <span className="text-muted-foreground font-mono text-xs">{time(m)}</span>
+                      )}
+                      {isNext && !m.isEvent && <CountdownChip dueAt={m.at} className="mt-2" />}
+                    </li>
+                  );
+                })}
+              </ol>
+            </div>
+          )}
 
-          {/* Mobile: vertical list */}
-          <ol className="border-hairline-strong relative space-y-4 border-l pl-5 md:hidden">
+          {/* Vertical list: mobile, and desktop when there are too many milestones for a ribbon */}
+          <ol
+            className={cn(
+              "border-hairline-strong relative space-y-5 border-l pl-5",
+              ribbon && "md:hidden",
+            )}
+          >
             {items.map((m, i) => {
               const passed = now != null && m.at < now;
               const isNext = i === nextIdx;
@@ -200,9 +211,7 @@ export function TimelineRibbon({
                           <span className="text-muted-foreground font-normal"> · {m.detail}</span>
                         )}
                       </p>
-                      <p className="text-muted-foreground tabular font-mono text-[11px]">
-                        {when(m)}
-                      </p>
+                      <p className="text-muted-foreground tabular font-mono text-xs">{when(m)}</p>
                     </div>
                     {!m.isEvent && !passed && <CountdownChip dueAt={m.at} />}
                   </div>

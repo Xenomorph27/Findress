@@ -60,7 +60,7 @@ export default async function HomePage() {
                 className="group hover:bg-surface/70 flex h-full flex-col gap-3 p-6 transition-colors"
               >
                 <f.icon className="text-aurora-ink size-5" aria-hidden />
-                <h2 className="font-display text-2xl leading-tight">{f.title}</h2>
+                <h2 className="font-heading text-xl leading-tight">{f.title}</h2>
                 <p className="text-muted-foreground text-sm">{f.body}</p>
               </Link>
             </li>

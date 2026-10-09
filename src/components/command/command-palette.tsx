@@ -134,7 +134,7 @@ export function CommandPalette({
                   value={`event-${hit.slug}`}
                   onSelect={() => go(`/c/${hit.slug}`)}
                 >
-                  <span className="text-aurora-ink shrink-0 font-mono text-xs">
+                  <span className="text-aurora-ink shrink-0 text-sm font-medium">
                     {hit.acronym} {hit.year}
                   </span>
                   <span className="text-muted-foreground truncate">{hit.name}</span>
@@ -152,7 +152,7 @@ export function CommandPalette({
                   onSelect={() => go(`/j/${j.slug}`)}
                 >
                   <BookOpen className="text-muted-foreground" />
-                  <span className="text-aurora-ink shrink-0 font-mono text-xs">
+                  <span className="text-aurora-ink shrink-0 text-sm font-medium">
                     {j.abbreviation}
                   </span>
                   <span className="text-muted-foreground truncate">{j.name}</span>
