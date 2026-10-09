@@ -1,15 +1,18 @@
 import "server-only";
 import { and, asc, desc, eq, gte, inArray, isNull, or, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
-import { cacheLife, cacheTag } from "next/cache";
+import { cacheTag } from "next/cache";
 import { getDb } from "@/lib/db";
 import { acceptanceStats, deadlines, events, eventSources } from "@/lib/db/schema";
 import type { EventDetail, ExplorerRow, RowDeadline } from "./types";
+import { settle, type Settled, unwrap } from "./settle";
 
 /**
  * Cached read models. Every loader is tagged "events" so ingestion can invalidate them with
  * revalidateTag("events"). Loaders return empty results when DATABASE_URL is missing; callers
- * use `withDbFallback` so a database outage renders an error state instead of crashing.
+ * use `withDbFallback` so a database outage renders an error state instead of crashing. Each
+ * loader is split into public → cached → query so no error escapes the cache (see ./settle):
+ * otherwise an unreachable database fails `next build`.
  */
 
 export type LoadResult<T> = { data: T; error: null } | { data: T; error: string };
@@ -28,9 +31,16 @@ const isoOrNull = (d: Date | null) => (d ? d.toISOString() : null);
 
 /** All editions worth exploring: anything from the last ~13 months onward. */
 export async function getExplorerRows(): Promise<ExplorerRow[]> {
+  return unwrap(await getExplorerRowsCached());
+}
+
+async function getExplorerRowsCached(): Promise<Settled<ExplorerRow[]>> {
   "use cache";
-  cacheLife("hours");
   cacheTag("events");
+  return settle("hours", () => getExplorerRowsQuery());
+}
+
+async function getExplorerRowsQuery(): Promise<ExplorerRow[]> {
   const db = getDb();
   if (!db) return [];
 
@@ -133,9 +143,16 @@ export async function getExplorerRows(): Promise<ExplorerRow[]> {
 
 /** Postgres full-text search (used by /api/events and the command palette). */
 export async function searchEventIds(query: string, limit = 200): Promise<number[]> {
+  return unwrap(await searchEventIdsCached(query, limit));
+}
+
+async function searchEventIdsCached(query: string, limit = 200): Promise<Settled<number[]>> {
   "use cache";
-  cacheLife("hours");
   cacheTag("events");
+  return settle("hours", () => searchEventIdsQuery(query, limit));
+}
+
+async function searchEventIdsQuery(query: string, limit = 200): Promise<number[]> {
   const db = getDb();
   const q = query.trim();
   if (!db || !q) return [];
@@ -159,9 +176,16 @@ export async function searchEventIds(query: string, limit = 200): Promise<number
 }
 
 export async function getEventDetail(slug: string): Promise<EventDetail | null> {
+  return unwrap(await getEventDetailCached(slug));
+}
+
+async function getEventDetailCached(slug: string): Promise<Settled<EventDetail | null>> {
   "use cache";
-  cacheLife("hours");
   cacheTag("events", `event:${slug}`);
+  return settle("hours", () => getEventDetailQuery(slug));
+}
+
+async function getEventDetailQuery(slug: string): Promise<EventDetail | null> {
   const db = getDb();
   if (!db) return null;
 
@@ -296,9 +320,16 @@ export async function getEventDetail(slug: string): Promise<EventDetail | null> 
 
 /** Lightweight lookup for metadata. */
 export async function getEventMeta(slug: string) {
+  return unwrap(await getEventMetaCached(slug));
+}
+
+async function getEventMetaCached(slug: string) {
   "use cache";
-  cacheLife("hours");
   cacheTag("events", `event:${slug}`);
+  return settle("hours", () => getEventMetaQuery(slug));
+}
+
+async function getEventMetaQuery(slug: string) {
   const db = getDb();
   if (!db) return null;
   const [e] = await db

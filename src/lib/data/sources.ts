@@ -1,9 +1,10 @@
 import "server-only";
 import { desc, eq, sql } from "drizzle-orm";
-import { cacheLife, cacheTag } from "next/cache";
+import { cacheTag } from "next/cache";
 import { getDb } from "@/lib/db";
 import { events, journals, sourceItems, sourceRuns, specialIssues } from "@/lib/db/schema";
 import { SOURCES } from "@/lib/taxonomy";
+import { settle, type Settled, unwrap } from "./settle";
 
 export interface SourceHealth {
   source: string;
@@ -34,9 +35,16 @@ export interface SourcesOverview {
 }
 
 export async function getSourcesOverview(): Promise<SourcesOverview> {
+  return unwrap(await getSourcesOverviewCached());
+}
+
+async function getSourcesOverviewCached(): Promise<Settled<SourcesOverview>> {
   "use cache";
-  cacheLife("minutes");
   cacheTag("events", "journals", "sources");
+  return settle("minutes", () => getSourcesOverviewQuery());
+}
+
+async function getSourcesOverviewQuery(): Promise<SourcesOverview> {
   const db = getDb();
   if (!db)
     return {

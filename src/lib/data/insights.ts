@@ -1,6 +1,6 @@
 import "server-only";
 import { desc, inArray } from "drizzle-orm";
-import { cacheLife, cacheTag } from "next/cache";
+import { cacheTag } from "next/cache";
 import { getDb } from "@/lib/db";
 import { acceptanceStats, events } from "@/lib/db/schema";
 import {
@@ -12,6 +12,7 @@ import { computeJournalInsights, type JournalInsights } from "@/lib/insights/jou
 import { SUBFIELDS } from "@/lib/taxonomy";
 import { getExplorerRows } from "./events";
 import { getJournalRows, getSpecialIssueRows } from "./journals";
+import { settle, type Settled, unwrap } from "./settle";
 
 /** Flagship series shown in the acceptance-rate chart (first six that have data). */
 const FLAGSHIPS = [
@@ -80,9 +81,16 @@ export interface InsightsPayload {
 }
 
 export async function getInsightsPayload(): Promise<InsightsPayload> {
+  return unwrap(await getInsightsPayloadCached());
+}
+
+async function getInsightsPayloadCached(): Promise<Settled<InsightsPayload>> {
   "use cache";
-  cacheLife("hours");
   cacheTag("events", "journals");
+  return settle("hours", () => getInsightsPayloadQuery());
+}
+
+async function getInsightsPayloadQuery(): Promise<InsightsPayload> {
   const now = Date.now();
   const [rows, acceptance, journals, specials] = await Promise.all([
     getExplorerRows(),

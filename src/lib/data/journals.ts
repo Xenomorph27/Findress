@@ -1,6 +1,6 @@
 import "server-only";
 import { asc, desc, eq, gte, isNotNull, or, sql } from "drizzle-orm";
-import { cacheLife, cacheTag } from "next/cache";
+import { cacheTag } from "next/cache";
 import { getDb } from "@/lib/db";
 import { journals, specialIssues } from "@/lib/db/schema";
 import type {
@@ -9,6 +9,7 @@ import type {
   JournalSpecialIssue,
   SpecialIssueListRow,
 } from "./types";
+import { settle, type Settled, unwrap } from "./settle";
 
 /**
  * Cached journal read models (tag "journals"; ingestion revalidates it). Like the event
@@ -18,9 +19,16 @@ import type {
 const DAY = 86_400_000;
 
 export async function getJournalRows(): Promise<JournalListRow[]> {
+  return unwrap(await getJournalRowsCached());
+}
+
+async function getJournalRowsCached(): Promise<Settled<JournalListRow[]>> {
   "use cache";
-  cacheLife("hours");
   cacheTag("journals");
+  return settle("hours", () => getJournalRowsQuery());
+}
+
+async function getJournalRowsQuery(): Promise<JournalListRow[]> {
   const db = getDb();
   if (!db) return [];
   const rows = await db
@@ -72,9 +80,16 @@ export async function getJournalRows(): Promise<JournalListRow[]> {
 
 /** Special-issue calls whose deadline is unknown or within the last year (older ones drop). */
 export async function getSpecialIssueRows(): Promise<SpecialIssueListRow[]> {
+  return unwrap(await getSpecialIssueRowsCached());
+}
+
+async function getSpecialIssueRowsCached(): Promise<Settled<SpecialIssueListRow[]>> {
   "use cache";
-  cacheLife("hours");
   cacheTag("journals");
+  return settle("hours", () => getSpecialIssueRowsQuery());
+}
+
+async function getSpecialIssueRowsQuery(): Promise<SpecialIssueListRow[]> {
   const db = getDb();
   if (!db) return [];
   const rows = await db
@@ -118,9 +133,16 @@ export async function getSpecialIssueRows(): Promise<SpecialIssueListRow[]> {
 }
 
 export async function getJournalDetail(slug: string): Promise<JournalDetail | null> {
+  return unwrap(await getJournalDetailCached(slug));
+}
+
+async function getJournalDetailCached(slug: string): Promise<Settled<JournalDetail | null>> {
   "use cache";
-  cacheLife("hours");
   cacheTag("journals", `journal:${slug}`);
+  return settle("hours", () => getJournalDetailQuery(slug));
+}
+
+async function getJournalDetailQuery(slug: string): Promise<JournalDetail | null> {
   const db = getDb();
   if (!db) return null;
   const [j] = await db.select().from(journals).where(eq(journals.slug, slug)).limit(1);
@@ -184,9 +206,20 @@ export async function getJournalDetail(slug: string): Promise<JournalDetail | nu
 export async function getJournalMeta(
   slug: string,
 ): Promise<{ name: string; abbreviation: string; publisher: string | null } | null> {
+  return unwrap(await getJournalMetaCached(slug));
+}
+
+async function getJournalMetaCached(
+  slug: string,
+): Promise<Settled<{ name: string; abbreviation: string; publisher: string | null } | null>> {
   "use cache";
-  cacheLife("hours");
   cacheTag("journals", `journal:${slug}`);
+  return settle("hours", () => getJournalMetaQuery(slug));
+}
+
+async function getJournalMetaQuery(
+  slug: string,
+): Promise<{ name: string; abbreviation: string; publisher: string | null } | null> {
   const db = getDb();
   if (!db) return null;
   const [j] = await db
@@ -202,9 +235,16 @@ export async function getJournalMeta(
 }
 
 export async function getJournalSlugs(): Promise<string[]> {
+  return unwrap(await getJournalSlugsCached());
+}
+
+async function getJournalSlugsCached(): Promise<Settled<string[]>> {
   "use cache";
-  cacheLife("hours");
   cacheTag("journals");
+  return settle("hours", () => getJournalSlugsQuery());
+}
+
+async function getJournalSlugsQuery(): Promise<string[]> {
   const db = getDb();
   if (!db) return [];
   return (await db.select({ slug: journals.slug }).from(journals)).map((r) => r.slug);

@@ -1,6 +1,6 @@
 import "server-only";
 import { and, eq, gte } from "drizzle-orm";
-import { cacheLife, cacheTag } from "next/cache";
+import { cacheTag } from "next/cache";
 import { getDb } from "@/lib/db";
 import { sourceRuns } from "@/lib/db/schema";
 import { inDefaultScope, nextDeadline } from "@/lib/explore/filters";
@@ -8,6 +8,7 @@ import { clusterVenues, type VenueCluster } from "@/lib/landing/venues";
 import { LIST_SOURCES } from "@/lib/taxonomy";
 import { getExplorerRows } from "./events";
 import { getJournalRows, getSpecialIssueRows } from "./journals";
+import { settle, type Settled, unwrap } from "./settle";
 
 /** Sources counted as "live" on the landing page: event lists plus the journal pipeline. */
 const LIVE_SOURCES: readonly string[] = [...LIST_SOURCES, "journals", "special-issues"];
@@ -43,9 +44,16 @@ export interface LandingData {
 }
 
 export async function getLandingData(): Promise<LandingData> {
+  return unwrap(await getLandingDataCached());
+}
+
+async function getLandingDataCached(): Promise<Settled<LandingData>> {
   "use cache";
-  cacheLife("hours");
   cacheTag("events", "journals");
+  return settle("hours", () => getLandingDataQuery());
+}
+
+async function getLandingDataQuery(): Promise<LandingData> {
   const now = Date.now();
   const [allRows, journals, specials] = await Promise.all([
     getExplorerRows(),

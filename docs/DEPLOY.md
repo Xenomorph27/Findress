@@ -122,3 +122,13 @@ at a time, so each call stays inside Vercel's 300 s function limit. You can also
   `onlyBuiltDependencies` (pnpm 10) and `allowBuilds` (pnpm 11+) both allow only `esbuild`.
 - If a deploy still reports an old error, redeploy without the build cache (Deployments → ⋯ →
   Redeploy, untick "Use existing Build Cache").
+
+## Build can't reach the database (`ECONNREFUSED 127.0.0.1:54329`)
+
+That address is the local PGlite database from `pnpm db:local`; it only exists on your machine.
+Seeing it in a Vercel log means the project's `DATABASE_URL` was copied from `.env.local`. Set it
+to the Neon pooled URL (Settings → Environment Variables, Production and Preview), then redeploy.
+
+The build itself no longer fails when the database is unreachable: cached loaders settle errors
+into values (`src/lib/data/settle.ts`), the pages prerender with their "unreachable" state, and
+those entries are retried every minute, so the site fills in once the database answers.
