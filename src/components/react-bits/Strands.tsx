@@ -353,7 +353,10 @@ export default function Strands({
     // FIndress: run the loop only while the band is on screen, the tab is visible and the
     // viewer has not asked for reduced motion (then a single still frame is drawn).
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-    let onScreen = false;
+    // Start from the measured position (the observer's first report can lag behind a footer that
+    // is already in view when the component mounts).
+    const box = ctn.getBoundingClientRect();
+    let onScreen = box.bottom > 0 && box.top < window.innerHeight;
     const shouldRun = () => onScreen && !document.hidden && !reducedMotion.matches;
 
     let animateId = 0;

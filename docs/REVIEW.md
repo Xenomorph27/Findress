@@ -178,3 +178,110 @@ rest in the tooltip). Subfield chips on detail pages also follow the 3 + "+N" ru
 Landing globe: cobe v2 raises markers 0.05 above the sphere by default (`markerElevation`), so
 markers near the edge drew outside the globe. They now sit on the surface (`markerElevation: 0`,
 smaller dots), and back-face markers are hidden by cobe.
+
+## Update 2026-10-09 (c) — lighting, whole-app login, React Bits visuals
+
+### What changed
+
+- **Lighting system** (DESIGN.md → Lighting system):
+  - One `--screen` accent per route (`src/lib/theme/route-accents.ts`).
+  - Tint-ladder utilities for rows, nav, tabs, filters, badges and table headers; a 220px top glow
+    on `<main>`; 0.035 grain.
+  - `lift` on raised surfaces; chrome darker than content. The star-field is gone.
+- **Whole-app login:**
+  - `/login` replaces `/unlock`. Every page redirects to `/login?next=…` and API routes answer 401.
+  - Remember me: 30-day cookie; unchecked: browser-session cookie.
+  - 5 wrong passwords lock that IP for 15 minutes (Postgres `login_attempts`).
+  - Log out from the header, the mobile menu, the command palette and the workspace.
+- **React Bits:**
+  - Crystal globe on `/`: CrystalizedBall plus the interactive cobe globe.
+  - RippleDistortion on `/login`; PixelSwap white→dark hand-off after sign-in.
+  - Strands band behind the footer.
+  - All four are in `src/components/react-bits/`, unchanged except the allowed Strands edits.
+- **Performance work to keep Lighthouse ≥ 85 on `/` and `/explore`:**
+  - Decorative WebGL starts on first interaction or 3s after load.
+  - `/explore` ships its rows as a columnar payload (HTML 656 KB → 369 KB).
+  - The title and intro are in the static shell, the desktop rail renders only on desktop, and the
+    row stagger is CSS.
+
+### Bugs found by this verification, and fixed
+
+- **Routes kept alive leaked state.** Next keeps visited routes mounted but hidden (React Activity),
+  so their accent markers stayed in the DOM. After signing in, the hidden `/login` marker kept the
+  site header hidden. After a few navigations the tint could come from the wrong route.
+  `RouteAccentSync` now sets `--screen` and the header/footer visibility from the pathname after
+  every navigation. The first paint still comes from CSS. E2E test: "route tint follows client-side
+  navigation".
+- **cobe moved its canvas.** cobe v2 wraps its canvas in a new div, which crashed React on mobile
+  (`insertBefore`). The globe now renders an empty host and creates the canvas imperatively.
+- **Ball wrapper positioning.** The CrystalizedBall wrapper's `relative` class beat `absolute`,
+  pushing the globe 600px down. The ball now sits in its own absolute wrapper.
+- **Hero layout shift.** The hero shifted when the browser-only globe chunk arrived (CLS 0.3 → 0).
+- **Accessibility fixes:** a `<p>` inside a `<dl>` on journal stat tiles; an Insights link
+  distinguished by colour alone; 18px-tall legend links (now 24px targets).
+- **Timeline "today" marker.** The vertical timeline (used for long schedules such as NeurIPS) had
+  no "today" marker; it has one now.
+- **Duplicate globe places.** Clusters now fold accents and merge places within ~30 km
+  ("Montréal" / "Montreal" / "Palais des congrès de Montréal").
+
+### Part 5 checklist (final run, 2026-10-09)
+
+Automated by `.data/verify.mts`, `.data/globe-check.mts`, `.data/textdiff.mts`, the Playwright e2e
+suite and Lighthouse 12.
+
+| #   | Check                                               | Result             | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| --- | --------------------------------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | typecheck, lint, test, build                        | PASS               | 241 unit tests; 20 e2e (1 desktop-only skip on mobile); 0 build warnings. React Bits files are vendor code, excluded from Prettier/ESLint.                                                                                                                                                                                                                                                                                                                                            |
+| 2   | No console errors / hydration warnings              | PASS               | 12 routes + `/login` × dark/light × 360/390/1440, motion on.                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| 3   | Landing hero content                                | PASS               | "FIndress" h1, headline, tagline, search, Explore button, all 4 stats, deadlines/sources line.                                                                                                                                                                                                                                                                                                                                                                                        |
+| 4   | No text lost vs the pre-typography build            | PASS               | Visible text of 11 pages diffed against 7fdc4c8 (built in a worktree): 0 lines lost on `/`, ICML, NeurIPS, JMLR, MLJ, Insights, Sources, Workspace and the Special-issues tab. On `/explore` the only differences are topic chips past the third (now "+N", allowed) and rows that fall below the first viewport because rows are taller (EvoMUSART, IJRR are still listed; checked by search). Lines the new layout splits in two (acronym / name, date / time) are counted as kept. |
+| 5   | Logged-out redirects and exceptions                 | PASS               | Pages 307 → `/login?next=…`. APIs 401 (JSON, not a redirect, so fetch callers don't receive HTML). Open: `/login`, `/api/auth/*`, `/api/ingest` and `/api/revalidate` (own CRON_SECRET check), `/api/workspace/ics` (own token), `_next/static`, favicon, public images.                                                                                                                                                                                                              |
+| 6   | Wrong password / lockout countdown                  | PASS               | Inline error; the 5th wrong attempt → "Try again in 14:59" ticking, button disabled; row in `login_attempts`.                                                                                                                                                                                                                                                                                                                                                                         |
+| 7   | PixelSwap hand-off → `?next`, no blank flash        | PASS               | Overlay seen, lands on `/sources` and `/j/jmlr`; next page's heading paints 0.5–0.8s after the URL change, over the dark panel.                                                                                                                                                                                                                                                                                                                                                       |
+| 8   | Remember me / session cookie / logout               | PASS               | 30.00 days, httpOnly, SameSite=Lax, Secure; unchecked = session cookie (token capped at 24h); logout from nav and palette both land on `/login` with the cookie cleared.                                                                                                                                                                                                                                                                                                              |
+| 9   | RippleDistortion                                    | PASS (placeholder) | Renders and reacts to the mouse. `public/hero.jpg` is missing, so the generated `public/hero-placeholder.jpg` is used.                                                                                                                                                                                                                                                                                                                                                                |
+| 10  | Crystal ball + whole globe at 360/390/768/1440/1920 | PASS               | Globe box and canvas inside the viewport at every width, no horizontal scroll; markers on the surface (unit test: every projected marker within the 0.8 radius).                                                                                                                                                                                                                                                                                                                      |
+| 11  | Drag, hover, click popover, links, See all          | PASS               | Drag changes the frame; hover "Helsinki, Finland · 1 event"; click → popover IUI 2027 → `/c/iui-2027`; "See all" → `/explore?country=FI&q=Helsinki` (filters correctly). Clicking off the sphere opens nothing. Clusters hold conferences and workshops only: special issues have no location data, so they can't be placed.                                                                                                                                                          |
+| 12  | Keyboard + no-WebGL fallback                        | PASS               | Arrows rotate; Tab walks "Browse by location"; Enter opens the popover. With WebGL disabled: still ball and 12 city links, no errors.                                                                                                                                                                                                                                                                                                                                                 |
+| 13  | Per-route `--screen` + top glow                     | PASS               | All 8 accents verified, and again after client-side navigation; glow 220px, isolated, ends at 70%.                                                                                                                                                                                                                                                                                                                                                                                    |
+| 14  | Tint ladder, grain, lift, chrome                    | PASS               | Classes in use (rows, nav, tabs, filters, badges, table headers, Kanban); grain 0.035; chrome `#03050a` / header `#080c14` / content `#0a0e16` / cards `#0d121b`.                                                                                                                                                                                                                                                                                                                     |
+| 15  | AA contrast                                         | PASS               | Text ≥ 14.5:1 and muted ≥ 5.4:1 on every surface in both themes; muted on the 21% selected tint ≥ 4.9:1 (`--muted-on-tint`). Lighthouse accessibility 100 on all 8 pages after the fixes above.                                                                                                                                                                                                                                                                                       |
+| 16  | Strands footer                                      | PASS               | Canvas behind the footer on every page (`/login` is full-bleed with no footer); text readable; 61 rAF/s visible, 0 off-screen, 0 with the tab hidden.                                                                                                                                                                                                                                                                                                                                 |
+| 17  | `/explore` regression                               | PASS               | Tabs, filters, URL sync, list/cards, preview sheet, `/` `j` Enter, ticking countdowns.                                                                                                                                                                                                                                                                                                                                                                                                |
+| 18  | ICML / JMLR detail + .ics                           | PASS               | Timeline, Call for papers / Aims & scope, Metrics, Sources; both .ics endpoints return VCALENDAR.                                                                                                                                                                                                                                                                                                                                                                                     |
+| 19  | Assistant "Elaborate the problem statement" on ICML | **BLOCKED**        | `ANTHROPIC_API_KEY` is empty in `.env.local`; `/api/chat` answers 503 "ANTHROPIC_API_KEY is not set". Add the key and re-run.                                                                                                                                                                                                                                                                                                                                                         |
+| 20  | Workspace + sources                                 | PASS               | Bookmark → Kanban card, note autosave, private calendar feed; test data removed afterwards. `/sources` all healthy.                                                                                                                                                                                                                                                                                                                                                                   |
+| 21  | `/api/ingest` auth                                  | PASS               | 401 without a bearer; with CRON_SECRET, `source=journal-ranks` ran (129 items).                                                                                                                                                                                                                                                                                                                                                                                                       |
+| 22  | Lighthouse mobile                                   | PASS               | `/`: 91 / 91 / 91 (a11y 100). `/explore`: 87 / 85 / 83, median 85 (a11y 100). Other pages, for reference (a single run each, which varies a few points): `/insights` 86, `/sources` 90, `/c/icml-2026` 82, `/j/jmlr` 72–80, `/workspace` 74. Simulated LCP sits near 3.5–4s because Lighthouse charges the JS bundle to it; the observed LCP is ~0.5s (the static title).                                                                                                             |
+| 23  | Reduced motion                                      | PASS               | No crystal ball, no ripple, Strands draws one still frame, the globe doesn't spin and its loop sleeps (0 rAF over 1.5s idle); CSS transitions collapse to 0.001ms.                                                                                                                                                                                                                                                                                                                    |
+| 24  | 360px, no horizontal scroll                         | PASS               | Every page, both themes.                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| 25  | Screenshots                                         | PASS               | Below.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+
+### Screenshots (`docs/screenshots/`, dark/light × 390/1440, motion on)
+
+- Sign-in: `login-*.png`; the PixelSwap mid-transition: `login-transition-dark-1440.png`,
+  `login-transition-light-390.png`.
+- Landing (crystal globe): `home-*.png`
+- Explore: `explore-*.png`
+- Conference (ICML 2026): `c_icml-2026-*.png`
+- Journal (JMLR): `j_jmlr-*.png`
+- Insights: `insights-*.png`
+- Workspace: `workspace-*.png`
+- Sources: `sources-*.png`
+
+### Notes and decisions
+
+- **PixelSwap trigger.** The registry component has no `trigger="none"`; `trigger="manual"` with
+  `active` controlled is the equivalent. `aspectRatio="auto"` plus `h-dvh w-screen` fills the
+  viewport.
+- **Strands config.** It is used exactly as specified. With `scale 1.5` and `taper 3` on a wide,
+  short band, the strands render as three soft lobes across the footer rather than one continuous
+  line.
+- **Vendor code.** React Bits files are excluded from Prettier (`.prettierignore`) and ESLint (the
+  `pnpm lint` script passes `--ignore-pattern`; a repo hook blocks edits to `eslint.config.mjs`),
+  because their upstream code trips the React Compiler lint rules and must stay unchanged.
+- **Lockout IP.** The lockout keys on the first `X-Forwarded-For` hop, which Vercel sets. Self-hosted
+  behind another proxy, make sure the proxy overwrites that header.
+- **Login screen in light theme.** The PixelSwap hand-off lands on the dark background (per the
+  brief), so in light theme a dark panel briefly precedes the light page.
+- **No new env vars.** `APP_PASSWORD` is unchanged (still the one in `.env.local`).

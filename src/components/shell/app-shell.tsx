@@ -1,10 +1,14 @@
-import type { ReactNode } from "react";
+import { type ReactNode, Suspense } from "react";
 import { type RouteAccentKey, routeAccentCss } from "@/lib/theme/route-accents";
+import { RouteAccentSync } from "./route-accent-sync";
 
-// Route tints, plus: the sign-in screen is full-bleed, so it hides the site header and footer.
+// First paint: route tints from the markers, and the full-bleed sign-in screen hides the site
+// header and footer. After hydration RouteAccentSync owns both (data-chrome + inline --screen),
+// because routes kept alive in the background leave their markers in the DOM.
 const CSS =
   routeAccentCss() +
-  '[data-app-shell]:has([data-route-accent="login"])>:is(header,footer){display:none}';
+  '[data-app-shell]:not([data-chrome]):has([data-route-accent="login"])>:is(header,footer),' +
+  '[data-app-shell][data-chrome="hidden"]>:is(header,footer){display:none}';
 
 /**
  * Root of the app. Sets --screen once for the whole tree (header, page, footer) from the route
@@ -14,6 +18,10 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div data-app-shell className="flex min-h-dvh flex-col">
       <style>{CSS}</style>
+      {/* Reads the pathname (request data), so it streams in; it renders nothing. */}
+      <Suspense fallback={null}>
+        <RouteAccentSync />
+      </Suspense>
       {children}
     </div>
   );

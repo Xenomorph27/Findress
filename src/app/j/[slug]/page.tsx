@@ -62,7 +62,7 @@ function Stat({ label, value, hint }: { label: string; value: React.ReactNode; h
     <div className="bg-surface lift min-w-0 rounded-xl px-4 py-3">
       <dt className="text-muted-foreground text-xs">{label}</dt>
       <dd className="tabular mt-0.5 font-mono text-xl leading-tight">{value ?? "—"}</dd>
-      {hint && <p className="text-muted-foreground mt-0.5 text-xs">{hint}</p>}
+      {hint && <dd className="text-muted-foreground mt-0.5 text-xs">{hint}</dd>}
     </div>
   );
 }

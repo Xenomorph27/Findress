@@ -5,10 +5,10 @@ in your timezone), rankings, acceptance rates, CFP text, journal metrics and spe
 insights, a private workspace, and an assistant grounded in each event's real call for papers and
 each journal's aims & scope.
 
-![Landing](docs/screenshots/landing-dark.png)
-![Explore](docs/screenshots/explore-dark.png)
-![Event](docs/screenshots/event-dark.png)
-![Insights](docs/screenshots/insights-dark.png)
+![Landing](docs/screenshots/home-dark-1440.png)
+![Explore](docs/screenshots/explore-dark-1440.png)
+![Event](docs/screenshots/c_icml-2026-dark-1440.png)
+![Insights](docs/screenshots/insights-dark-1440.png)
 
 ## Architecture
 
@@ -38,17 +38,19 @@ flowchart LR
 ```
 
 ## Run locally
+
 ```bash
 pnpm install
 pnpm db:local        # embedded Postgres on :54329 (or set DATABASE_URL to Neon)
 pnpm db:migrate
 pnpm ingest          # all steps; or --steps=ccfddl,huggingface,openreview,wikicfp,merge,cfp,
                      #   topics,geocode,journals,journal-ranks,journal-pages,special-issues
-pnpm dev             # http://localhost:3000 — unlock at /unlock with APP_PASSWORD
+pnpm dev             # http://localhost:3000 — sign in at /login with APP_PASSWORD
 pnpm test            # unit tests · pnpm test:e2e (against pnpm start)
 ```
 
 ## Environment variables
+
 See `.env.example`: `DATABASE_URL`, `CRON_SECRET`, `GITHUB_TOKEN` (optional), `ENABLE_LLM_TAGGING`,
 `OPENALEX_API_KEY` / `OPENALEX_EMAIL` (optional),
 `AI_PROVIDER`, `AI_MODEL`, `ANTHROPIC_API_KEY`, `AI_GATEWAY_API_KEY`, `AI_EFFORT`,
@@ -56,6 +58,7 @@ See `.env.example`: `DATABASE_URL`, `CRON_SECRET`, `GITHUB_TOKEN` (optional), `E
 `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_DEFAULT_TIMEZONE`.
 
 ## Ingestion
+
 - `GET /api/ingest?source=<step>` with `Authorization: Bearer $CRON_SECRET` (Vercel Cron, daily).
 - `.github/workflows/ingest.yml` calls each step every 6 hours (secrets `CRON_SECRET`, `SITE_URL`).
 - Journals: a second daily cron calls `?source=journals,journal-ranks,journal-pages,special-issues`.
@@ -67,6 +70,7 @@ See `.env.example`: `DATABASE_URL`, `CRON_SECRET`, `GITHUB_TOKEN` (optional), `E
   stops the others. Polite fetching: `FIndressBot/1.0` UA, robots.txt, ≥1 req/s per host (WikiCFP 5 s).
 
 ## Public API <a id="api"></a>
+
 - `GET /api/events` — query params as `/explore`: `q` (full-text), `type`, `subfield`, `rank`
   (`A*,A,B,C,CCF-A,CCF-B,CCF-C,unranked`), `window` (`7|30|90|custom` + `from`,`to`), `passed=1`,
   `evfrom`, `evto`, `continent`, `country`, `mode`, `abstract=1`, `rebuttal=1`, `blind=1`,
@@ -80,4 +84,7 @@ See `.env.example`: `DATABASE_URL`, `CRON_SECRET`, `GITHUB_TOKEN` (optional), `E
   `limit`, `offset`; add `include=special` for open special issues.
 - `GET /api/journals/{slug}` (record incl. special issues) · `GET /api/journals/{slug}/ics`.
 
-Owner-only (cookie from `/unlock`): `/api/chat`, `/api/workspace/*`.
+The whole app (pages and these API routes) sits behind the owner login (`/login`, session cookie).
+Open without a session: `/login`, `/api/auth/*`, `/api/ingest` and `/api/revalidate` (CRON_SECRET
+bearer), `/api/workspace/ics` (private feed token) and static assets. Without a session, pages
+redirect to `/login?next=…` and API routes answer 401.

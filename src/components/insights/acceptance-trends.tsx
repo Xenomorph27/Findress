@@ -74,7 +74,7 @@ export function AcceptanceTrends({ series }: { series: InsightsSlice["acceptance
           <Link
             key={s.seriesKey}
             href={s.slug ? `/c/${s.slug}` : "/explore"}
-            className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-xs"
+            className="text-muted-foreground hover:text-foreground inline-flex min-h-6 items-center gap-1.5 text-xs"
           >
             <span
               aria-hidden

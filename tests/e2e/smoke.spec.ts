@@ -113,3 +113,27 @@ test("journals tab, special issues tab and a journal page", async ({ page, reque
   expect(data.items).toHaveLength(2);
   expect(data.items[0].hIndex).toBeGreaterThanOrEqual(data.items[1].hIndex);
 });
+
+test("route tint follows client-side navigation", async ({ page, isMobile }) => {
+  test.skip(isMobile, "desktop nav");
+  const screen = () =>
+    page.evaluate(() =>
+      getComputedStyle(document.querySelector("[data-app-shell]")!)
+        .getPropertyValue("--screen")
+        .trim()
+        .toLowerCase(),
+    );
+  await page.goto("/insights");
+  const nav = page.getByRole("navigation", { name: "Main" });
+  for (const [label, color] of [
+    ["Sources", "#8a94a6"],
+    ["Explore", "#38bdf8"],
+    ["Workspace", "#f5b84b"],
+    ["Explore", "#38bdf8"],
+  ] as const) {
+    await nav.getByRole("link", { name: label }).click();
+    await page.waitForURL(`**/${label.toLowerCase()}`);
+    await expect.poll(screen).toBe(color);
+  }
+  await expect(page.getByRole("banner")).toBeVisible();
+});

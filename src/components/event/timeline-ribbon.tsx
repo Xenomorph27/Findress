@@ -192,10 +192,26 @@ export function TimelineRibbon({
               ribbon && "md:hidden",
             )}
           >
-            {items.map((m, i) => {
+            {items.flatMap((m, i) => {
               const passed = now != null && m.at < now;
               const isNext = i === nextIdx;
-              return (
+              // The "today" marker sits between the last passed milestone and the next one
+              // (or after the last, once every milestone has passed).
+              const todayHere =
+                now != null && (i === nextIdx || (nextIdx === -1 && i === items.length - 1));
+              const today = (
+                <li key="today" className="relative flex items-center gap-2" aria-label="Today">
+                  <span
+                    aria-hidden
+                    className="bg-foreground absolute top-1/2 -left-[25px] size-2 -translate-y-1/2 rounded-full"
+                  />
+                  <span className="bg-foreground text-background rounded-full px-1.5 text-xs font-medium tracking-wide uppercase">
+                    today
+                  </span>
+                  <span aria-hidden className="bg-foreground/30 h-px flex-1" />
+                </li>
+              );
+              const row = (
                 <li key={m.key} className={cn("relative", passed && "opacity-45")}>
                   <span
                     aria-hidden
@@ -218,6 +234,8 @@ export function TimelineRibbon({
                   </div>
                 </li>
               );
+              if (!todayHere) return [row];
+              return nextIdx === -1 ? [row, today] : [today, row];
             })}
           </ol>
 

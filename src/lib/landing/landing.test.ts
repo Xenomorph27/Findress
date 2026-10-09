@@ -144,4 +144,34 @@ describe("venue clusters", () => {
     expect(ldn.events.map((e) => e.acronym)).toEqual(["B", "A"]);
     expect(exploreHrefFor(ldn)).toBe("/explore?country=GB&q=London");
   });
+
+  it("merges spelling variants and nearby venues into one place", () => {
+    const now = Date.parse("2026-10-09T00:00:00Z");
+    const mk = (id: number, city: string, countryCode: string, lat: number, lng: number) =>
+      row({
+        id,
+        slug: `e${id}-2027`,
+        acronym: `E${id}`,
+        city,
+        country: "x",
+        countryCode,
+        lat,
+        lng,
+      });
+    const clusters = clusterVenues(
+      [
+        mk(1, "Montréal", "CA", 45.5019, -73.5674),
+        mk(2, "Montréal", "CA", 45.503, -73.56),
+        mk(3, "Montreal", "CA", 45.5017, -73.5673),
+        mk(4, "Palais des congrès de Montréal", "CA", 45.5035, -73.5605),
+        mk(5, "Atlanta", "US", 33.749, -84.388),
+        mk(6, "Atlanta", "GE", 33.7489, -84.3879),
+      ],
+      now,
+    );
+    expect(clusters.map((c) => [c.city, c.count])).toEqual([
+      ["Montréal", 4],
+      ["Atlanta", 2],
+    ]);
+  });
 });

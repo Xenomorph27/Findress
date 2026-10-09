@@ -125,7 +125,10 @@ export function JournalInsightsPanel({
             {data.totals.medianApc != null ? `$${data.totals.medianApc.toLocaleString()}` : "—"}
           </span>{" "}
           ·{" "}
-          <Link href={`/explore?tab=journals${sf}`} className="text-aurora-ink hover:underline">
+          <Link
+            href={`/explore?tab=journals${sf}`}
+            className="text-aurora-ink underline underline-offset-2 hover:no-underline"
+          >
             explore journals
           </Link>
         </p>

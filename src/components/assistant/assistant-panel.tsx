@@ -266,9 +266,7 @@ export function AssistantPanel({
                 ? `A research assistant grounded in ${journal.abbreviation}'s aims & scope and its special-issue calls — fit, fees, metrics and deadlines, with citations.`
                 : "Ask across every venue: deadlines, regions, subfields, recent papers."}
           </p>
-          <p className="text-xs">
-            Your session ended. Sign in again to ask.
-          </p>
+          <p className="text-xs">Your session ended. Sign in again to ask.</p>
           <Button asChild variant="outline" size="sm">
             <Link href={`/login?next=${encodeURIComponent(subjectPath)}`}>
               <Lock /> Sign in to ask

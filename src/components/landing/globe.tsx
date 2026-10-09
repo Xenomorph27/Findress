@@ -221,7 +221,10 @@ export function Globe({ venues, highlight }: Props) {
         placeOverlay();
         dirty.current = false;
       }
-      if (onScreen && !document.hidden) raf = requestAnimationFrame(frame);
+      // Keep looping only while something moves (spin, inertia, easing, drag, pulse); an idle
+      // globe (reduced motion, hover, open popover) sleeps until wakeRef is called.
+      const busy = moving || h !== null || drag.current !== null;
+      if (busy && onScreen && !document.hidden) raf = requestAnimationFrame(frame);
     };
     const wake = () => {
       if (!raf && onScreen && !document.hidden) {
