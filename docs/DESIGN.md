@@ -156,19 +156,19 @@ AA: body text is at least 14.5:1 and muted text at least 5.4:1 on every layer. M
 
 ## WebGL scenes (React Bits)
 
-Four React Bits components live in `src/components/react-bits/`. They were installed unchanged from
+React Bits components live in `src/components/react-bits/`. They were installed unchanged from
 the registry (`npx shadcn@latest add @react-bits/<Name>-TS-TW`). Only `Strands.tsx` carries the
 allowed edits: it pauses off-screen, in hidden tabs and under reduced motion, and uses a
 ResizeObserver. The folder is excluded from Prettier (`.prettierignore`) and ESLint (`pnpm lint`
 passes `--ignore-pattern`), so the vendored source stays as published. It isn't git-ignored, so
 Tailwind scans it; no `@source` is needed.
 
-| Where               | Component                                                             | Notes                                                                         |
-| ------------------- | --------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| `/` hero            | CrystalizedBall (`plasma`, `#F25BD0`, size 0.7) behind the cobe globe | "Crystal globe": the ball is decoration; the globe does all the interaction   |
-| `/login` left panel | RippleDistortion over `public/hero.jpg`                               | Uses `hero-placeholder.jpg` until a real `hero.jpg` exists (checked at build) |
-| after sign-in       | PixelSwap, white → `#0a0e16`, full screen                             | `trigger="manual"`, then `router.replace(next)`; reduced motion skips it      |
-| site footer         | Strands band, 180px mobile / 260px desktop                            | On `--chrome`, masked in from the top; text sits on a chrome scrim            |
+| Where                  | Component                                                                                                                         | Notes                                                                                                                                                                                                                                                                                                                                                                                  |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/` hero               | CrystalizedBall (`plasma`, `#F25BD0`, size 0.7) behind the cobe globe                                                             | "Crystal globe": the ball is decoration; the globe does all the interaction                                                                                                                                                                                                                                                                                                            |
+| `/login` (full screen) | Galaxy (back) · RippleDistortion over `public/hero.jpg`, screen-blended at 0.6 with a vignette · LaserFlow (`#FF79C6`) · the card | One layered scene, card centred. LaserFlow takes the card as `surfaceRef`, so the beam lands on its top edge at every width. Phones and low-end devices skip the ripple. The wrapper forwards pointer moves to Galaxy. The card is `#120F17` with a 1.5px `#FF79C6` border, 20px corners and a top glow. Uses `hero-placeholder.jpg` until a real `hero.jpg` exists (checked at build) |
+| after sign-in          | PixelSwap, white → `#0a0e16`, full screen                                                                                         | `trigger="manual"`, then `router.replace(next)`; reduced motion skips it                                                                                                                                                                                                                                                                                                               |
+| site footer            | Strands band, 180px mobile / 260px desktop                                                                                        | On `--chrome`, masked in from the top; text sits on a chrome scrim                                                                                                                                                                                                                                                                                                                     |
 
 Rules for every WebGL scene:
 

@@ -10,7 +10,7 @@ import { formatLockRemaining } from "@/lib/auth/lockout";
 import { safeNextPath } from "@/lib/auth/next-path";
 import { SITE_TAGLINE } from "@/lib/site";
 import { LoginTransition } from "./login-transition";
-import { LoginVisual } from "./login-visual";
+import { LoginScene } from "./login-scene";
 
 interface LoginError {
   message: string;
@@ -34,6 +34,7 @@ export function LoginScreen({ heroSrc }: { heroSrc: string }) {
   const [now, setNow] = useState(() => Date.now());
   const [signedInTo, setSignedInTo] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const cardRef = useRef<HTMLFormElement>(null);
   const ids = { password: useId(), remember: useId(), error: useId() };
 
   // Lockout countdown.
@@ -102,103 +103,106 @@ export function LoginScreen({ heroSrc }: { heroSrc: string }) {
   const locked = lockedMs > 0;
 
   return (
-    <div className="relative grid min-h-dvh lg:grid-cols-2">
-      <LoginVisual src={heroSrc} className="absolute inset-0 lg:relative lg:inset-auto" />
+    <LoginScene heroSrc={heroSrc} cardRef={cardRef}>
       {signedInTo && <LoginTransition to={signedInTo} />}
-
-      <div className="relative flex items-center justify-center px-4 py-12 sm:px-8">
-        <form
-          onSubmit={onSubmit}
-          noValidate
-          aria-describedby={error ? ids.error : undefined}
-          className="bg-surface/95 lift lg:bg-surface w-full max-w-sm space-y-6 rounded-2xl p-7 backdrop-blur-xl sm:p-8"
-        >
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <OrbitMark />
-              <h1 className="font-heading text-xl leading-none">FIndress</h1>
-            </div>
-            <p className="text-muted-foreground text-sm">{SITE_TAGLINE}</p>
+      <form
+        ref={cardRef}
+        onSubmit={onSubmit}
+        noValidate
+        aria-describedby={error ? ids.error : undefined}
+        className={CARD}
+      >
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <OrbitMark />
+            <h1 className="font-heading text-xl leading-none">FIndress</h1>
           </div>
+          <p className="text-muted-foreground text-sm">{SITE_TAGLINE}</p>
+        </div>
 
-          <div className="space-y-2">
-            <label htmlFor={ids.password} className="text-sm font-medium">
-              Password
-            </label>
-            <div className="relative">
-              <input
-                ref={inputRef}
-                id={ids.password}
-                name="password"
-                type={show ? "text" : "password"}
-                autoComplete="current-password"
-                autoFocus
-                required
-                disabled={locked}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                aria-invalid={error && !locked ? true : undefined}
-                className="border-input bg-background/60 placeholder:text-muted-foreground focus-visible:border-screen h-11 w-full rounded-lg border pr-11 pl-3 text-sm outline-none disabled:opacity-60"
-              />
-              <button
-                type="button"
-                onClick={() => setShow((v) => !v)}
-                aria-label={show ? "Hide password" : "Show password"}
-                aria-pressed={show}
-                aria-controls={ids.password}
-                className="text-muted-foreground hover:text-foreground absolute top-1/2 right-1.5 flex size-8 -translate-y-1/2 items-center justify-center rounded-md"
-              >
-                {show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-              </button>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2.5">
-            <Checkbox
-              id={ids.remember}
-              checked={remember}
-              onCheckedChange={(v) => setRemember(v === true)}
+        <div className="space-y-2">
+          <label htmlFor={ids.password} className="text-sm font-medium">
+            Password
+          </label>
+          <div className="relative">
+            <input
+              ref={inputRef}
+              id={ids.password}
+              name="password"
+              type={show ? "text" : "password"}
+              autoComplete="current-password"
+              autoFocus
+              required
+              disabled={locked}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              aria-invalid={error && !locked ? true : undefined}
+              className="border-input bg-background/60 placeholder:text-muted-foreground focus-visible:border-screen h-11 w-full rounded-lg border pr-11 pl-3 text-sm outline-none disabled:opacity-60"
             />
-            <label htmlFor={ids.remember} className="text-sm">
-              Remember me for 30 days
-            </label>
-          </div>
-
-          {error && (
-            <p
-              id={ids.error}
-              role="alert"
-              className="text-destructive text-sm"
-              data-testid="login-error"
+            <button
+              type="button"
+              onClick={() => setShow((v) => !v)}
+              aria-label={show ? "Hide password" : "Show password"}
+              aria-pressed={show}
+              aria-controls={ids.password}
+              className="text-muted-foreground hover:text-foreground absolute top-1/2 right-1.5 flex size-8 -translate-y-1/2 items-center justify-center rounded-md"
             >
-              {locked
-                ? `Too many wrong passwords. Try again in ${formatLockRemaining(lockedMs)}.`
-                : error.message}
-            </p>
-          )}
+              {show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+            </button>
+          </div>
+        </div>
 
-          <Button type="submit" className="h-11 w-full" disabled={pending || locked}>
-            {pending ? (
-              <>
-                <Loader2 className="animate-spin" aria-hidden /> Signing in…
-              </>
-            ) : (
-              "Sign in"
-            )}
-          </Button>
-        </form>
-      </div>
-    </div>
+        <div className="flex items-center gap-2.5">
+          <Checkbox
+            id={ids.remember}
+            checked={remember}
+            onCheckedChange={(v) => setRemember(v === true)}
+          />
+          <label htmlFor={ids.remember} className="text-sm">
+            Remember me for 30 days
+          </label>
+        </div>
+
+        {error && (
+          <p
+            id={ids.error}
+            role="alert"
+            className="text-destructive text-sm"
+            data-testid="login-error"
+          >
+            {locked
+              ? `Too many wrong passwords. Try again in ${formatLockRemaining(lockedMs)}.`
+              : error.message}
+          </p>
+        )}
+
+        <Button type="submit" className="h-11 w-full" disabled={pending || locked}>
+          {pending ? (
+            <>
+              <Loader2 className="animate-spin" aria-hidden /> Signing in…
+            </>
+          ) : (
+            "Sign in"
+          )}
+        </Button>
+      </form>
+    </LoginScene>
   );
 }
 
 export function LoginScreenSkeleton({ heroSrc }: { heroSrc: string }) {
+  const cardRef = useRef<HTMLDivElement>(null);
   return (
-    <div className="relative grid min-h-dvh lg:grid-cols-2">
-      <LoginVisual src={heroSrc} className="absolute inset-0 lg:relative lg:inset-auto" />
-      <div className="relative flex items-center justify-center px-4 py-12">
-        <div className="bg-surface lift h-[360px] w-full max-w-sm rounded-2xl" />
-      </div>
-    </div>
+    <LoginScene heroSrc={heroSrc} cardRef={cardRef}>
+      <div ref={cardRef} className={`${CARD} h-[360px]`} />
+    </LoginScene>
   );
 }
+
+/**
+ * The card, after the LaserFlow demo box: #120F17, a 1.5px beam-pink border, 20px corners, the
+ * lift shadow plus a soft glow along the top edge where the beam lands. Full width (16px margins)
+ * on phones.
+ */
+const CARD =
+  "relative w-full sm:max-w-sm space-y-6 rounded-[20px] border-[1.5px] border-[#FF79C6] bg-[#120F17] p-7 sm:p-8 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.055),0_1px_2px_rgba(0,0,0,0.45),0_-6px_28px_-8px_rgba(255,121,198,0.55),0_0_0_4px_rgba(255,121,198,0.06)]";
