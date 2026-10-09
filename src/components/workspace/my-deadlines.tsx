@@ -17,6 +17,11 @@ export function MyDeadlines({ items, now }: { items: WorkspaceItem[]; now: numbe
     .filter((i) => i.status !== "rejected")
     .flatMap((i) => i.deadlines.map((d) => ({ item: i, d, at: Date.parse(d.dueAtUtc) })))
     .filter((r) => r.at >= now)
+    // A special issue bookmarked on its own and via its journal appears once.
+    .filter(
+      (r, i, all) =>
+        all.findIndex((x) => x.at === r.at && (x.d.label ?? "") === (r.d.label ?? "")) === i,
+    )
     .sort((a, b) => a.at - b.at)
     .slice(0, 60);
 
@@ -55,8 +60,10 @@ export function MyDeadlines({ items, now }: { items: WorkspaceItem[]; now: numbe
                     </span>
                     <span className="text-muted-foreground">
                       {" "}
-                      · {DEADLINE_KIND_LABEL[d.kind as DeadlineKind] ?? d.kind}
-                      {d.label ? ` (${d.label})` : ""}
+                      ·{" "}
+                      {item.kind === "event"
+                        ? `${DEADLINE_KIND_LABEL[d.kind as DeadlineKind] ?? d.kind}${d.label ? ` (${d.label})` : ""}`
+                        : d.label}
                     </span>
                     <span className="text-muted-foreground block font-mono text-xs">
                       {formatInZone(at, zone, "EEE MMM d · HH:mm")} {zoneShortLabel(zone)} ·{" "}

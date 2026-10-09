@@ -103,12 +103,14 @@ function Card({
           <NotebookPen className="text-muted-foreground size-3.5" aria-label="Has notes" />
         )}
       </div>
-      <LocationLabel
-        city={item.city}
-        country={item.country}
-        countryCode={item.countryCode}
-        className="text-muted-foreground mt-2 text-xs"
-      />
+      {item.kind === "event" && (
+        <LocationLabel
+          city={item.city}
+          country={item.country}
+          countryCode={item.countryCode}
+          className="text-muted-foreground mt-2 text-xs"
+        />
+      )}
     </div>
   );
 }

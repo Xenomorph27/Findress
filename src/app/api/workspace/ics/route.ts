@@ -21,11 +21,16 @@ export async function GET(request: Request) {
   if (!db) return Response.json({ error: "db-not-configured" }, { status: 503 });
 
   const items: IcsItem[] = [];
+  const seen = new Set<string>();
   for (const it of await listWorkspace(db)) {
     if (it.status === "rejected") continue;
     const url = it.href.startsWith("/") ? absoluteUrl(it.href) : it.href;
     const label = it.year != null ? `${it.acronym} ${it.year}` : it.acronym;
     it.deadlines.forEach((d, i) => {
+      // A special issue bookmarked on its own and via its journal is one calendar entry.
+      const dedupe = `${d.dueAtUtc}|${d.label ?? d.kind}`;
+      if (seen.has(dedupe)) return;
+      seen.add(dedupe);
       const kind = DEADLINE_KIND_LABEL[d.kind as DeadlineKind] ?? d.kind;
       items.push({
         uid: `${it.key.replace(":", "-")}-${d.kind}-${i}@findress`,

@@ -52,11 +52,40 @@ test("insights and sources render", async ({ page }) => {
 });
 
 test("no horizontal overflow on key pages", async ({ page }) => {
-  for (const path of ["/", "/explore", "/insights", "/sources"]) {
+  for (const path of [
+    "/",
+    "/explore",
+    "/explore?tab=journals",
+    "/j/jmlr",
+    "/insights",
+    "/sources",
+  ]) {
     await page.goto(path);
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
     );
     expect(overflow, path).toBeLessThanOrEqual(0);
   }
+});
+
+test("journals tab, special issues tab and a journal page", async ({ page, request }) => {
+  await page.goto("/explore?tab=journals");
+  await expect(page.getByRole("tab", { name: "Journals" })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  await expect(page.getByText(/\d+ journals/).first()).toBeVisible();
+  await page.getByRole("tab", { name: "Special issues" }).click();
+  await expect(page).toHaveURL(/tab=special/);
+
+  await page.goto("/j/jmlr");
+  await expect(page.getByRole("heading", { level: 1, name: "JMLR" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Aims & scope" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Metrics" })).toBeVisible();
+
+  const res = await request.get("/api/journals?limit=2&jsort=hindex");
+  expect(res.ok()).toBeTruthy();
+  const data = await res.json();
+  expect(data.items).toHaveLength(2);
+  expect(data.items[0].hIndex).toBeGreaterThanOrEqual(data.items[1].hIndex);
 });

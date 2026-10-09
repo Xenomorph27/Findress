@@ -212,7 +212,7 @@ export async function listWorkspace(db: Db): Promise<WorkspaceItem[]> {
         ? [
             {
               kind: "paper",
-              label: "Special issue submission",
+              label: `Special issue: ${r.title}`,
               dueAtUtc: r.due.toISOString(),
               originalTz: null,
             },
