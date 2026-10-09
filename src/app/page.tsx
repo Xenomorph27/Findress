@@ -8,7 +8,15 @@ import { getLandingData, type LandingData } from "@/lib/data/landing";
 const EMPTY: LandingData = {
   next: [],
   markers: [],
-  stats: { tracked: 0, deadlinesThisMonth: 0, sourcesLive: 0, sourcesTotal: 4, workshops: 0 },
+  stats: {
+    conferences: 0,
+    workshops: 0,
+    journals: 0,
+    openSpecialIssues: 0,
+    deadlinesThisMonth: 0,
+    sourcesLive: 0,
+    sourcesTotal: 6,
+  },
 };
 
 const FEATURES = [
@@ -27,13 +35,13 @@ const FEATURES = [
   {
     icon: Bot,
     title: "Ask the call for papers",
-    body: "An assistant grounded in each event’s real CFP text: scope, themes, fit, key dates — with citations.",
+    body: "An assistant grounded in each event’s real CFP and each journal’s aims & scope: themes, fit, key dates — with citations.",
     href: "/explore",
   },
   {
     icon: Database,
     title: "Open sources, shown",
-    body: "ccfddl, Hugging Face ai-deadlines, WikiCFP, OpenReview and official CFP pages — with last-updated times.",
+    body: "ccfddl, Hugging Face ai-deadlines, WikiCFP, OpenReview, OpenAlex and official pages — with last-updated times.",
     href: "/sources",
   },
 ];

@@ -1,6 +1,16 @@
 "use client";
 
-import { BarChart3, Compass, FolderKanban, MoonStar, Radio, Sparkles, Sun } from "lucide-react";
+import {
+  BarChart3,
+  BookOpen,
+  CalendarClock,
+  Compass,
+  FolderKanban,
+  MoonStar,
+  Radio,
+  Sparkles,
+  Sun,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
@@ -26,8 +36,16 @@ interface SearchHit {
   nextDeadlineAt: string | null;
 }
 
+interface JournalHit {
+  slug: string;
+  abbreviation: string;
+  name: string;
+  publisher: string | null;
+}
+
 function useEventSearch(query: string, enabled: boolean) {
   const [hits, setHits] = useState<SearchHit[]>([]);
+  const [journals, setJournals] = useState<JournalHit[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -42,12 +60,24 @@ function useEventSearch(query: string, enabled: boolean) {
           params.set("q", q);
           params.set("passed", "1");
         }
-        const res = await fetch(`/api/events?${params}`, { signal: controller.signal });
+        const [res, jres] = await Promise.all([
+          fetch(`/api/events?${params}`, { signal: controller.signal }),
+          q
+            ? fetch(`/api/journals?${new URLSearchParams({ q, limit: "5", jsort: "hindex" })}`, {
+                signal: controller.signal,
+              })
+            : null,
+        ]);
         if (!res.ok) throw new Error(String(res.status));
         const data = (await res.json()) as { items: SearchHit[] };
         setHits(data.items ?? []);
+        const jdata = jres?.ok ? ((await jres.json()) as { items: JournalHit[] }) : null;
+        setJournals(jdata?.items ?? []);
       } catch (err) {
-        if ((err as Error).name !== "AbortError") setHits([]);
+        if ((err as Error).name !== "AbortError") {
+          setHits([]);
+          setJournals([]);
+        }
       } finally {
         if (!controller.signal.aborted) setLoading(false);
       }
@@ -58,7 +88,7 @@ function useEventSearch(query: string, enabled: boolean) {
     };
   }, [query, enabled]);
 
-  return { hits, loading };
+  return { hits, journals, loading };
 }
 
 export function CommandPalette({
@@ -71,7 +101,7 @@ export function CommandPalette({
   const router = useRouter();
   const { resolvedTheme, setTheme } = useTheme();
   const [query, setQuery] = useState("");
-  const { hits, loading } = useEventSearch(query, open);
+  const { hits, journals, loading } = useEventSearch(query, open);
 
   const go = (href: string) => {
     onOpenChange(false);
@@ -89,12 +119,12 @@ export function CommandPalette({
     >
       <Command shouldFilter={false} className="glass">
         <CommandInput
-          placeholder="Search venues, e.g. NeurIPS, vision workshops…"
+          placeholder="Search venues and journals, e.g. NeurIPS, TMLR, vision workshops…"
           value={query}
           onValueChange={setQuery}
         />
         <CommandList className="max-h-[min(60vh,440px)]">
-          <CommandEmpty>{loading ? "Searching…" : "No venues match."}</CommandEmpty>
+          <CommandEmpty>{loading ? "Searching…" : "No venues or journals match."}</CommandEmpty>
 
           {hits.length > 0 && (
             <CommandGroup heading={query.trim() ? "Venues" : "Next deadlines"}>
@@ -108,6 +138,24 @@ export function CommandPalette({
                     {hit.acronym} {hit.year}
                   </span>
                   <span className="text-muted-foreground truncate">{hit.name}</span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          )}
+
+          {journals.length > 0 && (
+            <CommandGroup heading="Journals">
+              {journals.map((j) => (
+                <CommandItem
+                  key={j.slug}
+                  value={`journal-${j.slug}`}
+                  onSelect={() => go(`/j/${j.slug}`)}
+                >
+                  <BookOpen className="text-muted-foreground" />
+                  <span className="text-aurora-ink shrink-0 font-mono text-xs">
+                    {j.abbreviation}
+                  </span>
+                  <span className="text-muted-foreground truncate">{j.name}</span>
                 </CommandItem>
               ))}
             </CommandGroup>
@@ -131,6 +179,12 @@ export function CommandPalette({
           <CommandGroup heading="Go to">
             <CommandItem value="nav-explore" onSelect={() => go("/explore")}>
               <Compass /> Explore
+            </CommandItem>
+            <CommandItem value="nav-journals" onSelect={() => go("/explore?tab=journals")}>
+              <BookOpen /> Journals
+            </CommandItem>
+            <CommandItem value="nav-special" onSelect={() => go("/explore?tab=special")}>
+              <CalendarClock /> Special issues
             </CommandItem>
             <CommandItem value="nav-insights" onSelect={() => go("/insights")}>
               <BarChart3 /> Insights

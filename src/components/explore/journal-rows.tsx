@@ -10,6 +10,7 @@ import type { JournalListRow, SpecialIssueListRow } from "@/lib/data/types";
 import { specialStatus } from "@/lib/explore/journal-filters";
 import { useMounted } from "@/lib/hooks/use-mounted";
 import { SUBFIELD_LABEL, type SubfieldId } from "@/lib/taxonomy";
+import { formatApc } from "@/lib/journals/format";
 import { formatInZone, zoneShortLabel } from "@/lib/time/format";
 import { cn } from "@/lib/utils";
 
@@ -46,15 +47,9 @@ export function OaBadge({
   );
 }
 
-export function formatApc(r: Pick<JournalListRow, "openAccess" | "apcUsd">): string {
-  if (r.apcUsd === 0) return "No APC";
-  if (r.apcUsd != null) return `APC $${r.apcUsd.toLocaleString("en-US")}`;
-  return r.openAccess === "subscription" ? "No APC (subscription)" : "APC not announced";
-}
-
 function Metric({ label, value }: { label: string; value: string | number | null }) {
   return (
-    <span className="flex items-baseline justify-between gap-2 md:justify-start">
+    <span className="flex items-baseline gap-2">
       <span className="text-muted-foreground text-[11px]">{label}</span>
       <span className="tabular font-mono text-[12px]">{value ?? "—"}</span>
     </span>
@@ -146,7 +141,7 @@ export function JournalResultRow({
         <BookmarkStar eventId={row.id} kind="journal" label={row.abbreviation} />
       </div>
 
-      <div className="col-span-2 grid grid-cols-2 gap-x-4 gap-y-0.5 md:col-span-1 md:block md:space-y-0.5">
+      <div className="col-span-2 flex flex-wrap gap-x-5 gap-y-0.5 md:col-span-1 md:block md:space-y-0.5">
         <Metric label="h-index" value={row.hIndex} />
         <Metric label="2-yr cited" value={row.twoYrMeanCitedness?.toFixed(2) ?? null} />
       </div>

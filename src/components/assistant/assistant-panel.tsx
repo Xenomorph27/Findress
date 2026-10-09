@@ -20,6 +20,36 @@ export interface AssistantEventRef {
   cfpUrl?: string | null;
 }
 
+/** A journal page's assistant: grounded in its aims & scope and special-issue calls. */
+export interface AssistantJournalRef {
+  id: number;
+  slug: string;
+  abbreviation: string;
+  hasScope: boolean;
+  scopeUrl?: string | null;
+  /** Title of the soonest open special issue, used by the "summarize this call" prompt. */
+  openCall?: string | null;
+}
+
+const JOURNAL_PROMPTS = [
+  {
+    label: "Does my paper fit the scope?",
+    text: "Does my paper fit this journal's aims and scope? My paper is about ",
+  },
+  {
+    label: "Compare with TMLR and JMLR",
+    text: "Compare this journal with TMLR and JMLR: scope, open access and fees, review model, speed and impact metrics.",
+  },
+  {
+    label: "Summarize this special issue's call",
+    text: "Summarize the open special issue call(s): theme, topics wanted, guest editors and the submission deadline in my timezone.",
+  },
+  {
+    label: "Fees and open access",
+    text: "What does it cost to publish here, and is it open access? Cite where each fact comes from.",
+  },
+];
+
 const EVENT_PROMPTS = [
   {
     label: "Elaborate the problem statement",
@@ -60,6 +90,8 @@ const GLOBAL_PROMPTS = [
 const TOOL_LABEL: Record<string, string> = {
   getEvent: "Looked up an event",
   searchEvents: "Searched the archive",
+  getJournal: "Looked up a journal",
+  searchJournals: "Searched journals",
   fetchPage: "Read a linked page",
   searchArxiv: "Searched arXiv",
 };
@@ -88,18 +120,26 @@ async function errorMessage(err: Error | undefined): Promise<string | null> {
 
 export function AssistantPanel({
   event,
+  journal,
   initialQuestion,
   className,
   autoFocus,
 }: {
   event?: AssistantEventRef;
+  journal?: AssistantJournalRef;
   initialQuestion?: string;
   className?: string;
   autoFocus?: boolean;
 }) {
   const owner = useOwner();
   const { tz } = useTimezone();
-  const scope = event ? `event:${event.id}` : "global";
+  const scope = event ? `event:${event.id}` : journal ? `journal:${journal.id}` : "global";
+  const subjectLabel = event
+    ? `${event.acronym} ${event.year}`
+    : journal
+      ? journal.abbreviation
+      : null;
+  const subjectPath = event ? `/c/${event.slug}` : journal ? `/j/${journal.slug}` : "/explore";
   const [input, setInput] = useState("");
   const [errorText, setErrorText] = useState<string | null>(null);
   const [historyLoaded, setHistoryLoaded] = useState(false);
@@ -111,9 +151,13 @@ export function AssistantPanel({
     () =>
       new DefaultChatTransport({
         api: "/api/chat",
-        body: () => ({ eventSlug: event?.slug ?? null, tz }),
+        body: () => ({
+          eventSlug: event?.slug ?? null,
+          journalSlug: journal?.slug ?? null,
+          tz,
+        }),
       }),
-    [event?.slug, tz],
+    [event?.slug, journal?.slug, tz],
   );
   const { messages, sendMessage, status, error, stop, setMessages, clearError } = useChat({
     id: scope,
@@ -181,7 +225,11 @@ export function AssistantPanel({
     );
   };
 
-  const prompts = event ? EVENT_PROMPTS : GLOBAL_PROMPTS;
+  const prompts = event
+    ? EVENT_PROMPTS
+    : journal
+      ? JOURNAL_PROMPTS.filter((p) => journal.openCall || !p.label.includes("special issue"))
+      : GLOBAL_PROMPTS;
 
   return (
     <section
@@ -193,7 +241,7 @@ export function AssistantPanel({
           <Sparkles className="text-aurora-ink size-4" aria-hidden />
           <h2 className="text-sm font-medium">Ask FIndress</h2>
           <span className="text-muted-foreground text-xs">
-            {event ? `· ${event.acronym} ${event.year}` : "· whole archive"}
+            {subjectLabel ? `· ${subjectLabel}` : "· whole archive"}
           </span>
         </div>
         {messages.length > 0 && (
@@ -214,15 +262,15 @@ export function AssistantPanel({
           <p>
             {event
               ? `A research assistant grounded in the ${event.acronym} ${event.year} call for papers — scope, themes, fit and key dates, with citations.`
-              : "Ask across every venue: deadlines, regions, subfields, recent papers."}
+              : journal
+                ? `A research assistant grounded in ${journal.abbreviation}'s aims & scope and its special-issue calls — fit, fees, metrics and deadlines, with citations.`
+                : "Ask across every venue: deadlines, regions, subfields, recent papers."}
           </p>
           <p className="text-xs">
             The assistant uses a paid API, so it’s available after you unlock your workspace.
           </p>
           <Button asChild variant="outline" size="sm">
-            <Link
-              href={`/unlock?next=${encodeURIComponent(event ? `/c/${event.slug}` : "/explore")}`}
-            >
+            <Link href={`/unlock?next=${encodeURIComponent(subjectPath)}`}>
               <Lock /> Unlock to ask
             </Link>
           </Button>
@@ -242,7 +290,11 @@ export function AssistantPanel({
                     ? event.hasCfp
                       ? "Answers come from this event’s call for papers and records, with citations."
                       : "The official CFP text hasn’t been fetched yet; answers use the event record and source descriptions."
-                    : "Ask about any venue in the archive."}
+                    : journal
+                      ? journal.hasScope
+                        ? "Answers come from this journal’s aims & scope, its special-issue calls and its record, with citations."
+                        : "The journal’s aims & scope page couldn’t be fetched; answers use its record and special-issue calls."
+                      : "Ask about any venue or journal in the archive."}
                 </p>
                 <div className="flex flex-wrap gap-1.5">
                   {prompts.map((p) => (
@@ -293,7 +345,9 @@ export function AssistantPanel({
                       {toolSummary(p as never)}
                     </p>
                   ))}
-                  {text && <MessageMarkdown text={text} cfpUrl={event?.cfpUrl} />}
+                  {text && (
+                    <MessageMarkdown text={text} cfpUrl={event?.cfpUrl ?? journal?.scopeUrl} />
+                  )}
                   {isLast && status === "streaming" && (
                     <span
                       aria-hidden
@@ -353,9 +407,7 @@ export function AssistantPanel({
                     submit(input);
                   }
                 }}
-                placeholder={
-                  event ? `Ask about ${event.acronym} ${event.year}…` : "Ask about any venue…"
-                }
+                placeholder={subjectLabel ? `Ask about ${subjectLabel}…` : "Ask about any venue…"}
                 className="placeholder:text-muted-foreground max-h-40 min-h-10 flex-1 resize-none bg-transparent px-2 py-1.5 text-sm outline-none"
               />
               {busy ? (

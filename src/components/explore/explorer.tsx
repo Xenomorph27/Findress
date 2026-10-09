@@ -613,7 +613,7 @@ function TabBar({ value, onChange }: { value: ExploreTab; onChange: (t: ExploreT
     <div
       role="tablist"
       aria-label="What to explore"
-      className="border-hairline bg-surface/50 mb-3 flex w-full scrollbar-none gap-1 overflow-x-auto rounded-xl border p-1 sm:w-fit"
+      className="border-hairline bg-surface/50 mb-3 flex w-full flex-wrap gap-1 rounded-xl border p-1 sm:w-fit sm:flex-nowrap"
     >
       {EXPLORE_TABS.map((t, i) => {
         const active = t.value === value;

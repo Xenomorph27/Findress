@@ -86,7 +86,14 @@ const rows: ExplorerRow[] = [
 describe("computeSlice", () => {
   it("aggregates totals, heatmap, months, places, ranks and topics", () => {
     const s = computeSlice(rows, [], null, NOW);
-    expect(s.totals).toEqual({ events: 3, upcoming: 2, workshops: 1, countries: 2, next30: 1 });
+    expect(s.totals).toEqual({
+      events: 3,
+      upcoming: 2,
+      workshops: 1,
+      countries: 2,
+      next30: 1,
+      specialOpen: 0,
+    });
     expect(s.heatmap.start).toBe("2026-10-05");
     expect(s.heatmap.counts.reduce((a, b) => a + b, 0)).toBe(3);
     expect(s.heatmap.max).toBe(1);

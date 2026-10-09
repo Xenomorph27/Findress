@@ -18,7 +18,10 @@ function level(count: number, max: number): number {
   return Math.min(5, Math.ceil((count / max) * 5));
 }
 
-/** GitHub-style calendar of submission deadlines for the next 12 months. Click a day → /explore. */
+/**
+ * GitHub-style calendar of submission deadlines (events and journal special issues) for the
+ * next 12 months. Click a day → /explore.
+ */
 export function DeadlineHeatmap({
   data,
   subfield,
@@ -63,7 +66,7 @@ export function DeadlineHeatmap({
   return (
     <ChartCard
       title="Deadline calendar"
-      description="Abstract and paper deadlines per day, next 12 months. Click a day to see those venues."
+      description="Abstract, paper and special-issue deadlines per day, next 12 months. Click a day to see them."
       table={
         <SimpleTable head={["Day", "Deadlines"]} rows={busiest.map((b) => [dayIso(b.i), b.c])} />
       }

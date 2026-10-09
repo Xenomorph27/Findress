@@ -48,10 +48,21 @@ export async function loadChat(db: Db, scope: string): Promise<unknown[]> {
   return row?.messages ?? [];
 }
 
-export async function saveChat(db: Db, scope: string, eventId: number | null, messages: unknown[]) {
+export async function saveChat(
+  db: Db,
+  scope: string,
+  target: { eventId?: number | null; journalId?: number | null },
+  messages: unknown[],
+) {
   await db
     .insert(chats)
-    .values({ scope, eventId, messages, updatedAt: new Date() })
+    .values({
+      scope,
+      eventId: target.eventId ?? null,
+      journalId: target.journalId ?? null,
+      messages,
+      updatedAt: new Date(),
+    })
     .onConflictDoUpdate({ target: chats.scope, set: { messages, updatedAt: new Date() } });
 }
 

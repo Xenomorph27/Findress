@@ -2,7 +2,9 @@ import "server-only";
 import { tool } from "ai";
 import { z } from "zod";
 import { getEventDetail, getExplorerRows, searchEventIds } from "@/lib/data/events";
+import { getJournalDetail, getJournalRows, getSpecialIssueRows } from "@/lib/data/journals";
 import { applyFilters, DEFAULT_FILTERS, nextDeadline } from "@/lib/explore/filters";
+import { applyJournalFilters, applySpecialFilters } from "@/lib/explore/journal-filters";
 import { PoliteFetcher, RobotsDisallowedError } from "@/lib/ingest/http";
 import { extractCfp } from "@/lib/sources/cfp";
 import { CONTINENTS, EVENT_TYPES, SUBFIELDS } from "@/lib/taxonomy";
@@ -153,8 +155,111 @@ export function buildTools({ tz, allowedHosts }: { tz: string; allowedHosts: str
       },
     }),
 
+    getJournal: tool({
+      description:
+        "Look up one journal by slug (e.g. 'jmlr', 'tmlr', 'tpami', 'mlj'). Returns publisher, ISSNs, open access and APC, OpenAlex metrics (with date), published impact factors (with source and year), CORE/CCF ranks, time to first decision, the start of its aims & scope, and its special-issue calls.",
+      inputSchema: z.object({ slug: z.string().describe("Journal slug, e.g. 'jmlr'") }),
+      execute: async ({ slug }) => {
+        const j = await getJournalDetail(slug.toLowerCase().trim());
+        if (!j) return { found: false, slug };
+        return {
+          found: true,
+          slug: j.slug,
+          name: j.name,
+          abbreviation: j.abbreviation,
+          publisher: j.publisher,
+          issn: { print: j.issnPrint, online: j.issnOnline },
+          openAccess: j.openAccess ?? "not known",
+          apcUsd: j.apcUsd ?? "not known",
+          openalex: {
+            asOf: j.metricsAsOf?.slice(0, 10) ?? null,
+            hIndex: j.hIndex,
+            twoYearMeanCitedness: j.twoYrMeanCitedness,
+            works: j.worksCount,
+            citations: j.citedByCount,
+          },
+          publishedMetrics: j.impactMetrics,
+          ranks: { coreJournal2020: j.rankCoreJournal, ccf2026: j.rankCcf },
+          reviewModel: j.reviewModel ?? "not stated",
+          timeToFirstDecision: j.avgTimeToFirstDecision ?? "not published",
+          homepage: j.homepage,
+          submissionGuidelines: j.submissionUrl,
+          scopeExcerpt: j.scopeText ? j.scopeText.slice(0, 2500) : null,
+          specialIssues: j.specialIssues.slice(0, 8).map((c) => ({
+            title: c.title,
+            deadline: c.submissionDeadlineUtc
+              ? `${formatInZone(c.submissionDeadlineUtc, tz, "yyyy-MM-dd HH:mm")} ${tz} (stated "${c.deadlineText ?? "?"}", end of day AoE)`
+              : "not stated",
+            guestEditors: c.guestEditors,
+            url: c.url,
+          })),
+          url: `/j/${j.slug}`,
+        };
+      },
+    }),
+
+    searchJournals: tool({
+      description:
+        "Search AI/ML journals and their special-issue calls. Filters optional. Returns journals (sorted by open calls, then h-index) and open special issues matching the query.",
+      inputSchema: z.object({
+        query: z.string().optional().describe("Free text: name, abbreviation, publisher or topic"),
+        subfield: z.enum(SUBFIELDS.map((s) => s.id) as [string, ...string[]]).optional(),
+        openAccess: z.enum(["full", "hybrid", "subscription"]).optional(),
+        maxApcUsd: z.number().int().min(0).optional().describe("0 = free to publish"),
+        rank: z
+          .enum(["A*", "A", "B", "C", "CCF-A", "CCF-B", "CCF-C"])
+          .optional()
+          .describe("CORE journal rank or CCF tier"),
+        sort: z.enum(["calls", "hindex", "citedness", "apc", "name"]).optional(),
+        limit: z.number().int().min(1).max(25).optional(),
+      }),
+      execute: async (input) => {
+        const now = Date.now();
+        const filters = {
+          ...DEFAULT_FILTERS,
+          q: input.query ?? "",
+          subfields: input.subfield ? [input.subfield] : [],
+          oa: input.openAccess ? [input.openAccess] : [],
+          apcMax: input.maxApcUsd != null ? String(input.maxApcUsd) : "",
+          jranks: input.rank ? [input.rank] : [],
+          jsort: input.sort ?? "calls",
+        };
+        const journals = applyJournalFilters(await getJournalRows(), filters, now);
+        const calls = applySpecialFilters(
+          await getSpecialIssueRows(),
+          { ...filters, showPassed: false },
+          now,
+        );
+        return {
+          total: journals.length,
+          journals: journals.slice(0, input.limit ?? 12).map((j) => ({
+            slug: j.slug,
+            abbreviation: j.abbreviation,
+            name: j.name,
+            publisher: j.publisher,
+            openAccess: j.openAccess ?? "not known",
+            apcUsd: j.apcUsd ?? "not known",
+            hIndex: j.hIndex,
+            twoYearMeanCitedness: j.twoYrMeanCitedness,
+            ranks:
+              [j.rankCoreJournal && `CORE ${j.rankCoreJournal}`, j.rankCcf && `CCF ${j.rankCcf}`]
+                .filter(Boolean)
+                .join(", ") || "unranked",
+            openCalls: j.openCalls,
+            url: `/j/${j.slug}`,
+          })),
+          openSpecialIssues: calls.slice(0, 10).map((c) => ({
+            title: c.title,
+            journal: c.journal?.abbreviation ?? c.journalName ?? "not stated",
+            deadline: c.at ? `${formatInZone(c.at, tz, "yyyy-MM-dd HH:mm")} ${tz}` : "not stated",
+            url: c.journal ? `/j/${c.journal.slug}#si-${c.id}` : c.url,
+          })),
+        };
+      },
+    }),
+
     fetchPage: tool({
-      description: `Fetch a web page and return its main text (Readability). Only these hosts are allowed: ${[...ALWAYS_ALLOWED, ...allowedHosts].join(", ")}. Use it for pages linked from the CFP (author guidelines, workshop pages, OpenReview).`,
+      description: `Fetch a web page and return its main text (Readability). Only these hosts are allowed: ${[...ALWAYS_ALLOWED, ...allowedHosts].join(", ")}. Use it for pages linked from the CFP or the journal (author guidelines, workshop pages, special-issue calls, OpenReview).`,
       inputSchema: z.object({ url: z.url() }),
       execute: async ({ url }) => {
         if (!isAllowedUrl(url, allowedHosts)) {

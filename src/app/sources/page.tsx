@@ -72,7 +72,7 @@ function SourceCard({ h, now }: { h: SourceHealth; now: number }) {
           <div className="flex items-center gap-3">
             <h2 className="font-display text-2xl">{meta?.label ?? h.source}</h2>
             <span className="border-hairline text-muted-foreground rounded border px-1.5 font-mono text-[10px] uppercase">
-              {meta?.kind === "enrichment" ? "enrichment" : "list"}
+              {meta?.kind ?? "list"}
             </span>
           </div>
           <p className="text-muted-foreground mt-1 max-w-xl text-sm">{meta?.description}</p>
@@ -165,12 +165,14 @@ async function SourcesContent() {
   const now = requestTime();
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
         {[
           ["Events", totals.events],
           ["Workshops", totals.workshops],
           ["With CFP text", totals.withCfp],
           ["On the map", totals.geocoded],
+          ["Journals", totals.journals],
+          ["Special issues", totals.specialIssues],
         ].map(([label, value]) => (
           <div key={label} className="border-hairline bg-surface/50 rounded-xl border px-4 py-3">
             <p className="text-muted-foreground text-xs">{label}</p>

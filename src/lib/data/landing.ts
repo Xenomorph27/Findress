@@ -3,9 +3,13 @@ import { and, eq, gte } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
 import { getDb } from "@/lib/db";
 import { sourceRuns } from "@/lib/db/schema";
-import { nextDeadline } from "@/lib/explore/filters";
+import { inDefaultScope, nextDeadline } from "@/lib/explore/filters";
 import { LIST_SOURCES } from "@/lib/taxonomy";
 import { getExplorerRows } from "./events";
+import { getJournalRows, getSpecialIssueRows } from "./journals";
+
+/** Sources counted as "live" on the landing page: event lists plus the journal pipeline. */
+const LIVE_SOURCES: readonly string[] = [...LIST_SOURCES, "journals", "special-issues"];
 
 export interface LandingDeadline {
   id: number;
@@ -25,20 +29,29 @@ export interface LandingData {
   next: LandingDeadline[];
   markers: { id: string; lat: number; lng: number }[];
   stats: {
-    tracked: number;
+    /** Current editions (the /explore default view), split by kind. */
+    conferences: number;
+    workshops: number;
+    journals: number;
+    openSpecialIssues: number;
     deadlinesThisMonth: number;
     sourcesLive: number;
     sourcesTotal: number;
-    workshops: number;
   };
 }
 
 export async function getLandingData(): Promise<LandingData> {
   "use cache";
   cacheLife("hours");
-  cacheTag("events");
+  cacheTag("events", "journals");
   const now = Date.now();
-  const rows = (await getExplorerRows()).filter((r) => !r.communityOnly);
+  const [allRows, journals, specials] = await Promise.all([
+    getExplorerRows(),
+    getJournalRows(),
+    getSpecialIssueRows(),
+  ]);
+  const rows = allRows.filter((r) => !r.communityOnly);
+  const current = rows.filter((r) => inDefaultScope(r, now));
 
   const upcoming = rows
     .map((r) => ({ r, nd: nextDeadline(r, now) }))
@@ -73,10 +86,11 @@ export async function getLandingData(): Promise<LandingData> {
   const monthStart = new Date(now);
   const startMs = Date.UTC(monthStart.getUTCFullYear(), monthStart.getUTCMonth(), 1);
   const endMs = Date.UTC(monthStart.getUTCFullYear(), monthStart.getUTCMonth() + 1, 1);
-  const deadlinesThisMonth = rows.reduce(
-    (n, r) => n + r.deadlines.filter((d) => d.at >= startMs && d.at < endMs).length,
-    0,
-  );
+  const deadlinesThisMonth =
+    rows.reduce(
+      (n, r) => n + r.deadlines.filter((d) => d.at >= startMs && d.at < endMs).length,
+      0,
+    ) + specials.filter((s) => s.at != null && s.at >= startMs && s.at < endMs).length;
 
   let sourcesLive = 0;
   const db = getDb();
@@ -87,18 +101,20 @@ export async function getLandingData(): Promise<LandingData> {
       .from(sourceRuns)
       .where(and(eq(sourceRuns.ok, true), gte(sourceRuns.startedAt, since)))
       .groupBy(sourceRuns.source);
-    sourcesLive = live.filter((l) => (LIST_SOURCES as readonly string[]).includes(l.source)).length;
+    sourcesLive = live.filter((l) => LIVE_SOURCES.includes(l.source)).length;
   }
 
   return {
     next,
     markers,
     stats: {
-      tracked: rows.length,
+      conferences: current.filter((r) => r.type !== "workshop").length,
+      workshops: current.filter((r) => r.type === "workshop").length,
+      journals: journals.length,
+      openSpecialIssues: specials.filter((s) => s.at != null && s.at >= now).length,
       deadlinesThisMonth,
       sourcesLive,
-      sourcesTotal: LIST_SOURCES.length,
-      workshops: rows.filter((r) => r.type === "workshop").length,
+      sourcesTotal: LIVE_SOURCES.length,
     },
   };
 }

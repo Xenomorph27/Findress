@@ -2,7 +2,7 @@ import "server-only";
 import { desc, eq, sql } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
 import { getDb } from "@/lib/db";
-import { events, sourceItems, sourceRuns } from "@/lib/db/schema";
+import { events, journals, sourceItems, sourceRuns, specialIssues } from "@/lib/db/schema";
 import { SOURCES } from "@/lib/taxonomy";
 
 export interface SourceHealth {
@@ -23,19 +23,26 @@ export interface SourceHealth {
 export interface SourcesOverview {
   sources: SourceHealth[];
   merge: SourceHealth | null;
-  totals: { events: number; withCfp: number; geocoded: number; workshops: number };
+  totals: {
+    events: number;
+    withCfp: number;
+    geocoded: number;
+    workshops: number;
+    journals: number;
+    specialIssues: number;
+  };
 }
 
 export async function getSourcesOverview(): Promise<SourcesOverview> {
   "use cache";
   cacheLife("minutes");
-  cacheTag("events", "sources");
+  cacheTag("events", "journals", "sources");
   const db = getDb();
   if (!db)
     return {
       sources: [],
       merge: null,
-      totals: { events: 0, withCfp: 0, geocoded: 0, workshops: 0 },
+      totals: { events: 0, withCfp: 0, geocoded: 0, workshops: 0, journals: 0, specialIssues: 0 },
     };
 
   const itemCounts = await db
@@ -80,7 +87,7 @@ export async function getSourcesOverview(): Promise<SourcesOverview> {
     };
   };
 
-  const [sources, merge, [totals]] = await Promise.all([
+  const [sources, merge, [totals], [jt]] = await Promise.all([
     Promise.all(SOURCES.map(health)),
     health("merge"),
     db
@@ -91,6 +98,20 @@ export async function getSourcesOverview(): Promise<SourcesOverview> {
         workshops: sql<number>`count(*) filter (where ${events.type} = 'workshop')::int`,
       })
       .from(events),
+    db
+      .select({
+        journals: sql<number>`(select count(*)::int from ${journals})`,
+        specialIssues: sql<number>`(select count(*)::int from ${specialIssues})`,
+      })
+      .from(sql`(select 1) as one`),
   ]);
-  return { sources, merge: merge.lastRun ? merge : null, totals };
+  return {
+    sources,
+    merge: merge.lastRun ? merge : null,
+    totals: {
+      ...totals,
+      journals: Number(jt?.journals ?? 0),
+      specialIssues: Number(jt?.specialIssues ?? 0),
+    },
+  };
 }

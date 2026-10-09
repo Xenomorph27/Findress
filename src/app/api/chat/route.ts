@@ -9,7 +9,11 @@ import {
 } from "ai";
 import { z } from "zod";
 import { isOwnerRequest } from "@/lib/auth/session";
-import { buildEventSystemPrompt, buildGlobalSystemPrompt } from "@/lib/ai/context";
+import {
+  buildEventSystemPrompt,
+  buildGlobalSystemPrompt,
+  buildJournalSystemPrompt,
+} from "@/lib/ai/context";
 import { aiConfigError, getChatModel, maxOutputTokens } from "@/lib/ai/model";
 import { buildTools } from "@/lib/ai/tools";
 import {
@@ -21,12 +25,13 @@ import {
   saveChat,
 } from "@/lib/ai/usage";
 import { getEventDetail } from "@/lib/data/events";
+import { getJournalDetail } from "@/lib/data/journals";
 import { getDb } from "@/lib/db";
 import { DEFAULT_TIMEZONE } from "@/lib/site";
 
 /**
  * POST   /api/chat            stream an answer (owner only; rate-limited; token-capped)
- * GET    /api/chat?scope=…    saved conversation for a scope ("event:<id>" | "global")
+ * GET    /api/chat?scope=…    saved conversation ("event:<id>" | "journal:<id>" | "global")
  * DELETE /api/chat?scope=…    clear it
  */
 export const maxDuration = 120;
@@ -34,11 +39,12 @@ export const maxDuration = 120;
 const BodySchema = z.object({
   messages: z.array(z.unknown()).min(1).max(60),
   eventSlug: z.string().max(160).nullable().optional(),
+  journalSlug: z.string().max(160).nullable().optional(),
   tz: z.string().max(60).optional(),
 });
 
 function validScope(scope: string | null): scope is string {
-  return !!scope && /^(global|event:\d+)$/.test(scope);
+  return !!scope && /^(global|event:\d+|journal:\d+)$/.test(scope);
 }
 
 function isValidZone(tz: string): boolean {
@@ -109,13 +115,29 @@ export async function POST(request: Request) {
   const event = parsed.data.eventSlug ? await getEventDetail(parsed.data.eventSlug) : null;
   if (parsed.data.eventSlug && !event)
     return Response.json({ error: "event not found" }, { status: 404 });
-  const scope = event ? `event:${event.id}` : "global";
+  const journal =
+    !event && parsed.data.journalSlug ? await getJournalDetail(parsed.data.journalSlug) : null;
+  if (!event && parsed.data.journalSlug && !journal)
+    return Response.json({ error: "journal not found" }, { status: 404 });
+  const scope = event ? `event:${event.id}` : journal ? `journal:${journal.id}` : "global";
 
-  const allowedHosts = event
+  const pageUrls = event
     ? [event.website, event.cfpUrl]
+    : journal
+      ? [
+          journal.homepage,
+          journal.scopeUrl,
+          journal.submissionUrl,
+          ...journal.specialIssues.map((c) => c.url),
+        ]
+      : [];
+  const allowedHosts = [
+    ...new Set(
+      pageUrls
         .filter((u): u is string => !!u)
-        .map((u) => new URL(u).hostname.replace(/^www\./, ""))
-    : [];
+        .map((u) => new URL(u).hostname.replace(/^www\./, "")),
+    ),
+  ];
   const tools = buildTools({ tz, allowedHosts });
 
   let messages: UIMessage[];
@@ -131,7 +153,9 @@ export async function POST(request: Request) {
   const today = new Date().toISOString().slice(0, 10);
   const system = event
     ? buildEventSystemPrompt(event, question, tz, today).system
-    : buildGlobalSystemPrompt(tz, today);
+    : journal
+      ? buildJournalSystemPrompt(journal, question, tz, today).system
+      : buildGlobalSystemPrompt(tz, today);
   const { model, providerOptions } = getChatModel();
   const usageId = await recordUsageStart(db, scope);
 
@@ -165,9 +189,12 @@ export async function POST(request: Request) {
         return "The assistant hit an error. Please try again.";
       },
       onEnd: async ({ messages: all }) => {
-        await saveChat(db, scope, event?.id ?? null, all.slice(-40)).catch((err) =>
-          console.error("[chat] save", err),
-        );
+        await saveChat(
+          db,
+          scope,
+          { eventId: event?.id ?? null, journalId: journal?.id ?? null },
+          all.slice(-40),
+        ).catch((err) => console.error("[chat] save", err));
       },
     }),
   });

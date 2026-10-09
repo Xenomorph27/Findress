@@ -9,6 +9,7 @@ import { AcceptanceTrends } from "./acceptance-trends";
 import { BarList } from "./bar-list";
 import { ChartCard } from "./chart-card";
 import { DeadlineHeatmap } from "./deadline-heatmap";
+import { JournalInsightsPanel } from "./journal-insights";
 import { MonthStackChart } from "./month-stack-chart";
 
 // The map ships the world outline; load it after the first paint.
@@ -77,11 +78,12 @@ export function InsightsDashboard({
         ))}
       </div>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
         <Stat label="Venues tracked" value={slice.totals.events} />
         <Stat label="With open deadlines" value={slice.totals.upcoming} />
         <Stat label="Deadlines next 30 days" value={slice.totals.next30} />
         <Stat label="Workshops" value={slice.totals.workshops} />
+        <Stat label="Open special issues" value={slice.totals.specialOpen} />
         <Stat label="Countries" value={slice.totals.countries} />
       </div>
 
@@ -133,6 +135,10 @@ export function InsightsDashboard({
           )}
         </ChartCard>
       </div>
+      {payload.journals[subfield ?? "all"] && (
+        <JournalInsightsPanel data={payload.journals[subfield ?? "all"]} subfield={subfield} />
+      )}
+
       <p className="text-muted-foreground text-xs">
         Computed {new Date(payload.generatedAt).toISOString().slice(0, 16).replace("T", " ")} UTC
         from the current archive. Community-listed WikiCFP calls are excluded.

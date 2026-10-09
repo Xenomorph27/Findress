@@ -4,6 +4,7 @@ import type { JournalListRow, SpecialIssueListRow } from "@/lib/data/types";
 import { DEFAULT_FILTERS } from "@/lib/explore/filters";
 import { applyJournalFilters, applySpecialFilters } from "@/lib/explore/journal-filters";
 import {
+  deadlineFromText,
   extractScopeText,
   journalNameFromTitle,
   matchJournal,
@@ -169,6 +170,14 @@ describe("journal pages", () => {
     expect(xai.guestEditors.length).toBe(4);
     expect(xai.url).toBe("https://link.springer.com/journal/10994/updates/27325590");
     expect(calls.every((c) => c.journalSlug === "mlj")).toBe(true);
+  });
+
+  it("parses deadlines written day-first or month-first, end of day AoE", () => {
+    expect(deadlineFromText("1 February 2027").utc).toBe("2027-02-02T11:59:59.000Z");
+    expect(deadlineFromText("15th Aug. 2024").utc).toBe("2024-08-16T11:59:59.000Z");
+    expect(deadlineFromText("April 15 2021").utc).toBe("2021-04-16T11:59:59.000Z");
+    expect(deadlineFromText("extended to October 31st, 2023").utc).toBe("2023-11-01T11:59:59.000Z");
+    expect(deadlineFromText("soon").utc).toBeNull();
   });
 
   it("extracts aims & scope text (Springer, Nature, TACL)", () => {

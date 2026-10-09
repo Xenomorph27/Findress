@@ -21,8 +21,10 @@ export interface InsightsSlice {
     workshops: number;
     countries: number;
     next30: number;
+    /** Special-issue calls with a deadline ahead (journals). */
+    specialOpen: number;
   };
-  /** Submission deadlines per day for 53 weeks starting on the Monday of the current week. */
+  /** Submission deadlines (events + special issues) per day for 53 weeks from this Monday. */
   heatmap: { start: string; counts: number[]; max: number };
   perMonth: { months: string[]; series: { key: string; label: string; counts: number[] }[] };
   places: {
@@ -66,6 +68,7 @@ export function computeSlice(
   acceptance: AcceptanceSeriesInput[],
   subfield: string | null,
   now: number,
+  specials: { at: number | null; subfields: string[] }[] = [],
 ): InsightsSlice {
   const scoped = (subfield ? rows.filter((r) => r.subfields.includes(subfield)) : rows).filter(
     (r) => !r.communityOnly,
@@ -89,6 +92,17 @@ export function computeSlice(
       }
     }
     if (hasUpcoming) upcoming++;
+  }
+  // Special-issue submission deadlines share the calendar.
+  let specialOpen = 0;
+  for (const s of subfield ? specials.filter((x) => x.subfields.includes(subfield)) : specials) {
+    if (s.at == null) continue;
+    const idx = Math.floor((s.at - start) / DAY);
+    if (idx >= 0 && idx < days) counts[idx]++;
+    if (s.at >= now) {
+      specialOpen++;
+      if (s.at <= now + 30 * DAY) next30++;
+    }
   }
 
   // Events per month (by start date) for the next 12 months, stacked by primary subfield.
@@ -173,6 +187,7 @@ export function computeSlice(
       workshops: scoped.filter((r) => r.type === "workshop").length,
       countries: countries.size,
       next30,
+      specialOpen,
     },
     heatmap: {
       start: new Date(start).toISOString().slice(0, 10),

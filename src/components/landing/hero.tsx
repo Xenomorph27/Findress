@@ -63,27 +63,33 @@ export function Hero({ data }: { data: LandingData }) {
                 Explore <ArrowRight />
               </Button>
             </form>
-            <dl className="border-hairline mt-10 grid max-w-lg grid-cols-3 gap-4 border-t pt-6">
-              <div>
-                <dt className="text-muted-foreground text-xs">Venues tracked</dt>
-                <dd className="mt-1 text-2xl font-semibold">
-                  {data.stats.tracked.toLocaleString()}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-muted-foreground text-xs">Deadlines this month</dt>
-                <dd className="mt-1 text-2xl font-semibold">{data.stats.deadlinesThisMonth}</dd>
-              </div>
-              <div>
-                <dt className="text-muted-foreground text-xs">Sources live</dt>
-                <dd className="mt-1 text-2xl font-semibold">
-                  {data.stats.sourcesLive}
-                  <span className="text-muted-foreground text-base font-normal">
-                    /{data.stats.sourcesTotal}
-                  </span>
-                </dd>
-              </div>
+            <dl className="border-hairline mt-10 grid max-w-xl grid-cols-2 gap-4 border-t pt-6 sm:grid-cols-4">
+              {(
+                [
+                  ["Conferences", data.stats.conferences, "/explore?tab=conferences"],
+                  ["Workshops", data.stats.workshops, "/explore?tab=workshops"],
+                  ["Journals", data.stats.journals, "/explore?tab=journals"],
+                  ["Open special issues", data.stats.openSpecialIssues, "/explore?tab=special"],
+                ] as const
+              ).map(([label, value, href]) => (
+                <div key={label}>
+                  <dt className="text-muted-foreground text-xs">{label}</dt>
+                  <dd className="mt-1 text-2xl font-semibold">
+                    <Link href={href} className="hover:text-aurora-ink transition-colors">
+                      {value.toLocaleString()}
+                    </Link>
+                  </dd>
+                </div>
+              ))}
             </dl>
+            <p className="text-muted-foreground mt-3 text-xs">
+              <span className="text-foreground font-mono">{data.stats.deadlinesThisMonth}</span>{" "}
+              deadlines this month ·{" "}
+              <span className="text-foreground font-mono">
+                {data.stats.sourcesLive}/{data.stats.sourcesTotal}
+              </span>{" "}
+              sources refreshed in the last 48 h
+            </p>
           </div>
           <div className="relative mx-auto w-full max-w-[560px] lg:col-span-6">
             <Globe markers={data.markers} highlight={highlight} />

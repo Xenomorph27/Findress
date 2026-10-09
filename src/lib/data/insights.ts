@@ -8,8 +8,10 @@ import {
   type AcceptanceSeriesInput,
   type InsightsSlice,
 } from "@/lib/insights/compute";
+import { computeJournalInsights, type JournalInsights } from "@/lib/insights/journals";
 import { SUBFIELDS } from "@/lib/taxonomy";
 import { getExplorerRows } from "./events";
+import { getJournalRows, getSpecialIssueRows } from "./journals";
 
 /** Flagship series shown in the acceptance-rate chart (first six that have data). */
 const FLAGSHIPS = [
@@ -74,15 +76,29 @@ async function acceptanceSeries(): Promise<AcceptanceSeriesInput[]> {
 export interface InsightsPayload {
   generatedAt: number;
   slices: Record<string, InsightsSlice>;
+  journals: Record<string, JournalInsights>;
 }
 
 export async function getInsightsPayload(): Promise<InsightsPayload> {
   "use cache";
   cacheLife("hours");
-  cacheTag("events");
+  cacheTag("events", "journals");
   const now = Date.now();
-  const [rows, acceptance] = await Promise.all([getExplorerRows(), acceptanceSeries()]);
-  const slices: Record<string, InsightsSlice> = { all: computeSlice(rows, acceptance, null, now) };
-  for (const s of SUBFIELDS) slices[s.id] = computeSlice(rows, acceptance, s.id, now);
-  return { generatedAt: now, slices };
+  const [rows, acceptance, journals, specials] = await Promise.all([
+    getExplorerRows(),
+    acceptanceSeries(),
+    getJournalRows(),
+    getSpecialIssueRows(),
+  ]);
+  const slices: Record<string, InsightsSlice> = {
+    all: computeSlice(rows, acceptance, null, now, specials),
+  };
+  const journalSlices: Record<string, JournalInsights> = {
+    all: computeJournalInsights(journals, specials, null, now),
+  };
+  for (const s of SUBFIELDS) {
+    slices[s.id] = computeSlice(rows, acceptance, s.id, now, specials);
+    journalSlices[s.id] = computeJournalInsights(journals, specials, s.id, now);
+  }
+  return { generatedAt: now, slices, journals: journalSlices };
 }

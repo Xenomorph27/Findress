@@ -289,12 +289,25 @@ export interface SpecialIssueInput {
   url: string | null;
 }
 
-function deadlineFromText(text: string | null): {
+const MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+
+/** "1 February 2027" / "15th Aug. 2024" (day first, as many journals write it) → ISO date. */
+export function parseDayFirstDate(text: string): string | null {
+  const m = /^(\d{1,2})(?:st|nd|rd|th)?\s+([A-Za-z]{3,9})\.?,?\s+(\d{4})$/.exec(text.trim());
+  if (!m) return null;
+  const month = MONTHS.indexOf(m[2].slice(0, 3).toLowerCase());
+  const day = Number(m[1]);
+  if (month < 0 || day < 1 || day > 31) return null;
+  return `${m[3]}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+export function deadlineFromText(text: string | null): {
   utc: string | null;
   text: string | null;
 } {
   if (!text) return { utc: null, text: null };
-  const date = parseSingleDate(text.replace(/\b(extended to|new deadline:?)\s*/i, ""));
+  const cleaned = text.replace(/\b(extended to|new deadline:?)\s*/i, "").trim();
+  const date = parseDayFirstDate(cleaned) ?? parseSingleDate(cleaned);
   const r = date ? wallClockToUtc(date, null) : null;
   return { utc: r ? r.utc.toISOString() : null, text: cleanText(text) };
 }
