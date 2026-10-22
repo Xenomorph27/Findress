@@ -143,6 +143,69 @@ export async function saveAcceptance(db: Db, rows: AcceptanceInput[]): Promise<n
 const ex = (column: string) => sql.raw(`excluded."${column}"`);
 
 /**
+ * Event identity follows the sources, not the spelling of the key. When a merged event's
+ * dedupe key/slug changed (e.g. a workshop acronym gained or lost its "@VENUE" suffix) but the
+ * same source records still back it, rename the existing row in place: its id, bookmarks, notes,
+ * chats and CFP text all stay attached. Returns how many rows were re-keyed.
+ */
+export async function rekeyMovedEvents(db: Db, merged: MergedEvent[]): Promise<number> {
+  const existing = await db.select({ id: events.id, dedupeKey: events.dedupeKey }).from(events);
+  if (existing.length === 0) return 0;
+  const keyById = new Map(existing.map((e) => [e.id, e.dedupeKey]));
+  const holderByKey = new Map(existing.map((e) => [e.dedupeKey, e.id]));
+  const refs = await db
+    .select({
+      eventId: eventSources.eventId,
+      source: eventSources.source,
+      sourceId: eventSources.sourceId,
+    })
+    .from(eventSources);
+  const idByRef = new Map(refs.map((r) => [`${r.source}|${r.sourceId}`, r.eventId]));
+
+  // Which existing row does each merged event continue? The one most of its source records point at.
+  const claimed = new Set<number>();
+  const plan: { id: number; to: string }[] = [];
+  const owners = merged.map((m) => {
+    const votes = new Map<number, number>();
+    for (const r of m.refs) {
+      const id = idByRef.get(`${r.source}|${r.sourceId}`);
+      if (id != null) votes.set(id, (votes.get(id) ?? 0) + 1);
+    }
+    const best = [...votes.entries()].sort((a, b) => b[1] - a[1] || a[0] - b[0])[0];
+    return { m, id: best?.[0] ?? null };
+  });
+  for (const { m, id } of owners) {
+    if (id == null || claimed.has(id)) continue;
+    claimed.add(id);
+    if (keyById.get(id) !== m.dedupeKey) plan.push({ id, to: m.dedupeKey });
+  }
+  // A target key held by a row that is neither moving nor continued by another merged event
+  // belongs to something unrelated: leave that pair to the normal upsert.
+  const movingIds = new Set(plan.map((p) => p.id));
+  const safe = plan.filter((p) => {
+    const holder = holderByKey.get(p.to);
+    return holder == null || movingIds.has(holder);
+  });
+  if (safe.length === 0) return 0;
+
+  await db.transaction(async (tx) => {
+    // Two phases so swaps never trip the unique indexes on slug and dedupe_key.
+    await tx.execute(sql`
+      update ${events} set dedupe_key = '~rekey~' || id::text, slug = '~rekey~' || id::text
+      where id in (${sql.join(
+        safe.map((p) => sql`${p.id}`),
+        sql`, `,
+      )})`);
+    for (const p of safe) {
+      await tx.execute(
+        sql`update ${events} set dedupe_key = ${p.to}, slug = ${p.to} where id = ${p.id}`,
+      );
+    }
+  });
+  return safe.length;
+}
+
+/**
  * Write merged events: upsert rows (preserving CFP text and geocodes unless the location
  * changed), resolve parents, replace deadlines + provenance, delete events no source lists
  * any more (unless the owner bookmarked or annotated them).
@@ -150,7 +213,14 @@ const ex = (column: string) => sql.raw(`excluded."${column}"`);
 export async function writeMergedEvents(
   db: Db,
   merged: MergedEvent[],
-): Promise<{ upserted: number; deleted: number; deadlines: number; workshops: number }> {
+): Promise<{
+  upserted: number;
+  deleted: number;
+  deadlines: number;
+  workshops: number;
+  rekeyed: number;
+}> {
+  const rekeyed = await rekeyMovedEvents(db, merged);
   const existing = await db
     .select({ dedupeKey: events.dedupeKey, cfpText: events.cfpText })
     .from(events);
@@ -315,6 +385,7 @@ export async function writeMergedEvents(
     deleted: deleted.length,
     deadlines: deadlineRows.length,
     workshops: merged.filter((m) => m.type === "workshop").length,
+    rekeyed,
   };
 }
 

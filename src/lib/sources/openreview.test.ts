@@ -81,4 +81,24 @@ describe("OpenReview", () => {
     const out = disambiguate([a, b]);
     expect(out.map((e) => e.acronym)).toEqual(["OPT@NEURIPS", "OPT@ICML"]);
   });
+  it("keeps a workshop's name stable when a run lists only one of two same-named workshops", () => {
+    const g = groups("neurips-2026-workshops.json").find((x) => x.id.endsWith("/OPT"))!;
+    const neurips = normalizeWorkshop(g, NEURIPS, null)!;
+    const icml = { ...neurips, sourceId: "ICML.cc/2026/Workshop/OPT", parentKey: "icml-2026" };
+    // Earlier full run stored both, suffixed.
+    const previous = new Map([
+      [neurips.sourceId, { ...neurips, acronym: "OPT@NEURIPS" }],
+      [icml.sourceId, { ...icml, acronym: "OPT@ICML" }],
+    ]);
+    // A budget-truncated run sees only the ICML one: it must keep "@ICML".
+    expect(disambiguate([icml], previous).map((e) => e.acronym)).toEqual(["OPT@ICML"]);
+    // Even without the sibling in `previous`, a workshop that was suffixed stays suffixed.
+    const solo = new Map([[icml.sourceId, { ...icml, acronym: "OPT@ICML" }]]);
+    expect(disambiguate([icml], solo).map((e) => e.acronym)).toEqual(["OPT@ICML"]);
+    // A new workshop whose name is already taken by an unlisted stored one is suffixed too.
+    const taken = new Map([[neurips.sourceId, { ...neurips, acronym: "OPT@NEURIPS" }]]);
+    expect(disambiguate([icml], taken).map((e) => e.acronym)).toEqual(["OPT@ICML"]);
+    // A genuinely unique workshop is left alone.
+    expect(disambiguate([icml]).map((e) => e.acronym)).toEqual(["OPT"]);
+  });
 });

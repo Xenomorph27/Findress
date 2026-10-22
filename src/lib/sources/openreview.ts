@@ -178,17 +178,36 @@ export function normalizeConference(
   };
 }
 
-/** Same workshop acronym under two parents in one year → disambiguate with the parent. */
-export function disambiguate(events: EventInput[]): EventInput[] {
+/**
+ * Same workshop acronym under two parents in one year → disambiguate with the parent.
+ *
+ * The decision must not depend on which venues this run happened to list: a run cut short by the
+ * time budget may see only one of two same-named workshops. So workshops stored by earlier runs
+ * (`previous`) still count as occupying their name, and a workshop that was ever suffixed keeps
+ * its suffix. Without this, the same workshop flipped between "AI4Research" and
+ * "AI4Research@ICML" from run to run.
+ */
+export function disambiguate(
+  events: EventInput[],
+  previous: Map<string, EventInput> = new Map(),
+): EventInput[] {
+  const base = (acronym: string) => acronym.split("@")[0];
+  const listed = new Set(events.map((e) => e.sourceId));
   const counts = new Map<string, number>();
-  for (const e of events) {
-    const k = dedupeKeyFor(e.acronym, e.year);
+  const count = (e: EventInput) => {
+    const k = dedupeKeyFor(base(e.acronym), e.year);
     counts.set(k, (counts.get(k) ?? 0) + 1);
-  }
+  };
+  for (const e of events) count(e);
+  for (const [sourceId, p] of previous)
+    if (!listed.has(sourceId) && p.type === "workshop") count(p);
   return events.map((e) => {
-    if (e.type !== "workshop" || (counts.get(dedupeKeyFor(e.acronym, e.year)) ?? 0) < 2) return e;
+    if (e.type !== "workshop") return e;
+    const k = dedupeKeyFor(base(e.acronym), e.year);
+    const wasSuffixed = previous.get(e.sourceId)?.acronym.includes("@") ?? false;
+    if ((counts.get(k) ?? 0) < 2 && !wasSuffixed) return e;
     const parent = e.parentKey?.replace(/-\d{4}$/, "").toUpperCase() ?? "";
-    return { ...e, acronym: `${e.acronym}@${parent}` };
+    return { ...e, acronym: `${base(e.acronym)}@${parent}` };
   });
 }
 
@@ -267,7 +286,7 @@ export const openreviewAdapter: SourceAdapter = {
         }
       }
     }
-    const valid = validateEvents(disambiguate(events), warnings);
+    const valid = validateEvents(disambiguate(events, ctx.previous), warnings);
     return {
       events: valid,
       warnings,
