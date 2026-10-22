@@ -1,4 +1,5 @@
 import "server-only";
+import { attachDatabasePool } from "@vercel/functions";
 import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import * as schema from "./schema";
@@ -25,7 +26,9 @@ export function getDb(): Db | null {
   if (!globalForDb.__findressDb) {
     const local = /@(localhost|127\.0\.0\.1)[:/]/.test(url);
     const pool = new Pool({
-      connectionString: url,
+      // `pg` already treats require/prefer/verify-ca as verify-full; saying so keeps that behavior
+      // when a future major version switches to libpq semantics.
+      connectionString: url.replace(/sslmode=(require|prefer|verify-ca)/, "sslmode=verify-full"),
       max: Number(process.env.DB_POOL_MAX ?? 5),
       idleTimeoutMillis: 10_000,
       connectionTimeoutMillis: 8_000,
@@ -33,6 +36,9 @@ export function getDb(): Db | null {
       ssl: local || /sslmode=disable/.test(url) ? undefined : { rejectUnauthorized: true },
     });
     pool.on("error", (err) => console.error("[db] idle client error", err.message));
+    // Fluid compute: lets Vercel keep the function alive until idle connections have closed.
+    // A no-op everywhere except a Vercel deployment.
+    attachDatabasePool(pool);
     globalForDb.__findressPool = pool;
     globalForDb.__findressDb = drizzle(pool, { schema });
   }

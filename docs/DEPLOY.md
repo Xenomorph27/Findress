@@ -84,6 +84,13 @@ at a time, so each call stays inside Vercel's 300 s function limit. You can also
    owner login, so Neon Auth, Realtime, Storage and Functions are not used. Remote connections
    verify Neon's TLS certificate.
 
+   **Local database or Neon.** `.env.local` keeps `DATABASE_URL` on the local PGlite database
+   (`pnpm db:local`), so plain `pnpm dev` and `pnpm ingest` never touch Neon. The Neon variables live
+   in `.env.neon` (git-ignored; refresh with `neon env pull --file .env.neon`). The `:neon` scripts
+   load it and win over `.env.local`: `pnpm dev:neon`, `pnpm start:neon`, `pnpm db:migrate:neon`,
+   `pnpm ingest:neon`. The app uses the pooled `DATABASE_URL` (`pg` + Fluid compute, with
+   `attachDatabasePool`); migrations use `DATABASE_URL_UNPOOLED`.
+
 ## 4. Post-deploy checks
 
 1. **First ingestion.** Either trigger the GitHub Action (Actions → "Ingest (every 6 hours)" → Run workflow), or run

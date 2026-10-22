@@ -4,8 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:neon": "node scripts/with-env.mjs .env.neon next dev",
     "build": "next build",
     "start": "next start",
+    "build:neon": "node scripts/with-env.mjs .env.neon next build",
+    "start:neon": "node scripts/with-env.mjs .env.neon next start",
     "lint": "eslint --ignore-pattern \"src/components/react-bits/**\"",
     "typecheck": "next typegen && tsc --noEmit",
     "format": "prettier --write .",
@@ -15,8 +18,10 @@
     "db:local": "tsx scripts/local-db.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx --conditions=react-server scripts/migrate.ts",
+    "db:migrate:neon": "node scripts/with-env.mjs .env.neon tsx --conditions=react-server scripts/migrate.ts",
     "db:studio": "drizzle-kit studio",
     "ingest": "tsx --conditions=react-server scripts/ingest.ts",
+    "ingest:neon": "node scripts/with-env.mjs .env.neon tsx --conditions=react-server scripts/ingest.ts",
     "screenshots": "tsx scripts/screenshots.ts"
   },
   "dependencies": {
@@ -27,8 +32,8 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@mozilla/readability": "^0.6.0",
-    "@neondatabase/serverless": "^1.2.0",
     "@tanstack/react-virtual": "^3.14.13",
+    "@vercel/functions": "^3.10.2",
     "ai": "^7.0.130",
     "cheerio": "^1.2.0",
     "class-variance-authority": "^0.7.1",
@@ -68,6 +73,8 @@
   "devDependencies": {
     "@electric-sql/pglite": "0.5.8",
     "@electric-sql/pglite-socket": "0.2.11",
+    "@neon/config": "^1.9.3",
+    "@neon/env": "^1.6.4",
     "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/d3-geo": "^3.1.1",
