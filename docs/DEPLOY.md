@@ -165,6 +165,28 @@ daily Vercel cron calls all of them): `ccfddl`, `huggingface`, `openreview`, `wi
   | `EXTRACT_MIN_INTERVAL_MS` | `13000` | Minimum gap between requests (< 5 RPM) |
   | `EXTRACT_MAX_RETRIES`     | `3`     | Retries on HTTP 429 before stopping    |
 
+## 7. Backups and CI
+
+**Backups.** Neon's instant restore only reaches back 6 hours, so it is not a backup. Run
+
+```bash
+pnpm backup:neon        # needs Docker Desktop running; writes .data/backups/neon-production-<time>.dump
+```
+
+(a read-only `pg_dump` of production through the official `postgres:18` image, using the direct
+`DATABASE_URL_UNPOOLED` from `.env.neon`; it checks that all 16 tables are in the file). **How often:**
+weekly, and always right before a migration or a change to how data is ingested. The event data can be
+rebuilt from its sources; what cannot is your bookmarks, notes and assistant chats, so that is what the
+weekly copy protects. Keep the last four or so; `.data/` is git-ignored.
+
+To restore, never write straight over production. Create a Neon branch first
+(`neon branch create --name restore-check`), restore into it with
+`pg_restore --dbname=<branch direct URL> --single-transaction --exit-on-error --no-owner --no-privileges <file>`
+(run inside the same `postgres:18` image), check it, and only then decide what to copy back.
+
+**CI.** `.github/workflows/ci.yml` runs typecheck, lint and the unit tests on every push to `main` and
+on every pull request. It needs no secrets or database.
+
 ## Install on Vercel (pnpm build scripts)
 
 - `package.json` pins `"packageManager": "pnpm@12.10.1"`, and Vercel has

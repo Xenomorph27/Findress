@@ -1,0 +1,40 @@
+name: CI
+
+# Typecheck, lint and unit tests on every push to main and on every pull request.
+# No secrets or database needed: the tests use fixtures and an in-memory Postgres (PGlite).
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # package.json pins "packageManager": "pnpm@12.10.1"; corepack installs exactly that.
+      - name: Enable pnpm
+        run: corepack enable
+
+      - name: Install (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Unit tests
+        run: pnpm test
