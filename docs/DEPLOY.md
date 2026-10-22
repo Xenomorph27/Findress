@@ -125,6 +125,43 @@ at a time, so each call stays inside Vercel's 300 s function limit. You can also
 - The lockout keys on the first `X-Forwarded-For` hop, which Vercel sets. Behind another proxy,
   make sure that proxy overwrites the header.
 
+## 6. Data pipeline notes
+
+**Steps** (`/api/ingest?source=<step>`; the GitHub Action calls them one by one every 6 hours, the
+daily Vercel cron calls all of them): `ccfddl`, `huggingface`, `openreview`, `wikicfp`,
+`easychair`, `merge`, `cfp`, `extract`, `topics`, `geocode`, `journals`, `journal-ranks`,
+`journal-pages`, `special-issues`.
+
+- **Time-boxed sources resume.** `openreview` sweeps its venue list round-robin and saves a cursor
+  (`source_runs.stats.cursor`); `wikicfp` fetches the stalest/nearest event pages first. A partial
+  run never prunes. Events keep their id, bookmarks and notes when a source changes an event's
+  acronym or slug.
+- **Journal pages are guarded.** A bot-block or error page (some publishers serve them to datacenter
+  IPs with HTTP 200) is detected and ignored; a journal's stored values are never overwritten with
+  an empty or blocked result.
+- **Impact factors are not stored or shown** (Clarivate data). The app shows OpenAlex's 2-year mean
+  citedness, labeled with its source, and links to the journal's own page.
+- **SJR quartiles** come from a CSV you download yourself from https://www.scimagojr.com/journalrank.php
+  ("Download data"; read SCImago's terms first), once a year:
+  `pnpm sjr:import:neon path/to/scimagojr-2024.csv`. Journals are matched by ISSN and the app shows
+  "Data: SCImago Journal & Country Rank, source Scopus®" with a link wherever SJR appears.
+- **EasyChair Smart CFP** is read as one page per run (robots.txt allows `/cfp/`). Only calls whose
+  title or acronym names AI/ML (or that carry three AI/ML topic tags, one of them strong) come in;
+  they are community-listed and hidden from the default Explore view unless another source backs them.
+- **AI extraction (`extract`)** asks Gemini to read each event's own CFP page and propose deadlines,
+  attendance mode and a description. A value is kept only if its verbatim quote is found on the page
+  (and a date re-parses to the same value, with an explicit year). Kept values are stored with the
+  quote and page URL in `extractions`, shown with an "AI" badge, never override a source, and are
+  re-read only when the page changes. It uses `GOOGLE_GENERATIVE_AI_API_KEY` (the same key as the
+  assistant) and is rate-limited to protect the assistant's quota:
+
+  | Variable                  | Default | Meaning                                |
+  | ------------------------- | ------- | -------------------------------------- |
+  | `EXTRACT_PER_RUN`         | `12`    | Max model requests per ingest run      |
+  | `EXTRACT_DAILY_LIMIT`     | `60`    | Max model requests per UTC day         |
+  | `EXTRACT_MIN_INTERVAL_MS` | `13000` | Minimum gap between requests (< 5 RPM) |
+  | `EXTRACT_MAX_RETRIES`     | `3`     | Retries on HTTP 429 before stopping    |
+
 ## Install on Vercel (pnpm build scripts)
 
 - `package.json` pins `"packageManager": "pnpm@12.10.1"`, and Vercel has
