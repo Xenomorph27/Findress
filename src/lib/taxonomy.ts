@@ -87,6 +87,7 @@ export const SOURCES = [
   "huggingface",
   "wikicfp",
   "openreview",
+  "easychair",
   "cfp",
   "extract",
   "topics",
@@ -97,7 +98,13 @@ export const SOURCES = [
   "special-issues",
 ] as const;
 /** Sources that produce events (vs. enrichment steps that improve existing events). */
-export const LIST_SOURCES = ["ccfddl", "huggingface", "wikicfp", "openreview"] as const;
+export const LIST_SOURCES = [
+  "ccfddl",
+  "huggingface",
+  "wikicfp",
+  "openreview",
+  "easychair",
+] as const;
 export type ListSourceName = (typeof LIST_SOURCES)[number];
 export const ENRICHMENT_STEPS = ["cfp", "extract", "topics", "geocode"] as const;
 export type EnrichmentStep = (typeof ENRICHMENT_STEPS)[number];
@@ -144,6 +151,13 @@ export const SOURCE_META: Record<
     url: "",
     description: "Readability-extracted call-for-papers text from each event's own website.",
     kind: "enrichment",
+  },
+  easychair: {
+    label: "EasyChair Smart CFP",
+    url: "https://easychair.org/cfp/",
+    description:
+      "EasyChair's public list of open calls, filtered to genuine AI/ML events (by title and topic tags). Community-listed, so hidden from the default view unless another source backs the event.",
+    kind: "list",
   },
   extract: {
     label: "AI extraction from CFP pages",
@@ -201,6 +215,7 @@ export const SOURCE_PRIORITY: Record<SourceName, number> = {
   ccfddl: 2,
   openreview: 3,
   wikicfp: 4,
+  easychair: 4.5,
   cfp: 5,
   extract: 5.5,
   topics: 6,

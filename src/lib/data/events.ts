@@ -134,7 +134,10 @@ async function getExplorerRowsQuery(): Promise<ExplorerRow[]> {
     hasRebuttal: r.hasRebuttal,
     reviewType: r.reviewType,
     communityOnly:
-      r.sources.length > 0 && r.sources.every((s) => s === "wikicfp") && !r.rankCore && !r.rankCcf,
+      r.sources.length > 0 &&
+      r.sources.every((s) => s === "wikicfp" || s === "easychair") &&
+      !r.rankCore &&
+      !r.rankCcf,
     latestInSeries: newestYear.get(r.seriesKey) === r.year,
     sources: r.sources,
     createdAt: r.createdAt.getTime(),

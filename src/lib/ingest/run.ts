@@ -4,6 +4,7 @@ import { sourceRuns } from "@/lib/db/schema";
 import { ccfddlAdapter } from "@/lib/sources/ccfddl";
 import { huggingfaceAdapter } from "@/lib/sources/huggingface";
 import { openreviewAdapter } from "@/lib/sources/openreview";
+import { easychairAdapter } from "@/lib/sources/easychair";
 import { wikicfpAdapter } from "@/lib/sources/wikicfp";
 import {
   ENRICHMENT_STEPS,
@@ -43,6 +44,7 @@ export const ADAPTERS: Record<ListSourceName, SourceAdapter> = {
   huggingface: huggingfaceAdapter,
   openreview: openreviewAdapter,
   wikicfp: wikicfpAdapter,
+  easychair: easychairAdapter,
 };
 
 export type StepName = ListSourceName | EnrichmentStep | JournalStep | "merge";
@@ -51,6 +53,7 @@ export const ALL_STEPS: StepName[] = [
   "huggingface",
   "openreview",
   "wikicfp",
+  "easychair",
   "merge",
   "cfp",
   "extract",

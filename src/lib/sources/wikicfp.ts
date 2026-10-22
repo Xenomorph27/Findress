@@ -198,7 +198,7 @@ function deadlineKind(summary: string): DeadlineKind {
   return "other";
 }
 
-function eventType(acronym: string, name: string | null): EventType {
+export function eventType(acronym: string, name: string | null): EventType {
   const text = `${acronym} ${name ?? ""}`;
   if (/\bworkshop\b|\bspecial session\b|\bspecial track\b/i.test(text)) return "workshop";
   if (/\bsymposium\b/i.test(text)) return "symposium";
