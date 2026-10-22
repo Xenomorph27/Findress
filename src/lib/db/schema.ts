@@ -78,6 +78,9 @@ export const events = pgTable(
     cfpHash: text("cfp_hash"),
     cfpUrl: text("cfp_url"),
     cfpFetchedAt: timestamp("cfp_fetched_at", { withTimezone: true }),
+    /** cfp_hash the AI extraction last ran on (so unchanged pages are never re-sent). */
+    aiExtractedHash: text("ai_extracted_hash"),
+    aiExtractedAt: timestamp("ai_extracted_at", { withTimezone: true }),
     /** "Topics of interest" bullet items extracted from the CFP text. */
     cfpTopics: text("cfp_topics")
       .array()
@@ -128,6 +131,42 @@ export const deadlines = pgTable(
     source: text("source").notNull(),
   },
   (t) => [index("deadlines_event_idx").on(t.eventId), index("deadlines_due_idx").on(t.dueAtUtc)],
+);
+
+/**
+ * Facts an LLM read off an event's own CFP page. Every row keeps the verbatim quote it came from
+ * and the page URL; nothing is stored unless the quote is found in the page text and (for dates)
+ * the date parses back to the same value. The app shows these values marked as AI-extracted.
+ */
+export const extractions = pgTable(
+  "extractions",
+  {
+    id: serial("id").primaryKey(),
+    eventId: integer("event_id")
+      .notNull()
+      .references(() => events.id, { onDelete: "cascade" }),
+    /** deadline | mode | description */
+    field: text("field").notNull(),
+    /** Deadline kind (abstract, paper, …) for deadlines. */
+    kind: text("kind"),
+    label: text("label"),
+    /** mode value ("in-person" | "virtual" | "hybrid") or the description excerpt. */
+    value: text("value"),
+    dueAtUtc: timestamp("due_at_utc", { withTimezone: true }),
+    /** The date/time/zone exactly as the page wrote them. */
+    originalText: text("original_text"),
+    originalTz: text("original_tz"),
+    zoneAssumed: boolean("zone_assumed").notNull().default(false),
+    /** Verbatim text from the page that states this value. */
+    quote: text("quote").notNull(),
+    sourceUrl: text("source_url").notNull(),
+    model: text("model").notNull(),
+    promptVersion: text("prompt_version").notNull(),
+    /** events.cfp_hash at extraction time. */
+    contentHash: text("content_hash").notNull(),
+    extractedAt: timestamp("extracted_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("extractions_event_idx").on(t.eventId, t.field)],
 );
 
 export const eventSources = pgTable(

@@ -1,4 +1,5 @@
 import { Laptop, MapPin, Users } from "lucide-react";
+import { AiBadge } from "@/components/event/ai-badge";
 import { EVENT_TYPE_LABEL, MODE_LABEL, type EventType, type Mode } from "@/lib/taxonomy";
 import { cn } from "@/lib/utils";
 
@@ -166,9 +167,12 @@ export function TopicLine({
 export function ModeChip({
   mode,
   className,
+  ai = false,
 }: {
   mode: string | null | undefined;
   className?: string;
+  /** The mode was read off the CFP page by an LLM, not given by a source. */
+  ai?: boolean;
 }) {
   if (!mode) return null;
   const Icon = mode === "virtual" ? Laptop : Users;
@@ -176,6 +180,7 @@ export function ModeChip({
     <span className={cn("text-muted-foreground inline-flex items-center gap-1 text-xs", className)}>
       <Icon className="size-3.5" aria-hidden />
       {MODE_LABEL[mode as Mode] ?? mode}
+      {ai && <AiBadge />}
     </span>
   );
 }

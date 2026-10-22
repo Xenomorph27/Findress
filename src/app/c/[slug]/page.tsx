@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Suspense, ViewTransition } from "react";
 import { AssistantSlot } from "@/components/assistant/assistant-slot";
 import { AcceptanceChart } from "@/components/event/acceptance-chart";
+import { AiBadge } from "@/components/event/ai-badge";
 import { CfpText } from "@/components/event/cfp-text";
 import {
   ChipList,
@@ -90,7 +91,7 @@ function Header({ e }: { e: EventDetail }) {
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <TypeBadge type={e.type} />
         <Ranks core={e.rankCore} ccf={e.rankCcf} />
-        <ModeChip mode={e.mode} />
+        <ModeChip mode={e.mode} ai={e.provenance.mode === "ai-cfp"} />
       </div>
       <div>
         <ViewTransition name={`acronym-${e.slug}`}>
@@ -102,6 +103,27 @@ function Header({ e }: { e: EventDetail }) {
           {e.name ?? "Full name not announced"}
         </p>
       </div>
+      {e.provenance.description === "ai-cfp" && e.description && (
+        <blockquote className="border-hairline text-muted-foreground max-w-3xl border-l-2 pl-4 text-sm">
+          {e.description} <AiBadge />
+          <span className="mt-1 block text-xs">
+            Passage copied from{" "}
+            {e.cfpUrl ? (
+              <a
+                href={e.cfpUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-foreground underline underline-offset-2"
+              >
+                the official page
+              </a>
+            ) : (
+              "the official page"
+            )}
+            , picked by AI.
+          </span>
+        </blockquote>
+      )}
       <dl className="grid grid-cols-1 gap-x-8 gap-y-2 text-sm sm:grid-cols-[auto_1fr]">
         <dt className="text-muted-foreground">When</dt>
         <dd className="font-mono">{dates ?? e.dateText ?? NA}</dd>
@@ -364,6 +386,33 @@ function Sources({ e }: { e: EventDetail }) {
             </li>
           );
         })}
+        {e.aiExtractions.length > 0 && (
+          <li className="bg-surface lift rounded-xl p-4 text-sm">
+            <span className="font-medium">
+              AI-extracted values <AiBadge />
+            </span>
+            <p className="text-muted-foreground mt-1 text-xs">
+              Read from the official CFP page by {e.aiExtractions[0].model}. Each value is kept only
+              because the quote below appears in that page; a source never gets overridden.
+            </p>
+            <ul className="mt-3 space-y-2">
+              {e.aiExtractions.map((x, i) => (
+                <li key={i} className="text-xs">
+                  <span className="font-medium">
+                    {x.field === "deadline"
+                      ? `${x.label ?? x.kind}: ${x.originalText ?? x.dueAtUtc}${
+                          x.originalTz ? ` ${x.originalTz}` : ""
+                        }`
+                      : x.field === "mode"
+                        ? `Mode: ${x.value}`
+                        : "Description excerpt"}
+                  </span>
+                  <q className="text-muted-foreground mt-0.5 block">{x.quote}</q>
+                </li>
+              ))}
+            </ul>
+          </li>
+        )}
         {e.cfpUrl && (
           <li className="bg-surface lift rounded-xl p-4 text-sm">
             <span className="font-medium">Official CFP page</span>

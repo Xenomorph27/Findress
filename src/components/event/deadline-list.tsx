@@ -1,5 +1,6 @@
 "use client";
 
+import { AiBadge } from "@/components/event/ai-badge";
 import { CountdownChip } from "@/components/event/countdown-chip";
 import { useTimezone } from "@/components/timezone/timezone-provider";
 import type { DetailDeadline } from "@/lib/data/types";
@@ -38,12 +39,24 @@ export function DeadlineList({
             <div className="min-w-0">
               <p className="text-sm">
                 <span className="font-medium">{kind}</span>
+                {d.source === "ai-cfp" && (
+                  <>
+                    {" "}
+                    <AiBadge title={d.comment ?? undefined} />
+                  </>
+                )}
                 {d.label && d.label.toLowerCase() !== kind.toLowerCase() && (
                   <span className="text-muted-foreground"> · {d.label}</span>
                 )}
               </p>
               <p className="text-muted-foreground tabular font-mono text-xs">
                 {formatInZone(d.dueAtUtc, zone, "EEE, MMM d yyyy · HH:mm")} {zoneShortLabel(zone)}
+                {!compact && d.source === "ai-cfp" && d.originalTz == null && (
+                  <span className="hidden sm:inline">
+                    {" "}
+                    · zone not stated; shown as end of day AoE
+                  </span>
+                )}
                 {!compact && d.originalText && (
                   <span className="hidden sm:inline">
                     {" "}

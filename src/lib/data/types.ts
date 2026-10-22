@@ -50,6 +50,22 @@ export interface DetailDeadline {
   source: string;
 }
 
+/** One value an LLM read off the event's own CFP page, with the evidence it was accepted on. */
+export interface DetailAiExtraction {
+  field: string;
+  kind: string | null;
+  label: string | null;
+  value: string | null;
+  dueAtUtc: string | null;
+  originalText: string | null;
+  originalTz: string | null;
+  zoneAssumed: boolean;
+  quote: string;
+  sourceUrl: string;
+  model: string;
+  extractedAt: string;
+}
+
 export interface DetailSource {
   source: string;
   sourceId: string;
@@ -125,6 +141,7 @@ export interface EventDetail {
   updatedAt: string;
   deadlines: DetailDeadline[];
   sourceRefs: DetailSource[];
+  aiExtractions: DetailAiExtraction[];
   children: ChildEvent[];
   history: EditionSummary[];
   acceptance: AcceptancePoint[];

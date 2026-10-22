@@ -3,7 +3,7 @@ import { and, asc, desc, eq, gte, inArray, isNull, or, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { cacheTag } from "next/cache";
 import { getDb } from "@/lib/db";
-import { acceptanceStats, deadlines, events, eventSources } from "@/lib/db/schema";
+import { acceptanceStats, deadlines, events, eventSources, extractions } from "@/lib/db/schema";
 import type { EventDetail, ExplorerRow, RowDeadline } from "./types";
 import { settle, type Settled, unwrap } from "./settle";
 
@@ -192,7 +192,7 @@ async function getEventDetailQuery(slug: string): Promise<EventDetail | null> {
   const [e] = await db.select().from(events).where(eq(events.slug, slug)).limit(1);
   if (!e) return null;
 
-  const [dl, refs, parentRows, children, history, acceptance] = await Promise.all([
+  const [dl, refs, parentRows, children, history, acceptance, aiRows] = await Promise.all([
     db.select().from(deadlines).where(eq(deadlines.eventId, e.id)).orderBy(asc(deadlines.dueAtUtc)),
     db.select().from(eventSources).where(eq(eventSources.eventId, e.id)),
     e.parentEventId
@@ -241,6 +241,7 @@ async function getEventDetailQuery(slug: string): Promise<EventDetail | null> {
       .from(acceptanceStats)
       .where(eq(acceptanceStats.eventAcronym, e.seriesKey))
       .orderBy(asc(acceptanceStats.year)),
+    db.select().from(extractions).where(eq(extractions.eventId, e.id)).orderBy(asc(extractions.id)),
   ]);
 
   return {
@@ -287,6 +288,20 @@ async function getEventDetailQuery(slug: string): Promise<EventDetail | null> {
       originalText: d.originalText,
       comment: d.comment,
       source: d.source,
+    })),
+    aiExtractions: aiRows.map((x) => ({
+      field: x.field,
+      kind: x.kind,
+      label: x.label,
+      value: x.value,
+      dueAtUtc: x.dueAtUtc?.toISOString() ?? null,
+      originalText: x.originalText,
+      originalTz: x.originalTz,
+      zoneAssumed: x.zoneAssumed,
+      quote: x.quote,
+      sourceUrl: x.sourceUrl,
+      model: x.model,
+      extractedAt: x.extractedAt.toISOString(),
     })),
     sourceRefs: refs.map((r) => ({
       source: r.source,

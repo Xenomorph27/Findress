@@ -1,4 +1,4 @@
-import { and, eq, inArray, lt, notInArray, sql } from "drizzle-orm";
+import { and, eq, inArray, lt, ne, notInArray, sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import {
   acceptanceStats,
@@ -13,6 +13,7 @@ import {
 } from "@/lib/db/schema";
 import { tagEvent } from "@/lib/sources/topics";
 import type { SourceName } from "@/lib/taxonomy";
+import { AI_DEADLINE_SOURCE, applyExtractions } from "./apply-extractions";
 import { continentFor, countryByCode } from "./countries";
 import type { HttpCacheStore } from "./http";
 import { dedupeKeyFor } from "./keys";
@@ -328,7 +329,10 @@ export async function writeMergedEvents(
   // Deadlines + provenance: replace for every written event.
   const idList = [...ids.values()];
   for (const batch of chunk(idList, 500)) {
-    await db.delete(deadlines).where(inArray(deadlines.eventId, batch));
+    // AI-extracted deadlines are not rebuilt from sources; applyExtractions() reconciles them below.
+    await db
+      .delete(deadlines)
+      .where(and(inArray(deadlines.eventId, batch), ne(deadlines.source, AI_DEADLINE_SOURCE)));
     await db.delete(eventSources).where(inArray(eventSources.eventId, batch));
   }
   const deadlineRows = merged.flatMap((m) =>
@@ -379,6 +383,7 @@ export async function writeMergedEvents(
           .returning({ id: events.id })
       : [];
 
+  await applyExtractions(db);
   await refreshDerivedColumns(db);
   return {
     upserted: ids.size,

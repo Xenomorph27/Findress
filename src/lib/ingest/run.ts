@@ -13,7 +13,9 @@ import {
   type JournalStep,
   type ListSourceName,
 } from "@/lib/taxonomy";
+import { aiConfigError, makeGenerate } from "@/lib/ai/extract-model";
 import { enrichCfps } from "./enrich-cfp";
+import { runExtractStep } from "./extract-cfp";
 import { geocodeEvents } from "./geocode";
 import {
   runJournalPagesStep,
@@ -51,6 +53,7 @@ export const ALL_STEPS: StepName[] = [
   "wikicfp",
   "merge",
   "cfp",
+  "extract",
   "topics",
   "geocode",
   "journals",
@@ -220,6 +223,17 @@ export async function runIngestion(db: Db, opts: RunOptions = {}): Promise<StepR
           const out = await enrichCfps(db, fetcher, deadlineMs, log);
           await refreshDerivedColumns(db);
           return { items: out.updated + out.unchanged, stats: out };
+        }),
+      );
+    } else if (step === "extract") {
+      reports.push(
+        await recordRun(db, "extract", async () => {
+          const configError = aiConfigError();
+          if (configError) {
+            return { items: 0, stats: { requests: 0 }, warnings: [`skipped: ${configError}`] };
+          }
+          const { generate, label } = makeGenerate();
+          return runExtractStep(db, deadlineMs, log, { generate, model: label });
         }),
       );
     } else if (step === "topics") {

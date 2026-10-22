@@ -88,6 +88,7 @@ export const SOURCES = [
   "wikicfp",
   "openreview",
   "cfp",
+  "extract",
   "topics",
   "geocode",
   "journals",
@@ -98,7 +99,7 @@ export const SOURCES = [
 /** Sources that produce events (vs. enrichment steps that improve existing events). */
 export const LIST_SOURCES = ["ccfddl", "huggingface", "wikicfp", "openreview"] as const;
 export type ListSourceName = (typeof LIST_SOURCES)[number];
-export const ENRICHMENT_STEPS = ["cfp", "topics", "geocode"] as const;
+export const ENRICHMENT_STEPS = ["cfp", "extract", "topics", "geocode"] as const;
 export type EnrichmentStep = (typeof ENRICHMENT_STEPS)[number];
 /** Journal pipeline: seed + OpenAlex, rankings, journal pages, special-issue calls. */
 export const JOURNAL_STEPS = [
@@ -142,6 +143,13 @@ export const SOURCE_META: Record<
     label: "Official CFP pages",
     url: "",
     description: "Readability-extracted call-for-papers text from each event's own website.",
+    kind: "enrichment",
+  },
+  extract: {
+    label: "AI extraction from CFP pages",
+    url: "",
+    description:
+      "An LLM reads each event's own CFP page and proposes deadlines, attendance mode and a description. A value is kept only if its verbatim quote is found on the page; kept values are marked AI-extracted and never override a source.",
     kind: "enrichment",
   },
   topics: {
@@ -194,6 +202,7 @@ export const SOURCE_PRIORITY: Record<SourceName, number> = {
   openreview: 3,
   wikicfp: 4,
   cfp: 5,
+  extract: 5.5,
   topics: 6,
   geocode: 7,
   journals: 8,
