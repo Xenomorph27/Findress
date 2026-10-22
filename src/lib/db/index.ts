@@ -29,7 +29,8 @@ export function getDb(): Db | null {
       max: Number(process.env.DB_POOL_MAX ?? 5),
       idleTimeoutMillis: 10_000,
       connectionTimeoutMillis: 8_000,
-      ssl: local || /sslmode=disable/.test(url) ? undefined : { rejectUnauthorized: false },
+      // Neon's certificates chain to a public CA, so remote connections verify them.
+      ssl: local || /sslmode=disable/.test(url) ? undefined : { rejectUnauthorized: true },
     });
     pool.on("error", (err) => console.error("[db] idle client error", err.message));
     globalForDb.__findressPool = pool;

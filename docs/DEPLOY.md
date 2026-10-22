@@ -73,7 +73,16 @@ at a time, so each call stays inside Vercel's 300 s function limit. You can also
    DATABASE_URL="<the Neon URL from .env.production.local>" pnpm db:migrate
    ```
 
-   Migrations live in `drizzle/` (0000–0003, including `login_attempts` for the lockout).
+   Migrations live in `drizzle/` (0000–0003, including `login_attempts` for the lockout). If
+   `DATABASE_URL_UNPOOLED` is set (the Vercel Neon integration creates it), `pnpm db:migrate` uses
+   it instead of `DATABASE_URL`: schema changes go through Neon's direct endpoint, the running app
+   through the pooled one.
+
+   **Neon project settings.** Only the Postgres database is used. No extensions are needed (search
+   uses built-in `tsvector`). Create the project in the region closest to your Vercel functions
+   (default `iad1`, so an AWS US East region). Connection pooling stays on. FIndress has its own
+   owner login, so Neon Auth, Realtime, Storage and Functions are not used. Remote connections
+   verify Neon's TLS certificate.
 
 ## 4. Post-deploy checks
 

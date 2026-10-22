@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { useTheme } from "next-themes";
 import { useDeferredStart } from "@/lib/hooks/use-deferred-start";
+import { useMounted } from "@/lib/hooks/use-mounted";
 import { useWebGLMode } from "@/lib/hooks/use-webgl";
 
 // three.js + WebGL: browser only, fetched after the page is interactive.
@@ -20,9 +21,12 @@ export const DEMO_BG = "#120F17";
  */
 export function ExplorePillar() {
   const { resolvedTheme } = useTheme();
+  // The server can't know the theme (it renders null); the browser reads it from storage on its
+  // first render. Waiting for mount keeps the hydration render identical to the server's.
+  const mounted = useMounted();
   const started = useDeferredStart();
   const mode = useWebGLMode(started);
-  if (resolvedTheme !== "dark") return null;
+  if (!mounted || resolvedTheme !== "dark") return null;
   return (
     <div
       aria-hidden
