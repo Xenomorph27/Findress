@@ -78,7 +78,6 @@ const PROVENANCE_LABEL: Record<string, string> = {
 
 function Header({ j }: { j: JournalDetail }) {
   const calls = j.specialIssues.length;
-  const jif = j.impactMetrics.find((m) => /^journal impact factor$/i.test(m.name));
   return (
     <header className="space-y-5 pt-8 md:pt-12">
       <nav
@@ -111,9 +110,9 @@ function Header({ j }: { j: JournalDetail }) {
           hint="OpenAlex"
         />
         <Stat
-          label={jif ? `Impact factor ${jif.year ?? ""}`.trim() : "Works indexed"}
-          value={jif ? jif.value : (j.worksCount?.toLocaleString() ?? null)}
-          hint={jif ? jif.source : "OpenAlex"}
+          label="Works indexed"
+          value={j.worksCount?.toLocaleString() ?? null}
+          hint="OpenAlex"
         />
         <Stat
           label="Publication fee"
@@ -133,6 +132,25 @@ function Header({ j }: { j: JournalDetail }) {
         Rolling submissions
         {calls > 0 && ` · ${calls} special-issue ${calls === 1 ? "call" : "calls"} on record`}
         {j.avgTimeToFirstDecision && ` · first decision in ${j.avgTimeToFirstDecision} (median)`}
+      </p>
+      <p className="text-muted-foreground text-xs">
+        Citation figures come from OpenAlex. Impact factors are Clarivate data and are not shown
+        here
+        {j.homepage && (
+          <>
+            ; see the{" "}
+            <a
+              href={j.homepage}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-foreground underline underline-offset-2"
+            >
+              journal&apos;s own page
+            </a>{" "}
+            for the figure it publishes
+          </>
+        )}
+        .
       </p>
       <EventActions
         eventId={j.id}
@@ -335,11 +353,7 @@ function Metrics({ j }: { j: JournalDetail }) {
               ["2-year mean citedness", j.twoYrMeanCitedness?.toFixed(2), "OpenAlex"],
               ["Works indexed", j.worksCount?.toLocaleString(), "OpenAlex"],
               ["Citations", j.citedByCount?.toLocaleString(), "OpenAlex"],
-              ...j.impactMetrics.map((m) => [
-                `${m.name}${m.year ? ` (${m.year})` : ""}`,
-                m.value,
-                m.source,
-              ]),
+              ["Impact factor", null, "not shown (Clarivate data): see the journal page"],
               ["CORE journal rank", j.rankCoreJournal, "CORE2020 (final edition)"],
               ["CCF rank", j.rankCcf, "CCF 2026 list"],
               ["SJR quartile", null, "not tracked (Scimago blocks automated use)"],

@@ -178,7 +178,7 @@ export function buildTools({ tz, allowedHosts }: { tz: string; allowedHosts: str
             works: j.worksCount,
             citations: j.citedByCount,
           },
-          publishedMetrics: j.impactMetrics,
+          impactFactor: "not tracked (Clarivate data); see the journal's own page",
           ranks: { coreJournal2020: j.rankCoreJournal, ccf2026: j.rankCcf },
           reviewModel: j.reviewModel ?? "not stated",
           timeToFirstDecision: j.avgTimeToFirstDecision ?? "not published",

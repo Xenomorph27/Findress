@@ -22,9 +22,8 @@ describe("journal page guards", () => {
     expect(text).toContain("Machine Learning publishes high-quality research");
   });
 
-  it("yields no metrics (not zero-length overwrites) from a block page", () => {
+  it("yields no time-to-decision from a block page", () => {
     const m = parseSpringerMetrics(BLOCK_PAGE);
     expect(m.timeToFirstDecision).toBeNull();
-    expect(m.impactMetrics).toHaveLength(0);
   });
 });

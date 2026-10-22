@@ -190,7 +190,6 @@ async function getJournalDetailQuery(slug: string): Promise<JournalDetail | null
     citedByCount: j.citedByCount,
     metricsAsOf: j.metricsAsOf?.toISOString() ?? null,
     countsByYear: j.countsByYear,
-    impactMetrics: j.impactMetrics,
     rankCoreJournal: j.rankCoreJournal,
     rankCcf: j.rankCcf,
     sjrQuartile: j.sjrQuartile,

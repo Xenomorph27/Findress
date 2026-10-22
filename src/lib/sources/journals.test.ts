@@ -146,13 +146,10 @@ describe("journal rankings", () => {
 });
 
 describe("journal pages", () => {
-  it("reads Springer's published metrics with their year", () => {
+  it("reads Springer's time to first decision and ignores the impact factors on the page", () => {
     const m = parseSpringerMetrics(fixture("journals", "springer-10994-home.html"));
-    expect(m.impactMetrics).toEqual([
-      { name: "Journal Impact Factor", value: "4.9", year: 2025 },
-      { name: "5-year Journal Impact Factor", value: "8.0", year: 2025 },
-    ]);
-    expect(m.timeToFirstDecision).toBe("5 days");
+    expect(m).toEqual({ timeToFirstDecision: "5 days" });
+    expect(m).not.toHaveProperty("impactMetrics");
   });
 
   it("keeps only Springer calls that state a submission deadline", () => {

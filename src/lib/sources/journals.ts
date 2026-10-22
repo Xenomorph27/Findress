@@ -247,32 +247,23 @@ export function extractScopeText(html: string, url: string): string | null {
 }
 
 export interface SpringerJournalMetrics {
-  impactMetrics: { name: string; value: string; year: number | null }[];
   timeToFirstDecision: string | null;
 }
 
-/** Springer journal home: the "Journal metrics" block as published (label → value (year)). */
+/**
+ * Springer journal home: the "Journal metrics" block. Only the journal's own submission-speed
+ * figure is read. Impact factors on those pages are Clarivate data and are deliberately ignored;
+ * the app shows OpenAlex's 2-year mean citedness instead.
+ */
 export function parseSpringerMetrics(html: string): SpringerJournalMetrics {
   const $ = cheerio.load(html);
-  const impactMetrics: SpringerJournalMetrics["impactMetrics"] = [];
   let timeToFirstDecision: string | null = null;
   $(".app-journal-homepage-metrics dl").each((_, dl) => {
     const label = cleanText($(dl).find("dt").text());
     const raw = cleanText($(dl).find("dd").text());
-    if (!label || !raw) return;
-    if (/first decision/i.test(label)) {
-      timeToFirstDecision = raw;
-      return;
-    }
-    if (!/impact factor/i.test(label)) return;
-    const m = /^([\d.]+)\s*\((\d{4})\)$/.exec(raw);
-    impactMetrics.push({
-      name: label,
-      value: m ? m[1] : raw,
-      year: m ? Number(m[2]) : null,
-    });
+    if (label && raw && /first decision/i.test(label)) timeToFirstDecision = raw;
   });
-  return { impactMetrics, timeToFirstDecision };
+  return { timeToFirstDecision };
 }
 
 /* ------------------------------------------------------------ special issues */

@@ -218,9 +218,7 @@ export function buildJournalSystemPrompt(
     `ISSN: print ${j.issnPrint ?? "—"} · online ${j.issnOnline ?? "—"}${j.issns.length ? ` · all known: ${j.issns.join(", ")}` : " · no ISSN recorded"}`,
     `Open access: ${j.openAccess ? OA_TEXT[j.openAccess] : "not known"}${prov("openAccess")} · APC: ${j.apcUsd != null ? (j.apcUsd === 0 ? "none (no author fees)" : `US$${j.apcUsd}`) : "not known"}${prov("apcUsd")}`,
     `OpenAlex metrics (as of ${j.metricsAsOf?.slice(0, 10) ?? "unknown"}): h-index ${j.hIndex ?? "—"}, i10-index ${j.i10Index ?? "—"}, 2-year mean citedness ${j.twoYrMeanCitedness ?? "—"}, works ${j.worksCount ?? "—"}, citations ${j.citedByCount ?? "—"}`,
-    j.impactMetrics.length
-      ? `Published impact metrics: ${j.impactMetrics.map((m) => `${m.name} ${m.value}${m.year ? ` (${m.year})` : ""} — source: ${m.source}`).join("; ")}`
-      : "Published impact metrics: none recorded (the journal page did not list any we could read)",
+    "Impact factors: not tracked (Clarivate data). Use the OpenAlex 2-year mean citedness above, and point the user to the journal's own page for the figure it publishes.",
     `Ranks: CORE journal ${j.rankCoreJournal ?? "—"} (final CORE2020 list) · CCF ${j.rankCcf ?? "—"} (2026 list) · SJR quartile: not tracked`,
     `Review model: ${j.reviewModel ?? "not stated"} · Time to first decision: ${j.avgTimeToFirstDecision ? `${j.avgTimeToFirstDecision} (median, published by the journal)` : "not published"}`,
     `Homepage: ${j.homepage ?? "not known"} · Submission guidelines: ${j.submissionUrl ?? "not known"}`,

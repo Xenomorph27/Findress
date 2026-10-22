@@ -45,9 +45,17 @@ export function OaBadge({
   );
 }
 
-function Metric({ label, value }: { label: string; value: string | number | null }) {
+function Metric({
+  label,
+  value,
+  title,
+}: {
+  label: string;
+  value: string | number | null;
+  title?: string;
+}) {
   return (
-    <span className="flex items-baseline gap-2">
+    <span className="flex items-baseline gap-2" title={title}>
       <span className="text-muted-foreground text-xs">{label}</span>
       <span className="tabular font-mono text-xs">{value ?? "—"}</span>
     </span>
@@ -137,8 +145,12 @@ export function JournalResultRow({
       </div>
 
       <div className="col-span-2 flex flex-wrap gap-x-5 gap-y-0.5 md:col-span-1 md:block md:space-y-0.5">
-        <Metric label="h-index" value={row.hIndex} />
-        <Metric label="2-yr cited" value={row.twoYrMeanCitedness?.toFixed(2) ?? null} />
+        <Metric label="h-index" value={row.hIndex} title="h-index (OpenAlex)" />
+        <Metric
+          label="2-yr cited"
+          value={row.twoYrMeanCitedness?.toFixed(2) ?? null}
+          title="2-year mean citedness (OpenAlex)"
+        />
       </div>
 
       <div className="col-span-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs md:col-span-1 md:block md:space-y-1">

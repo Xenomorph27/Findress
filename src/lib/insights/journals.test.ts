@@ -108,15 +108,6 @@ describe("buildJournalSystemPrompt", () => {
         citedByCount: 300000,
         metricsAsOf: "2026-10-08T00:00:00.000Z",
         countsByYear: [{ year: 2025, works: 120, citations: 9000 }],
-        impactMetrics: [
-          {
-            name: "Journal Impact Factor",
-            value: "4.9",
-            year: 2025,
-            source: "Springer journal page",
-            url: null,
-          },
-        ],
         rankCoreJournal: "A*",
         rankCcf: "B",
         sjrQuartile: null,
@@ -146,7 +137,8 @@ describe("buildJournalSystemPrompt", () => {
     );
     expect(chunks.length).toBeGreaterThan(0);
     expect(system).toContain("[§1] Aims");
-    expect(system).toContain("Journal Impact Factor 4.9 (2025) — source: Springer journal page");
+    expect(system).toContain("Impact factors: not tracked (Clarivate data)");
+    expect(system).not.toContain("Journal Impact Factor 4.9");
     expect(system).toContain("[SI1] Trustworthy Foundation Models");
     expect(system).toContain('call states "December 1, 2026"');
     expect(system).toContain("OPEN");

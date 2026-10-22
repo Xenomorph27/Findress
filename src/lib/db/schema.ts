@@ -236,6 +236,7 @@ export const journals = pgTable(
       .$type<{ year: number; works: number; citations: number }[]>()
       .notNull()
       .default([]),
+    /** Legacy, always empty: scraped impact factors were retired (Clarivate data). */
     impactMetrics: jsonb("impact_metrics").$type<JournalMetric[]>().notNull().default([]),
     rankCoreJournal: text("rank_core_journal"),
     rankCcf: text("rank_ccf"),

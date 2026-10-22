@@ -208,13 +208,6 @@ export interface JournalDetail {
   citedByCount: number | null;
   metricsAsOf: string | null;
   countsByYear: { year: number; works: number; citations: number }[];
-  impactMetrics: {
-    name: string;
-    value: string;
-    year: number | null;
-    source: string;
-    url: string | null;
-  }[];
   rankCoreJournal: string | null;
   rankCcf: string | null;
   sjrQuartile: string | null;

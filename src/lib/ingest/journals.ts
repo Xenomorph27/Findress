@@ -352,19 +352,13 @@ export async function runJournalPagesStep(
         } else if (home.ok) {
           const m = parseSpringerMetrics(home.text);
           // Only write what the page actually states: a missing block must not erase earlier data.
-          const set: Partial<typeof journals.$inferInsert> = {};
-          if (m.impactMetrics.length)
-            set.impactMetrics = m.impactMetrics.map((x) => ({
-              ...x,
-              source: "Springer journal page",
-              url: seed.homepage,
-            }));
-          if (m.timeToFirstDecision) set.avgTimeToFirstDecision = m.timeToFirstDecision;
-          if (Object.keys(set).length > 0) {
-            await db.update(journals).set(set).where(eq(journals.id, row.id));
+          if (m.timeToFirstDecision) {
+            await db
+              .update(journals)
+              .set({ avgTimeToFirstDecision: m.timeToFirstDecision })
+              .where(eq(journals.id, row.id));
             await mergeSources(db, row.id, "journal-site", {
-              ...(set.impactMetrics ? { impactMetrics: "journal-site" } : {}),
-              ...(set.avgTimeToFirstDecision ? { avgTimeToFirstDecision: "journal-site" } : {}),
+              avgTimeToFirstDecision: "journal-site",
             });
             metrics++;
           }
