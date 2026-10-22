@@ -20,6 +20,7 @@ import {
 import { tagEvent } from "@/lib/sources/topics";
 import { eventPageUrl, feedUrl, WIKICFP_CATEGORIES } from "@/lib/sources/wikicfp";
 import { RobotsDisallowedError, type PoliteFetcher } from "./http";
+import { looksBlocked } from "./blocked-page";
 import { sha256Hex } from "./keys";
 
 /**
@@ -333,6 +334,10 @@ export async function runJournalPagesStep(
             scopes++;
           }
         } else if (!res.ok) warnings.push(`${seed.abbreviation} scope: HTTP ${res.status}`);
+        else
+          warnings.push(
+            `${seed.abbreviation} scope: no usable text (blocked or empty page); kept the previous value`,
+          );
       } catch (err) {
         warnings.push(`${seed.abbreviation} scope: ${(err as Error).message}`.slice(0, 160));
       }
@@ -340,24 +345,29 @@ export async function runJournalPagesStep(
     if (seed.homepage?.startsWith("https://link.springer.com/journal/")) {
       try {
         const home = await fetcher.get(seed.homepage, opts);
-        if (home.ok) {
+        if (home.ok && looksBlocked(home.text)) {
+          warnings.push(
+            `${seed.abbreviation} journal page: blocked or error page; kept the previous values`,
+          );
+        } else if (home.ok) {
           const m = parseSpringerMetrics(home.text);
-          await db
-            .update(journals)
-            .set({
-              impactMetrics: m.impactMetrics.map((x) => ({
-                ...x,
-                source: "Springer journal page",
-                url: seed.homepage,
-              })),
-              avgTimeToFirstDecision: m.timeToFirstDecision,
-            })
-            .where(eq(journals.id, row.id));
-          await mergeSources(db, row.id, "journal-site", {
-            ...(m.impactMetrics.length ? { impactMetrics: "journal-site" } : {}),
-            ...(m.timeToFirstDecision ? { avgTimeToFirstDecision: "journal-site" } : {}),
-          });
-          metrics++;
+          // Only write what the page actually states: a missing block must not erase earlier data.
+          const set: Partial<typeof journals.$inferInsert> = {};
+          if (m.impactMetrics.length)
+            set.impactMetrics = m.impactMetrics.map((x) => ({
+              ...x,
+              source: "Springer journal page",
+              url: seed.homepage,
+            }));
+          if (m.timeToFirstDecision) set.avgTimeToFirstDecision = m.timeToFirstDecision;
+          if (Object.keys(set).length > 0) {
+            await db.update(journals).set(set).where(eq(journals.id, row.id));
+            await mergeSources(db, row.id, "journal-site", {
+              ...(set.impactMetrics ? { impactMetrics: "journal-site" } : {}),
+              ...(set.avgTimeToFirstDecision ? { avgTimeToFirstDecision: "journal-site" } : {}),
+            });
+            metrics++;
+          }
         }
         if (seed.cfpUrl) {
           const up = await fetcher.get(seed.cfpUrl, { ...opts, cacheTtlMs: DAY });

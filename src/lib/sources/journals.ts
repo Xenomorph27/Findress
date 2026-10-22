@@ -3,6 +3,7 @@ import * as cheerio from "cheerio";
 import { parseHTML } from "linkedom";
 import { z } from "zod";
 import type { JournalSeed } from "@/data/journals-seed";
+import { isUsableScrape, looksBlocked } from "@/lib/ingest/blocked-page";
 import { parseSingleDate } from "@/lib/ingest/dates";
 import { cleanText, normalizeUrl } from "@/lib/ingest/keys";
 import { wallClockToUtc } from "@/lib/time/tz";
@@ -221,6 +222,8 @@ const MAX_SCOPE = 20_000;
 
 /** Readability-extracted "aims & scope" text, structure kept (## headings, - bullets). */
 export function extractScopeText(html: string, url: string): string | null {
+  // A bot-challenge or error page served with HTTP 200 is not the journal's page.
+  if (looksBlocked(html)) return null;
   const { document } = parseHTML(html);
   // Springer pages put the aims & scope in a dedicated container; prefer it when present.
   const $ = cheerio.load(html);
@@ -240,7 +243,7 @@ export function extractScopeText(html: string, url: string): string | null {
   }
   if (!text) return null;
   text = text.replace(/\n{3,}/g, "\n\n").trim();
-  return text.length >= 120 ? text.slice(0, MAX_SCOPE) : null;
+  return isUsableScrape(text) ? text.slice(0, MAX_SCOPE) : null;
 }
 
 export interface SpringerJournalMetrics {
