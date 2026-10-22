@@ -193,6 +193,8 @@ async function getJournalDetailQuery(slug: string): Promise<JournalDetail | null
     rankCoreJournal: j.rankCoreJournal,
     rankCcf: j.rankCcf,
     sjrQuartile: j.sjrQuartile,
+    sjrScore: j.sjrScore,
+    sjrYear: j.sjrYear,
     reviewModel: j.reviewModel,
     avgTimeToFirstDecision: j.avgTimeToFirstDecision,
     sources: j.sources,

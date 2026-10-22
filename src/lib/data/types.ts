@@ -211,6 +211,8 @@ export interface JournalDetail {
   rankCoreJournal: string | null;
   rankCcf: string | null;
   sjrQuartile: string | null;
+  sjrScore: number | null;
+  sjrYear: number | null;
   reviewModel: string | null;
   avgTimeToFirstDecision: string | null;
   sources: string[];

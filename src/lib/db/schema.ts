@@ -242,6 +242,9 @@ export const journals = pgTable(
     rankCcf: text("rank_ccf"),
     /** Only when an openly reusable source provides it (see docs/REVIEW.md). */
     sjrQuartile: text("sjr_quartile"),
+    /** SCImago SJR indicator and the data year it comes from (SCImago Journal & Country Rank). */
+    sjrScore: real("sjr_score"),
+    sjrYear: integer("sjr_year"),
     reviewModel: text("review_model"),
     /** As the journal publishes it, e.g. "37 days" (median, submission to first decision). */
     avgTimeToFirstDecision: text("avg_time_to_first_decision"),

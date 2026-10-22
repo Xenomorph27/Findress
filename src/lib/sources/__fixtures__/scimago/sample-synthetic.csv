@@ -1,0 +1,7 @@
+"Rank";"Sourceid";"Title";"Type";"Issn";"SJR";"SJR Best Quartile";"H index";"Total Docs. (2024)";"Total Docs. (3years)";"Total Refs.";"Total Cites (3years)";"Citable Docs. (3years)";"Cites / Doc. (2years)";"Ref. / Doc.";"Publisher";"Coverage";"Categories";"Areas"
+"1";"100001";"Journal of Machine Learning Research";"journal";"15337928, 15324435";"2,500";"Q1";"300";"100";"300";"9000";"1500";"290";"5,10";"90,00";"Microtome Publishing";"2001-2024";"Artificial Intelligence (Q1)";"Computer Science"
+"2";"100002";"Neural Networks";"journal";"18792782, 08936080";"1,800";"Q1";"250";"250";"700";"30000";"3000";"680";"6,20";"120,00";"Elsevier";"1988-2024";"Artificial Intelligence (Q1)";"Computer Science"
+"3";"100003";"Machine Learning; A Synthetic ""Quoted"" Title";"journal";"08856125";"1,100";"Q2";"180";"90";"250";"8000";"900";"240";"3,90";"85,00";"Springer Nature";"1986-2024";"Artificial Intelligence (Q2)";"Computer Science"
+"4";"100004";"Journal Without A Quartile";"journal";"22223333";"0,150";"-";"12";"20";"60";"1500";"40";"55";"0,70";"40,00";"Some Publisher";"2010-2024";"Computer Science Applications (Q4)";"Computer Science"
+"5";"100005";"Proceedings Series With No ISSN";"book series";"";"0,300";"Q3";"20";"200";"600";"9000";"100";"590";"0,20";"30,00";"Some Publisher";"2005-2024";"Computer Science (Q3)";"Computer Science"
+"900";"100099";"Duplicate Of JMLR Lower Ranked";"journal";"15324435";"0,200";"Q4";"5";"10";"30";"500";"10";"28";"0,30";"20,00";"Mirror Press";"2015-2024";"Artificial Intelligence (Q4)";"Computer Science"

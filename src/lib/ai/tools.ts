@@ -179,7 +179,18 @@ export function buildTools({ tz, allowedHosts }: { tz: string; allowedHosts: str
             citations: j.citedByCount,
           },
           impactFactor: "not tracked (Clarivate data); see the journal's own page",
-          ranks: { coreJournal2020: j.rankCoreJournal, ccf2026: j.rankCcf },
+          ranks: {
+            coreJournal2020: j.rankCoreJournal,
+            ccf2026: j.rankCcf,
+            sjr: j.sjrQuartile
+              ? {
+                  quartile: j.sjrQuartile,
+                  score: j.sjrScore,
+                  year: j.sjrYear,
+                  credit: "Data: SCImago Journal & Country Rank, source Scopus®",
+                }
+              : "not loaded",
+          },
           reviewModel: j.reviewModel ?? "not stated",
           timeToFirstDecision: j.avgTimeToFirstDecision ?? "not published",
           homepage: j.homepage,

@@ -45,7 +45,7 @@ function provenance(fields: string[], source: string) {
   return Object.fromEntries(fields.map((f) => [f, source]));
 }
 
-async function mergeSources(db: Db, id: number, source: string, prov: Record<string, string>) {
+export async function mergeSources(db: Db, id: number, source: string, prov: Record<string, string>) {
   await db
     .update(journals)
     .set({

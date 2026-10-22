@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { formatSjr, SjrCredit } from "@/components/journal/sjr-credit";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { AssistantSlot } from "@/components/assistant/assistant-slot";
@@ -73,6 +74,7 @@ const PROVENANCE_LABEL: Record<string, string> = {
   ccf: "CCF list",
   core: "CORE portal",
   "journal-site": "journal site",
+  scimago: "SCImago (Scopus®)",
   "journal site": "journal site",
 };
 
@@ -133,6 +135,16 @@ function Header({ j }: { j: JournalDetail }) {
         {calls > 0 && ` · ${calls} special-issue ${calls === 1 ? "call" : "calls"} on record`}
         {j.avgTimeToFirstDecision && ` · first decision in ${j.avgTimeToFirstDecision} (median)`}
       </p>
+      {(j.sjrQuartile || j.sjrScore != null) && (
+        <p className="text-sm">
+          <span className="text-muted-foreground">SJR quartile </span>
+          <span className="tabular font-mono">
+            {formatSjr(j.sjrQuartile, j.sjrScore, j.sjrYear)}
+          </span>
+          <span className="text-muted-foreground"> · </span>
+          <SjrCredit issn={j.issnPrint ?? j.issnOnline} />
+        </p>
+      )}
       <p className="text-muted-foreground text-xs">
         Citation figures come from OpenAlex. Impact factors are Clarivate data and are not shown
         here
@@ -356,7 +368,13 @@ function Metrics({ j }: { j: JournalDetail }) {
               ["Impact factor", null, "not shown (Clarivate data): see the journal page"],
               ["CORE journal rank", j.rankCoreJournal, "CORE2020 (final edition)"],
               ["CCF rank", j.rankCcf, "CCF 2026 list"],
-              ["SJR quartile", null, "not tracked (Scimago blocks automated use)"],
+              [
+                "SJR quartile",
+                formatSjr(j.sjrQuartile, j.sjrScore, j.sjrYear),
+                j.sjrQuartile || j.sjrScore != null
+                  ? "SCImago (Scopus®)"
+                  : "not loaded yet (imported yearly from SCImago)",
+              ],
             ].map(([k, v, src]) => (
               <tr key={k as string}>
                 <td className="py-2 pr-3">{k}</td>
@@ -368,6 +386,11 @@ function Metrics({ j }: { j: JournalDetail }) {
             ))}
           </tbody>
         </table>
+        {(j.sjrQuartile || j.sjrScore != null) && (
+          <p className="mt-2">
+            <SjrCredit issn={j.issnPrint ?? j.issnOnline} />
+          </p>
+        )}
         <JournalCountsChart data={j.countsByYear.slice(-12)} />
       </div>
     </Section>

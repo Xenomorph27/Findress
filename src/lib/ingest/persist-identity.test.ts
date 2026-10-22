@@ -1,13 +1,10 @@
-import { readFileSync, readdirSync } from "node:fs";
-import path from "node:path";
-import { PGlite } from "@electric-sql/pglite";
-import { drizzle } from "drizzle-orm/pglite";
+import type { PGlite } from "@electric-sql/pglite";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { Db } from "@/lib/db";
-import * as schema from "@/lib/db/schema";
 import { bookmarks, chats, events, eventSources, notes } from "@/lib/db/schema";
 import { mergeEventInputs } from "./merge";
 import { writeMergedEvents } from "./persist";
+import { createTestDb } from "./test-db";
 import { emptyEvent, type EventInput } from "./types";
 
 // A real Postgres (PGlite, in memory) with the project's actual migrations applied.
@@ -15,16 +12,7 @@ let pg: PGlite;
 let db: Db;
 
 beforeAll(async () => {
-  pg = new PGlite();
-  const dir = path.join(process.cwd(), "drizzle");
-  for (const f of readdirSync(dir)
-    .filter((x) => x.endsWith(".sql"))
-    .sort()) {
-    for (const stmt of readFileSync(path.join(dir, f), "utf8").split("--> statement-breakpoint")) {
-      if (stmt.trim()) await pg.exec(stmt);
-    }
-  }
-  db = drizzle(pg, { schema }) as unknown as Db;
+  ({ pg, db } = await createTestDb());
 }, 60_000);
 
 afterAll(async () => {

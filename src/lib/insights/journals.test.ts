@@ -111,6 +111,8 @@ describe("buildJournalSystemPrompt", () => {
         rankCoreJournal: "A*",
         rankCcf: "B",
         sjrQuartile: null,
+        sjrScore: null,
+        sjrYear: null,
         reviewModel: null,
         avgTimeToFirstDecision: "5 days",
         sources: ["seed", "openalex"],

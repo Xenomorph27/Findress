@@ -219,7 +219,7 @@ export function buildJournalSystemPrompt(
     `Open access: ${j.openAccess ? OA_TEXT[j.openAccess] : "not known"}${prov("openAccess")} · APC: ${j.apcUsd != null ? (j.apcUsd === 0 ? "none (no author fees)" : `US$${j.apcUsd}`) : "not known"}${prov("apcUsd")}`,
     `OpenAlex metrics (as of ${j.metricsAsOf?.slice(0, 10) ?? "unknown"}): h-index ${j.hIndex ?? "—"}, i10-index ${j.i10Index ?? "—"}, 2-year mean citedness ${j.twoYrMeanCitedness ?? "—"}, works ${j.worksCount ?? "—"}, citations ${j.citedByCount ?? "—"}`,
     "Impact factors: not tracked (Clarivate data). Use the OpenAlex 2-year mean citedness above, and point the user to the journal's own page for the figure it publishes.",
-    `Ranks: CORE journal ${j.rankCoreJournal ?? "—"} (final CORE2020 list) · CCF ${j.rankCcf ?? "—"} (2026 list) · SJR quartile: not tracked`,
+    `Ranks: CORE journal ${j.rankCoreJournal ?? "—"} (final CORE2020 list) · CCF ${j.rankCcf ?? "—"} (2026 list) · SJR quartile: ${j.sjrQuartile ? `${j.sjrQuartile}${j.sjrScore != null ? ` (SJR ${j.sjrScore.toFixed(3)}${j.sjrYear ? `, ${j.sjrYear}` : ""})` : ""} — Data: SCImago Journal & Country Rank, source Scopus®` : "not loaded"}`,
     `Review model: ${j.reviewModel ?? "not stated"} · Time to first decision: ${j.avgTimeToFirstDecision ? `${j.avgTimeToFirstDecision} (median, published by the journal)` : "not published"}`,
     `Homepage: ${j.homepage ?? "not known"} · Submission guidelines: ${j.submissionUrl ?? "not known"}`,
     `Subfields: ${j.subfields.join(", ") || "—"} · Topics (OpenAlex): ${j.topics.join(", ") || "—"}`,
