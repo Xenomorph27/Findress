@@ -3,6 +3,10 @@ import { EventInputSchema } from "@/lib/ingest/types";
 import {
   disambiguate,
   normalizeConference,
+  OPENREVIEW_VENUES,
+  openreviewAdapter,
+  sweepNextCursor,
+  sweepStart,
   normalizeWorkshop,
   parseOrDateTime,
   type OrGroup,
@@ -100,5 +104,60 @@ describe("OpenReview", () => {
     expect(disambiguate([icml], taken).map((e) => e.acronym)).toEqual(["OPT@ICML"]);
     // A genuinely unique workshop is left alone.
     expect(disambiguate([icml]).map((e) => e.acronym)).toEqual(["OPT"]);
+  });
+});
+
+describe("OpenReview resumable sweep", () => {
+  it("starts where the last run stopped and wraps around", () => {
+    expect(sweepStart(20, null)).toBe(0);
+    expect(sweepStart(20, "7")).toBe(7);
+    expect(sweepStart(20, "27")).toBe(7);
+    expect(sweepStart(20, "garbage")).toBe(0);
+    expect(sweepNextCursor(20, 7, 6)).toBe("13");
+    expect(sweepNextCursor(20, 17, 6)).toBe("3");
+    expect(sweepNextCursor(20, 7, 20)).toBe("7");
+  });
+
+  it("visits every task within ceil(total / perRun) runs, however the budget cuts each run", () => {
+    const total = 20;
+    const perRun = 6;
+    const seen = new Set<number>();
+    let cursor: string | null = null;
+    let runs = 0;
+    while (seen.size < total && runs < 10) {
+      const from = sweepStart(total, cursor);
+      for (let n = 0; n < perRun; n++) seen.add((from + n) % total);
+      cursor = sweepNextCursor(total, from, perRun);
+      runs++;
+    }
+    expect(seen.size).toBe(total);
+    expect(runs).toBe(Math.ceil(total / perRun));
+  });
+
+  const ctx = (over: Partial<Parameters<typeof openreviewAdapter.run>[0]>) =>
+    ({
+      fetcher: { getJson: async () => ({ groups: [] }) },
+      deadlineMs: Date.now() + 60_000,
+      now: new Date("2026-10-22T00:00:00Z"),
+      log: () => {},
+      previous: new Map(),
+      cursor: null,
+      env: {},
+      ...over,
+    }) as Parameters<typeof openreviewAdapter.run>[0];
+
+  it("finishes a whole sweep when there is time, and may then prune", async () => {
+    const out = await openreviewAdapter.run(ctx({}));
+    expect(out.stats.venueYearsDone).toBe(OPENREVIEW_VENUES.length * 2);
+    expect(out.nextCursor).toBe("0");
+    expect(out.warnings).toEqual([]);
+  });
+
+  it("stops at the budget, keeps its place, warns where it resumes and never prunes", async () => {
+    const out = await openreviewAdapter.run(ctx({ cursor: "7", deadlineMs: Date.now() - 1 }));
+    expect(out.stats.venueYearsDone).toBe(0);
+    expect(out.nextCursor).toBe("7");
+    expect(out.pruneStale).toBe(false);
+    expect(out.warnings[0]).toMatch(/resumes at/);
   });
 });

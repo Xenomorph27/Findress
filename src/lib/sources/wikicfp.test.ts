@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { EventInputSchema } from "@/lib/ingest/types";
-import { normalizeWikiCfp, parseEventPage, parseFeed } from "./wikicfp";
+import {
+  normalizeWikiCfp,
+  orderPageFetches,
+  pageTtlMs,
+  parseEventPage,
+  parseFeed,
+  type PageCandidate,
+} from "./wikicfp";
 import { fixture } from "./test-utils";
 
 describe("WikiCFP RSS", () => {
@@ -114,5 +121,59 @@ describe("WikiCFP event page", () => {
         null,
       ),
     ).toBeNull();
+  });
+});
+
+describe("WikiCFP page fetch planning", () => {
+  const NOW = Date.parse("2026-10-22T00:00:00Z");
+  const H = 3600_000;
+  const c = (eventId: string, over: Partial<PageCandidate> = {}): PageCandidate => ({
+    eventId,
+    priority: 1,
+    cachedAt: null,
+    soonestDate: null,
+    ...over,
+  });
+
+  it("re-reads imminent events sooner than far-off ones", () => {
+    expect(pageTtlMs("2026-11-10", NOW)).toBe(2 * 24 * H);
+    expect(pageTtlMs("2027-06-01", NOW)).toBe(6 * 24 * H);
+    expect(pageTtlMs(null, NOW)).toBe(6 * 24 * H);
+  });
+
+  it("fetches never-seen pages first, then the nearest stale event, then the oldest copy", () => {
+    const order = orderPageFetches(
+      [
+        c("fresh-cached", { cachedAt: NOW - 1 * H, soonestDate: "2026-11-01" }),
+        c("far-stale-old", { cachedAt: NOW - 20 * 24 * H, soonestDate: "2027-05-01" }),
+        c("near-stale", { cachedAt: NOW - 3 * 24 * H, soonestDate: "2026-11-05" }),
+        c("never", { priority: 0 }),
+        c("far-stale-older", { cachedAt: NOW - 30 * 24 * H, soonestDate: "2027-05-01" }),
+      ],
+      NOW,
+    ).map((x) => x.eventId);
+    expect(order).toEqual([
+      "never",
+      "near-stale",
+      "far-stale-older",
+      "far-stale-old",
+      "fresh-cached",
+    ]);
+  });
+
+  it("walks the whole list over several budget-limited runs", () => {
+    // 10 pages, 3 fetched per run; each fetched page becomes fresh. Everything is covered in 4 runs.
+    let cached = new Map<string, number>();
+    const ids = Array.from({ length: 10 }, (_, i) => `e${i}`);
+    for (let run = 0; run < 4; run++) {
+      const plan = orderPageFetches(
+        ids.map((id) => c(id, { cachedAt: cached.get(id) ?? null, soonestDate: "2027-03-01" })),
+        NOW + run * 6 * H,
+      );
+      const stale = plan.filter((p) => p.cachedAt == null);
+      cached = new Map(cached);
+      for (const p of stale.slice(0, 3)) cached.set(p.eventId, NOW + run * 6 * H);
+    }
+    expect(cached.size).toBe(10);
   });
 });

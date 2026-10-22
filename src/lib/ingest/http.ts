@@ -274,6 +274,13 @@ export class PoliteFetcher {
     return res.text;
   }
 
+  /** When the cached copy of a URL was fetched (ms epoch), or null (no network). */
+  async cachedAt(cacheKey: string): Promise<number | null> {
+    if (!this.opts.cache) return null;
+    const hit = await this.opts.cache.get(cacheKey);
+    return hit ? hit.fetchedAt.getTime() : null;
+  }
+
   /** True when a fresh cached copy exists (no network). */
   async isCached(cacheKey: string, ttlMs: number): Promise<boolean> {
     if (!this.opts.cache) return false;

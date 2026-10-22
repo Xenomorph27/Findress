@@ -49,7 +49,10 @@ export function eventPageUrl(eventId: string): string {
   return `http://www.wikicfp.com/cfp/servlet/event.showcfp?eventid=${eventId}`;
 }
 
-const PAGE_TTL_MS = 3 * 24 * 3600_000;
+const DAY_MS = 24 * 3600_000;
+/** Cached event pages are reused for this long; pages of imminent events are re-read sooner. */
+const PAGE_TTL_SOON_MS = 2 * DAY_MS;
+const PAGE_TTL_FAR_MS = 6 * DAY_MS;
 const FEED_TTL_MS = 55 * 60_000;
 
 /** Calls that are not conferences/workshops (courses, schools, journals, books) are skipped. */
@@ -264,6 +267,45 @@ export function normalizeWikiCfp(
   };
 }
 
+export interface PageCandidate {
+  eventId: string;
+  /** 0 = never seen before, 1 = in the feed and known, 2 = known but no longer in the feed. */
+  priority: number;
+  /** When its cached page was fetched (ms epoch), null if never. */
+  cachedAt: number | null;
+  /** Start date or nearest deadline of the stored event (ISO date), if known. */
+  soonestDate: string | null;
+}
+
+/** An event whose start or deadline is within ~6 weeks needs fresher data than a far-off one. */
+export function pageTtlMs(soonestDate: string | null, nowMs: number): number {
+  const t = soonestDate ? Date.parse(soonestDate) : NaN;
+  return Number.isFinite(t) && t - nowMs < 42 * DAY_MS ? PAGE_TTL_SOON_MS : PAGE_TTL_FAR_MS;
+}
+
+/**
+ * Order event pages so a time-boxed run spends its few network fetches where they matter most:
+ * stale pages first (never fetched, then nearest event, then oldest copy); pages still fresh in
+ * the cache cost nothing and go last. Over several runs this walks the whole list.
+ */
+export function orderPageFetches(cands: PageCandidate[], nowMs: number): PageCandidate[] {
+  const stale = (c: PageCandidate) =>
+    c.cachedAt == null || nowMs - c.cachedAt >= pageTtlMs(c.soonestDate, nowMs);
+  const soon = (c: PageCandidate) => (c.soonestDate ? Date.parse(c.soonestDate) : Infinity);
+  return [...cands].sort((a, b) => {
+    const sa = stale(a),
+      sb = stale(b);
+    if (sa !== sb) return sa ? -1 : 1;
+    if (!sa) return a.priority - b.priority;
+    return (
+      Number(b.cachedAt == null) - Number(a.cachedAt == null) ||
+      a.priority - b.priority ||
+      soon(a) - soon(b) ||
+      (a.cachedAt ?? 0) - (b.cachedAt ?? 0)
+    );
+  });
+}
+
 export const wikicfpAdapter: SourceAdapter = {
   name: "wikicfp",
   async run(ctx: AdapterContext): Promise<AdapterResult> {
@@ -306,19 +348,45 @@ export const wikicfpAdapter: SourceAdapter = {
         priority: 2,
       });
     }
-    candidates.sort((a, b) => a.priority - b.priority);
+    const nowMs = ctx.now.getTime();
+    const soonestOf = (prev: EventInput | undefined) => {
+      if (!prev) return null;
+      const upcoming = prev.deadlines
+        .map((d) => d.dueAtUtc.slice(0, 10))
+        .filter((d) => d >= todayIso)
+        .sort()[0];
+      return (
+        [prev.startDate, upcoming].filter((d): d is string => !!d && d >= todayIso).sort()[0] ??
+        null
+      );
+    };
+    const planned = orderPageFetches(
+      await Promise.all(
+        candidates.map(async ({ item, priority }) => ({
+          eventId: item.eventId,
+          priority,
+          cachedAt: await ctx.fetcher.cachedAt(item.link),
+          soonestDate: soonestOf(ctx.previous.get(item.eventId)),
+        })),
+      ),
+      nowMs,
+    );
+    const itemById = new Map(candidates.map((c) => [c.item.eventId, c.item]));
 
     const interval = await ctx.fetcher.intervalFor("http://www.wikicfp.com");
     const events: EventInput[] = [];
     let pagesFetched = 0;
     let pagesFromCache = 0;
     let skippedForBudget = 0;
-    for (const { item } of candidates) {
+    let oldestSkippedMs: number | null = null;
+    for (const plan of planned) {
+      const item = itemById.get(plan.eventId)!;
+      const ttl = pageTtlMs(plan.soonestDate, nowMs);
       let page: WikiCfpPage | null = null;
-      const cached = await ctx.fetcher.isCached(item.link, PAGE_TTL_MS);
+      const cached = plan.cachedAt != null && nowMs - plan.cachedAt < ttl;
       if (cached || Date.now() + interval < ctx.deadlineMs) {
         try {
-          const res = await ctx.fetcher.get(item.link, { robots: true, cacheTtlMs: PAGE_TTL_MS });
+          const res = await ctx.fetcher.get(item.link, { robots: true, cacheTtlMs: ttl });
           if (res.ok) page = parseEventPage(res.text);
           if (res.fromCache) pagesFromCache++;
           else pagesFetched++;
@@ -327,6 +395,8 @@ export const wikicfpAdapter: SourceAdapter = {
         }
       } else {
         skippedForBudget++;
+        if (plan.cachedAt != null)
+          oldestSkippedMs = Math.min(oldestSkippedMs ?? Infinity, plan.cachedAt);
       }
       const prev = ctx.previous.get(item.eventId);
       const normalized = normalizeWikiCfp(item, page);
@@ -355,6 +425,8 @@ export const wikicfpAdapter: SourceAdapter = {
         pagesFetched,
         pagesFromCache,
         skippedForBudget,
+        oldestUnrefreshedPageHours:
+          oldestSkippedMs == null ? 0 : Math.round((nowMs - oldestSkippedMs) / 3600_000),
       },
     };
   },

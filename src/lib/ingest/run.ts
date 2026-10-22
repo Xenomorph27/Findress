@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { sourceRuns } from "@/lib/db/schema";
 import { ccfddlAdapter } from "@/lib/sources/ccfddl";
@@ -90,6 +90,23 @@ export function parseSteps(input: string | null | undefined): StepName[] {
   return valid;
 }
 
+/** Where the last successful run of a source said the next one should resume (see AdapterResult). */
+async function loadCursor(db: Db, source: StepName): Promise<string | null> {
+  const [row] = await db
+    .select({ cursor: sql<string | null>`${sourceRuns.stats}->>'cursor'` })
+    .from(sourceRuns)
+    .where(
+      and(
+        eq(sourceRuns.source, source),
+        eq(sourceRuns.ok, true),
+        sql`${sourceRuns.stats} ? 'cursor'`,
+      ),
+    )
+    .orderBy(desc(sourceRuns.startedAt))
+    .limit(1);
+  return row?.cursor ?? null;
+}
+
 async function recordRun<
   T extends { items: number; stats: Record<string, number | string>; warnings?: string[] },
 >(db: Db, step: StepName, fn: () => Promise<T>): Promise<StepReport> {
@@ -156,6 +173,7 @@ export async function runIngestion(db: Db, opts: RunOptions = {}): Promise<StepR
     const report = await recordRun(db, name, async () => {
       const runStartedAt = new Date();
       const previous = await loadPreviousPayloads(db, name);
+      const cursor = await loadCursor(db, name);
       // WikiCFP is slow by design (5s crawl delay): leave it most of the remaining budget.
       const result = await ADAPTERS[name].run({
         fetcher,
@@ -163,13 +181,19 @@ export async function runIngestion(db: Db, opts: RunOptions = {}): Promise<StepR
         now: new Date(),
         log,
         previous,
+        cursor,
         env,
       });
       const saved = await saveSourceItems(db, name, result.events, runStartedAt, result.pruneStale);
       const acceptance = result.acceptance ? await saveAcceptance(db, result.acceptance) : 0;
       return {
         items: saved.saved,
-        stats: { ...result.stats, pruned: saved.pruned, ...(acceptance ? { acceptance } : {}) },
+        stats: {
+          ...result.stats,
+          pruned: saved.pruned,
+          ...(acceptance ? { acceptance } : {}),
+          ...(result.nextCursor != null ? { cursor: result.nextCursor } : {}),
+        },
         warnings: result.warnings,
       };
     });

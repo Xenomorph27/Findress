@@ -103,6 +103,8 @@ export interface AdapterContext {
   log: (message: string) => void;
   /** Previously stored payloads for this source, keyed by sourceId (used to keep enrichment). */
   previous: Map<string, EventInput>;
+  /** Where the previous successful run of this source stopped (adapter-defined), or null. */
+  cursor: string | null;
   env: Record<string, string | undefined>;
 }
 
@@ -113,6 +115,8 @@ export interface AdapterResult {
   stats: Record<string, number>;
   /** When false, the source is a rolling window and stale items must not be pruned. */
   pruneStale: boolean;
+  /** Where the next run should resume when this one stopped early (saved in source_runs.stats). */
+  nextCursor?: string | null;
 }
 
 export interface SourceAdapter {

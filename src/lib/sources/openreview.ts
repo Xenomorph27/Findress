@@ -218,6 +218,20 @@ interface InvitationsResponse {
   invitations?: { duedate?: number }[];
 }
 
+/**
+ * A sweep visits every (venue, year) task once, starting where the last run stopped, so a run cut
+ * short by the time budget resumes instead of repeating the first few venues forever.
+ */
+export function sweepStart(total: number, cursor: string | null): number {
+  const n = Number(cursor);
+  return total > 0 && Number.isInteger(n) && n >= 0 ? n % total : 0;
+}
+
+/** Cursor to save after `done` tasks starting at `start` (wraps; 0 once a full sweep finished). */
+export function sweepNextCursor(total: number, start: number, done: number): string {
+  return total > 0 ? String((start + done) % total) : "0";
+}
+
 export const openreviewAdapter: SourceAdapter = {
   name: "openreview",
   async run(ctx: AdapterContext): Promise<AdapterResult> {
@@ -245,57 +259,68 @@ export const openreviewAdapter: SourceAdapter = {
       }
     };
 
-    for (const venue of OPENREVIEW_VENUES) {
-      for (const y of years) {
-        if (Date.now() + 2000 > ctx.deadlineMs) {
-          warnings.push("time budget reached before all venues were listed");
-          break;
+    const tasks = OPENREVIEW_VENUES.flatMap((venue) => years.map((y) => ({ venue, y })));
+    const from = sweepStart(tasks.length, ctx.cursor);
+    let done = 0;
+    for (let n = 0; n < tasks.length; n++) {
+      const { venue, y } = tasks[(from + n) % tasks.length];
+      if (Date.now() + 2000 > ctx.deadlineMs) {
+        const next = tasks[(from + n) % tasks.length];
+        warnings.push(
+          `time budget reached after ${done} of ${tasks.length} venue-years; next run resumes at ${next.venue.label} ${next.y}`,
+        );
+        break;
+      }
+      try {
+        const conf = await ctx.fetcher.getJson<GroupsResponse>(
+          `${API}/groups?id=${encodeURIComponent(`${venue.prefix}/${y}/Conference`)}`,
+          { cacheTtlMs: 6 * 3600_000, minIntervalMs: OR_INTERVAL_MS },
+        );
+        for (const g of conf.groups ?? []) {
+          groupsSeen++;
+          const e = normalizeConference(g, venue, await dueDate(g));
+          if (e) events.push(e);
         }
-        try {
-          const conf = await ctx.fetcher.getJson<GroupsResponse>(
-            `${API}/groups?id=${encodeURIComponent(`${venue.prefix}/${y}/Conference`)}`,
-            { cacheTtlMs: 6 * 3600_000, minIntervalMs: OR_INTERVAL_MS },
-          );
-          for (const g of conf.groups ?? []) {
-            groupsSeen++;
-            const e = normalizeConference(g, venue, await dueDate(g));
-            if (e) events.push(e);
-          }
-        } catch (err) {
-          if (!/HTTP (400|403|404)/.test((err as Error).message)) {
-            warnings.push(`${venue.prefix}/${y}/Conference: ${(err as Error).message}`);
-          }
-        }
-        try {
-          const ws = await ctx.fetcher.getJson<GroupsResponse>(
-            `${API}/groups?parent=${encodeURIComponent(`${venue.prefix}/${y}/Workshop`)}`,
-            { cacheTtlMs: 6 * 3600_000, minIntervalMs: OR_INTERVAL_MS },
-          );
-          for (const g of ws.groups ?? []) {
-            groupsSeen++;
-            // Only look up invitation due dates for workshops that haven't happened yet.
-            const start = startDateOf(g.content?.start_date?.value);
-            const upcoming = !start || Date.parse(start) > nowMs - 7 * 86400_000;
-            const e = normalizeWorkshop(g, venue, upcoming ? await dueDate(g) : null);
-            if (e) events.push(e);
-          }
-        } catch (err) {
-          if (!/HTTP (400|403|404)/.test((err as Error).message)) {
-            warnings.push(`${venue.prefix}/${y}/Workshop: ${(err as Error).message}`);
-          }
+      } catch (err) {
+        if (!/HTTP (400|403|404)/.test((err as Error).message)) {
+          warnings.push(`${venue.prefix}/${y}/Conference: ${(err as Error).message}`);
         }
       }
+      try {
+        const ws = await ctx.fetcher.getJson<GroupsResponse>(
+          `${API}/groups?parent=${encodeURIComponent(`${venue.prefix}/${y}/Workshop`)}`,
+          { cacheTtlMs: 6 * 3600_000, minIntervalMs: OR_INTERVAL_MS },
+        );
+        for (const g of ws.groups ?? []) {
+          groupsSeen++;
+          // Only look up invitation due dates for workshops that haven't happened yet.
+          const start = startDateOf(g.content?.start_date?.value);
+          const upcoming = !start || Date.parse(start) > nowMs - 7 * 86400_000;
+          const e = normalizeWorkshop(g, venue, upcoming ? await dueDate(g) : null);
+          if (e) events.push(e);
+        }
+      } catch (err) {
+        if (!/HTTP (400|403|404)/.test((err as Error).message)) {
+          warnings.push(`${venue.prefix}/${y}/Workshop: ${(err as Error).message}`);
+        }
+      }
+      done++;
     }
     const valid = validateEvents(disambiguate(events, ctx.previous), warnings);
+    const complete = done === tasks.length;
     return {
       events: valid,
       warnings,
-      pruneStale: groupsSeen > 0 && warnings.length === 0,
+      // Only a finished sweep with no problems may prune; a partial one just adds and refreshes.
+      pruneStale: complete && groupsSeen > 0 && warnings.length === 0,
+      nextCursor: sweepNextCursor(tasks.length, from, done),
       stats: {
         groups: groupsSeen,
         events: valid.length,
         workshops: valid.filter((e) => e.type === "workshop").length,
         invitations,
+        venueYearsDone: done,
+        venueYearsTotal: tasks.length,
       },
     };
   },
