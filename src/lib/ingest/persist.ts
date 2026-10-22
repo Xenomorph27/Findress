@@ -33,6 +33,17 @@ export class DbHttpCache implements HttpCacheStore {
     const [row] = await this.db.select().from(httpCache).where(eq(httpCache.url, url)).limit(1);
     return row ? { status: row.status, body: row.body, fetchedAt: row.fetchedAt } : null;
   }
+  async ages(urls: string[]) {
+    const out = new Map<string, number>();
+    for (const batch of chunk(urls, 200)) {
+      const rows = await this.db
+        .select({ url: httpCache.url, fetchedAt: httpCache.fetchedAt })
+        .from(httpCache)
+        .where(inArray(httpCache.url, batch));
+      for (const r of rows) out.set(r.url, r.fetchedAt.getTime());
+    }
+    return out;
+  }
   async set(url: string, status: number, body: string | null) {
     await this.db
       .insert(httpCache)

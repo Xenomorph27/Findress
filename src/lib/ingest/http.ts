@@ -88,6 +88,12 @@ export interface FetchResult {
 export interface HttpCacheStore {
   get(url: string): Promise<{ status: number; body: string | null; fetchedAt: Date } | null>;
   set(url: string, status: number, body: string | null): Promise<void>;
+  /**
+   * When each of these URLs was cached (ms epoch), in ONE cheap lookup that never loads bodies.
+   * Planners must use this instead of calling get() once per URL: hundreds of concurrent get()s
+   * exhaust the database pool.
+   */
+  ages?(urls: string[]): Promise<Map<string, number>>;
 }
 
 export class MemoryHttpCache implements HttpCacheStore {
@@ -97,6 +103,14 @@ export class MemoryHttpCache implements HttpCacheStore {
   }
   async set(url: string, status: number, body: string | null) {
     this.map.set(url, { status, body, fetchedAt: new Date() });
+  }
+  async ages(urls: string[]) {
+    const out = new Map<string, number>();
+    for (const u of urls) {
+      const hit = this.map.get(u);
+      if (hit) out.set(u, hit.fetchedAt.getTime());
+    }
+    return out;
   }
 }
 
@@ -272,6 +286,18 @@ export class PoliteFetcher {
     const res = await this.get(url, o);
     if (!res.ok) throw new Error(`GET ${url} → HTTP ${res.status}`);
     return res.text;
+  }
+
+  /** cachedAt() for many URLs with a single store lookup (no bodies, no per-URL queries). */
+  async cachedAtMany(urls: string[]): Promise<Map<string, number>> {
+    if (!this.opts.cache) return new Map();
+    if (this.opts.cache.ages) return this.opts.cache.ages(urls);
+    const out = new Map<string, number>();
+    for (const u of urls) {
+      const at = await this.cachedAt(u);
+      if (at != null) out.set(u, at);
+    }
+    return out;
   }
 
   /** When the cached copy of a URL was fetched (ms epoch), or null (no network). */

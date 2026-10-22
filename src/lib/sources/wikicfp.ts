@@ -360,15 +360,15 @@ export const wikicfpAdapter: SourceAdapter = {
         null
       );
     };
+    // One lookup for all pages' cache ages: per-page lookups would flood the connection pool.
+    const ages = await ctx.fetcher.cachedAtMany(candidates.map((c) => c.item.link));
     const planned = orderPageFetches(
-      await Promise.all(
-        candidates.map(async ({ item, priority }) => ({
-          eventId: item.eventId,
-          priority,
-          cachedAt: await ctx.fetcher.cachedAt(item.link),
-          soonestDate: soonestOf(ctx.previous.get(item.eventId)),
-        })),
-      ),
+      candidates.map(({ item, priority }) => ({
+        eventId: item.eventId,
+        priority,
+        cachedAt: ages.get(item.link) ?? null,
+        soonestDate: soonestOf(ctx.previous.get(item.eventId)),
+      })),
       nowMs,
     );
     const itemById = new Map(candidates.map((c) => [c.item.eventId, c.item]));

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { EventInputSchema } from "@/lib/ingest/types";
 import {
   normalizeWikiCfp,
+  wikicfpAdapter,
   orderPageFetches,
   pageTtlMs,
   parseEventPage,
@@ -175,5 +176,41 @@ describe("WikiCFP page fetch planning", () => {
       for (const p of stale.slice(0, 3)) cached.set(p.eventId, NOW + run * 6 * H);
     }
     expect(cached.size).toBe(10);
+  });
+});
+
+describe("WikiCFP adapter planning", () => {
+  it("asks the cache about all pages in ONE lookup (hundreds of per-page queries exhaust the pool)", async () => {
+    const calls = { cachedAtMany: 0, cachedAt: 0, isCached: 0, get: 0 };
+    const feed = fixture("wikicfp", "rss-machine-learning.xml");
+    const page = fixture("wikicfp", "event-203529.html");
+    const fetcher = {
+      getText: async () => feed,
+      intervalFor: async () => 1,
+      cachedAtMany: async (links: string[]) => {
+        calls.cachedAtMany++;
+        expect(links.length).toBeGreaterThan(3);
+        return new Map<string, number>();
+      },
+      cachedAt: async () => (calls.cachedAt++, null),
+      isCached: async () => (calls.isCached++, false),
+      get: async () => (
+        calls.get++,
+        { ok: true, status: 200, text: page, fromCache: false, url: "x" }
+      ),
+    };
+    const out = await wikicfpAdapter.run({
+      fetcher,
+      deadlineMs: Date.now() + 60_000,
+      now: new Date("2026-10-22T00:00:00Z"),
+      log: () => {},
+      previous: new Map(),
+      cursor: null,
+      env: {},
+    } as unknown as Parameters<typeof wikicfpAdapter.run>[0]);
+    expect(calls.cachedAtMany).toBe(1);
+    expect(calls.cachedAt + calls.isCached).toBe(0);
+    expect(calls.get).toBeGreaterThan(3);
+    expect(out.events.length).toBeGreaterThan(3);
   });
 });
