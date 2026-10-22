@@ -12,6 +12,14 @@ import {
 } from "@/lib/sources/cfp-extract";
 import { applyExtractions } from "./apply-extractions";
 
+/**
+ * The AI extraction is OFF unless ENABLE_AI_EXTRACTION=true (like ENABLE_LLM_TAGGING). The API key
+ * alone must not start it: turn it on only after the accuracy sample has been reviewed.
+ */
+export function extractionEnabled(env: Record<string, string | undefined> = process.env): boolean {
+  return env.ENABLE_AI_EXTRACTION === "true";
+}
+
 /** Free-tier friendly defaults; the daily cap also protects the quota "Ask FIndress" needs. */
 export interface ExtractConfig {
   /** Max model requests in one run. */

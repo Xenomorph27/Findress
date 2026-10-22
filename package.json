@@ -21,6 +21,7 @@
     "db:migrate:neon": "node scripts/with-env.mjs .env.neon tsx --conditions=react-server scripts/migrate.ts",
     "db:studio": "drizzle-kit studio",
     "ingest": "tsx --conditions=react-server scripts/ingest.ts",
+    "backup:neon": "node scripts/backup-db.mjs",
     "sjr:import": "tsx --conditions=react-server scripts/import-sjr.ts",
     "sjr:import:neon": "node scripts/with-env.mjs .env.neon tsx --conditions=react-server scripts/import-sjr.ts",
     "ingest:neon": "node scripts/with-env.mjs .env.neon tsx --conditions=react-server scripts/ingest.ts",

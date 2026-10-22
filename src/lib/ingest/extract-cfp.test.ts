@@ -7,6 +7,7 @@ import { applyExtractions } from "./apply-extractions";
 import {
   classifyApiError,
   extractConfig,
+  extractionEnabled,
   QuotaExhausted,
   RequestPacer,
   runExtractStep,
@@ -187,6 +188,13 @@ describe("pacing, backoff and error classes", () => {
       }),
     ).rejects.toThrow("bad request");
     expect(calls).toBe(1);
+  });
+
+  it("is OFF unless explicitly enabled: an API key alone must not start it", () => {
+    expect(extractionEnabled({})).toBe(false);
+    expect(extractionEnabled({ GOOGLE_GENERATIVE_AI_API_KEY: "k" })).toBe(false);
+    expect(extractionEnabled({ ENABLE_AI_EXTRACTION: "false" })).toBe(false);
+    expect(extractionEnabled({ ENABLE_AI_EXTRACTION: "true" })).toBe(true);
   });
 
   it("reads limits from the environment with safe defaults", () => {

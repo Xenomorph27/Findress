@@ -153,10 +153,13 @@ daily Vercel cron calls all of them): `ccfddl`, `huggingface`, `openreview`, `wi
   (and a date re-parses to the same value, with an explicit year). Kept values are stored with the
   quote and page URL in `extractions`, shown with an "AI" badge, never override a source, and are
   re-read only when the page changes. It uses `GOOGLE_GENERATIVE_AI_API_KEY` (the same key as the
-  assistant) and is rate-limited to protect the assistant's quota:
+  assistant) and is rate-limited to protect the assistant's quota. It is **off** until you set
+  `ENABLE_AI_EXTRACTION=true` (the key alone does not start it), so turn it on only after reviewing
+  the accuracy sample:
 
   | Variable                  | Default | Meaning                                |
   | ------------------------- | ------- | -------------------------------------- |
+  | `ENABLE_AI_EXTRACTION`    | off     | `true` to let the step call the model  |
   | `EXTRACT_PER_RUN`         | `12`    | Max model requests per ingest run      |
   | `EXTRACT_DAILY_LIMIT`     | `60`    | Max model requests per UTC day         |
   | `EXTRACT_MIN_INTERVAL_MS` | `13000` | Minimum gap between requests (< 5 RPM) |

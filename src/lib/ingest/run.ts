@@ -16,7 +16,7 @@ import {
 } from "@/lib/taxonomy";
 import { aiConfigError, makeGenerate } from "@/lib/ai/extract-model";
 import { enrichCfps } from "./enrich-cfp";
-import { runExtractStep } from "./extract-cfp";
+import { extractionEnabled, runExtractStep } from "./extract-cfp";
 import { geocodeEvents } from "./geocode";
 import {
   runJournalPagesStep,
@@ -231,6 +231,15 @@ export async function runIngestion(db: Db, opts: RunOptions = {}): Promise<StepR
     } else if (step === "extract") {
       reports.push(
         await recordRun(db, "extract", async () => {
+          if (!extractionEnabled(env)) {
+            return {
+              items: 0,
+              stats: { requests: 0 },
+              warnings: [
+                "disabled: set ENABLE_AI_EXTRACTION=true after reviewing the accuracy sample",
+              ],
+            };
+          }
           const configError = aiConfigError();
           if (configError) {
             return { items: 0, stats: { requests: 0 }, warnings: [`skipped: ${configError}`] };
