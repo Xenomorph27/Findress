@@ -1,33 +1,39 @@
 <div align="center">
 
-# FIndress
-
-### Every AI/ML venue on Earth. One view.
-
-Live deadlines, rankings, acceptance rates, calls for papers, journal metrics and special issues —
-with an assistant that reads each event's real CFP so you don't have to.
-
-[![Live](https://img.shields.io/badge/live-findress.vercel.app-000?style=for-the-badge&logo=vercel)](https://findress.vercel.app)
-[![CI](https://img.shields.io/github/actions/workflow/status/Xenomorph27/Findress/ci.yml?branch=main&style=for-the-badge&label=CI)](https://github.com/Xenomorph27/Findress/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue?style=for-the-badge)](LICENSE)
-
-![Next.js](https://img.shields.io/badge/Next.js_16-000?logo=nextdotjs&logoColor=white)
-![React](https://img.shields.io/badge/React_19-20232a?logo=react&logoColor=61dafb)
-![TypeScript](https://img.shields.io/badge/TypeScript-3178c6?logo=typescript&logoColor=white)
-![Tailwind](https://img.shields.io/badge/Tailwind_4-0f172a?logo=tailwindcss&logoColor=38bdf8)
-![Postgres](https://img.shields.io/badge/Neon_Postgres-4169e1?logo=postgresql&logoColor=white)
-![Drizzle](https://img.shields.io/badge/Drizzle_ORM-c5f74f?logo=drizzle&logoColor=black)
-![Vitest](https://img.shields.io/badge/Vitest-6e9f18?logo=vitest&logoColor=white)
-![Playwright](https://img.shields.io/badge/Playwright-2ead33?logo=playwright&logoColor=white)
+<img src="docs/assets/banner.png" alt="FIndress" height="72">
 
 <br/>
+
+[![Live](https://img.shields.io/badge/Live-findress.vercel.app-0EA5E9?labelColor=30363d&logo=vercel&logoColor=white)](https://findress.vercel.app) [![CI](https://img.shields.io/github/actions/workflow/status/Xenomorph27/Findress/ci.yml?branch=main&label=CI&labelColor=30363d)](https://github.com/Xenomorph27/Findress/actions/workflows/ci.yml) ![Next.js](https://img.shields.io/badge/Next.js-16-000000?labelColor=30363d&logo=nextdotjs&logoColor=white) ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?labelColor=30363d&logo=typescript&logoColor=white) ![Postgres](https://img.shields.io/badge/Postgres-Neon-4169E1?labelColor=30363d&logo=postgresql&logoColor=white) [![License](https://img.shields.io/badge/License-MIT-0EA5E9?labelColor=30363d)](LICENSE)
+
+<br/>
+
+<a href="https://findress.vercel.app"><img src="docs/assets/card.png" alt="Live at findress.vercel.app" height="60"></a>
+
+<br/>
+
+[Features](#features) | [Screenshots](#screenshots) | [Architecture](#architecture) | [Run locally](#run-locally) | [API](#api)
+
+</div>
+
+---
+
+# FIndress: Every AI/ML Venue on Earth, One View
+
+Live deadlines, rankings, acceptance rates, calls for papers, journal metrics and special issues for every AI/ML conference, workshop and journal — with an assistant that reads each event's real CFP so you don't have to.
+
+## News
+
+- [2026-10] New sources and smarter data: **EasyChair Smart CFP** with an AI/ML relevance filter, **SJR quartiles** matched by ISSN, evidence-bound extraction of deadlines from CFP pages, and a resumable OpenReview sweep.
+- [2026-10] Now on **Neon Postgres**, with one-command backups and CI running typecheck, lint and unit tests on every push and pull request.
+- [2026-10] **Journals & special issues** land: 116 AI/ML journals with OpenAlex metrics, CCF/CORE ranks and open calls, plus whole-app sign-in and a new lighting system with per-page tints.
+- [2026-10] **First release:** explorer, event pages, insights dashboard, private workspace and the CFP-grounded assistant.
 
 <picture>
   <source media="(prefers-color-scheme: light)" srcset="docs/screenshots/home-light-1440.png">
   <img alt="FIndress landing page: a glowing globe of upcoming AI/ML venues next to live counts of conferences, workshops and journals" src="docs/screenshots/home-dark-1440.png" width="100%">
 </picture>
 
-</div>
 
 ---
 
