@@ -1,39 +1,35 @@
-<div align="center">
+<a href="https://findress.vercel.app"><img src="docs/assets/banner.png" alt="FIndress — every AI/ML venue, live" width="100%"></a>
 
-<img src="docs/assets/banner.png" alt="FIndress" height="72">
+<p align="center">
+  <b>Every AI/ML conference, workshop and journal in one live view.</b><br>
+  <sub>Deadlines in your timezone · CORE &amp; CCF ranks · acceptance rates · calls for papers · an assistant that reads them for you</sub>
+</p>
 
-<br/>
+<p align="center">
+  <a href="https://findress.vercel.app"><img alt="Open the app" src="https://img.shields.io/badge/open_the_app-findress.vercel.app-7dd3fc?style=for-the-badge&labelColor=05070f&logo=vercel&logoColor=white"></a>
+  <a href="https://github.com/Xenomorph27/Findress/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/Xenomorph27/Findress/ci.yml?branch=main&style=for-the-badge&label=CI&labelColor=05070f"></a>
+  <img alt="Next.js 16" src="https://img.shields.io/badge/Next.js_16-1e1b4b?style=for-the-badge&logo=nextdotjs&logoColor=white">
+  <img alt="Neon Postgres" src="https://img.shields.io/badge/Neon_Postgres-1e1b4b?style=for-the-badge&logo=postgresql&logoColor=white">
+  <a href="LICENSE"><img alt="MIT" src="https://img.shields.io/badge/license-MIT-f472d0?style=for-the-badge&labelColor=05070f"></a>
+</p>
 
-[![Live](https://img.shields.io/badge/Live-findress.vercel.app-0EA5E9?labelColor=30363d&logo=vercel&logoColor=white)](https://findress.vercel.app) [![CI](https://img.shields.io/github/actions/workflow/status/Xenomorph27/Findress/ci.yml?branch=main&label=CI&labelColor=30363d)](https://github.com/Xenomorph27/Findress/actions/workflows/ci.yml) ![Next.js](https://img.shields.io/badge/Next.js-16-000000?labelColor=30363d&logo=nextdotjs&logoColor=white) ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?labelColor=30363d&logo=typescript&logoColor=white) ![Postgres](https://img.shields.io/badge/Postgres-Neon-4169E1?labelColor=30363d&logo=postgresql&logoColor=white) [![License](https://img.shields.io/badge/License-MIT-0EA5E9?labelColor=30363d)](LICENSE)
-
-<br/>
-
-<a href="https://findress.vercel.app"><img src="docs/assets/card.png" alt="Live at findress.vercel.app" height="60"></a>
-
-<br/>
-
-[Features](#features) | [Screenshots](#screenshots) | [Architecture](#architecture) | [Run locally](#run-locally) | [API](#api)
-
-</div>
-
----
-
-# FIndress: Every AI/ML Venue on Earth, One View
-
-Live deadlines, rankings, acceptance rates, calls for papers, journal metrics and special issues for every AI/ML conference, workshop and journal — with an assistant that reads each event's real CFP so you don't have to.
-
-## News
-
-- [2026-10] New sources and smarter data: **EasyChair Smart CFP** with an AI/ML relevance filter, **SJR quartiles** matched by ISSN, evidence-bound extraction of deadlines from CFP pages, and a resumable OpenReview sweep.
-- [2026-10] Now on **Neon Postgres**, with one-command backups and CI running typecheck, lint and unit tests on every push and pull request.
-- [2026-10] **Journals & special issues** land: 116 AI/ML journals with OpenAlex metrics, CCF/CORE ranks and open calls, plus whole-app sign-in and a new lighting system with per-page tints.
-- [2026-10] **First release:** explorer, event pages, insights dashboard, private workspace and the CFP-grounded assistant.
+<p align="center">
+  <a href="#features">Features</a> · <a href="#screenshots">Screenshots</a> · <a href="#architecture">Architecture</a> · <a href="#run-locally">Run locally</a> · <a href="#api">API</a>
+</p>
 
 <picture>
   <source media="(prefers-color-scheme: light)" srcset="docs/screenshots/home-light-1440.png">
   <img alt="FIndress landing page: a glowing globe of upcoming AI/ML venues next to live counts of conferences, workshops and journals" src="docs/screenshots/home-dark-1440.png" width="100%">
 </picture>
 
+## Changelog
+
+| When | What shipped |
+|---|---|
+| **Oct 22, 2026** | New sources and smarter data — **EasyChair Smart CFP** with an AI/ML relevance filter, **SJR quartiles** matched by ISSN, evidence-bound extraction of deadlines from CFP pages, and a resumable OpenReview sweep. |
+| **Oct 22, 2026** | Moved to **Neon Postgres**, with one-command backups and CI running typecheck, lint and unit tests on every push and pull request. |
+| **Oct 9, 2026** | **Journals & special issues** — 116 AI/ML journals with OpenAlex metrics, CCF/CORE ranks and open calls — plus whole-app sign-in and per-page lighting. |
+| **Oct 9, 2026** | **First release** — explorer, event pages, insights dashboard, private workspace and the CFP-grounded assistant. |
 
 ---
 
