@@ -1,7 +1,7 @@
 import { USER_AGENT } from "@/lib/site";
 
 /**
- * Polite HTTP for ingestion (CLAUDE.md data rules):
+ * Polite HTTP for ingestion:
  * - identifies as FIndressBot with a contact URL
  * - at most one request per host per `minIntervalMs` (default 1s), raised to the host's
  *   robots.txt Crawl-delay when larger; requests to one host are serialized

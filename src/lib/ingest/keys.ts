@@ -1,5 +1,5 @@
 /**
- * Cross-source identity: events are deduplicated by normalized acronym + year (CLAUDE.md).
+ * Cross-source identity: events are deduplicated by normalized acronym + year.
  * "NeurIPS 2026" (HF), "NeurIPS" + confs[2026] (ccfddl) and "NIPS 2026" (WikiCFP) all map to
  * "neurips-2026".
  */

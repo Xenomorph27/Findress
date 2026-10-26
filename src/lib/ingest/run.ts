@@ -162,7 +162,7 @@ async function recordRun<
 
 /**
  * Run ingestion. Each step is isolated: a failing source is logged to source_runs and the
- * rest continue (CLAUDE.md: fail soft).
+ * rest continue (fail soft).
  */
 export async function runIngestion(db: Db, opts: RunOptions = {}): Promise<StepReport[]> {
   const log = opts.log ?? (() => {});
