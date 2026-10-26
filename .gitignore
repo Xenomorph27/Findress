@@ -50,6 +50,6 @@ next-env.d.ts
 /blob-report/
 /playwright/.cache/
 
-# design hook cache
+# local tool caches
 /.impeccable/
 .neon

@@ -279,7 +279,7 @@ export const journals = pgTable(
     impactMetrics: jsonb("impact_metrics").$type<JournalMetric[]>().notNull().default([]),
     rankCoreJournal: text("rank_core_journal"),
     rankCcf: text("rank_ccf"),
-    /** Only when an openly reusable source provides it (see docs/REVIEW.md). */
+    /** Only when an openly reusable source provides it. */
     sjrQuartile: text("sjr_quartile"),
     /** SCImago SJR indicator and the data year it comes from (SCImago Journal & Country Rank). */
     sjrScore: real("sjr_score"),
