@@ -47,26 +47,42 @@ export interface ApiErrorInfo {
   quota: boolean;
   /** The per-day quota is spent: retrying today is pointless. */
   daily: boolean;
+  /** The model is temporarily overloaded (HTTP 503 "high demand"): wait, don't move on. */
+  overloaded: boolean;
   retryAfterMs: number | null;
 }
 
-/** Recognise rate-limit / quota errors from the AI SDK (HTTP 429, RESOURCE_EXHAUSTED …). */
+/**
+ * Recognise rate-limit / quota errors (HTTP 429, RESOURCE_EXHAUSTED …) and an overloaded model
+ * (HTTP 503, UNAVAILABLE). A retry wrapper's `lastError` is looked through.
+ */
 export function classifyApiError(err: unknown): ApiErrorInfo {
-  const e = err as {
+  type ApiError = {
     statusCode?: number;
     message?: string;
     responseBody?: string;
     responseHeaders?: Record<string, string>;
+    lastError?: unknown;
   };
+  const outer = err as ApiError | null;
+  const e = (outer?.lastError as ApiError | undefined) ?? outer;
   const text = `${e?.message ?? ""} ${e?.responseBody ?? ""}`;
   const quota =
     e?.statusCode === 429 || /RESOURCE_EXHAUSTED|quota|rate.?limit|too many requests/i.test(text);
-  if (!quota) return { quota: false, daily: false, retryAfterMs: null };
+  if (!quota) {
+    const overloaded = e?.statusCode === 503 || /UNAVAILABLE|overloaded|high demand/i.test(text);
+    return { quota: false, daily: false, overloaded, retryAfterMs: null };
+  }
   const daily = /per.?day|daily|PerDay/i.test(text);
   const hdr = Number(e?.responseHeaders?.["retry-after"]);
   const fromBody = /retry(?:Delay)?"?\s*(?:in|:)?\s*"?(\d+(?:\.\d+)?)\s*s/i.exec(text);
   const seconds = Number.isFinite(hdr) && hdr > 0 ? hdr : fromBody ? Number(fromBody[1]) : null;
-  return { quota, daily, retryAfterMs: seconds != null ? Math.ceil(seconds * 1000) : null };
+  return {
+    quota,
+    daily,
+    overloaded: false,
+    retryAfterMs: seconds != null ? Math.ceil(seconds * 1000) : null,
+  };
 }
 
 export interface Clock {
@@ -101,9 +117,13 @@ export class QuotaExhausted extends Error {
   }
 }
 
+/** The model stayed overloaded through every retry: stop the run, try again in a later one. */
+export class ModelOverloaded extends Error {}
+
 /**
- * Call `fn`, retrying quota errors with the server's suggested delay (else 30 s, 60 s, 120 s).
- * Throws QuotaExhausted for a spent daily quota or when waiting would pass `deadlineMs`.
+ * Call `fn`, retrying quota errors and an overloaded model with the server's suggested delay
+ * (else 30 s, 60 s, 120 s). Throws QuotaExhausted for a spent daily quota, and QuotaExhausted /
+ * ModelOverloaded when retries run out or waiting would pass `deadlineMs`.
  */
 export async function withBackoff<T>(
   fn: () => Promise<T>,
@@ -115,13 +135,15 @@ export async function withBackoff<T>(
       return await fn();
     } catch (err) {
       const info = classifyApiError(err);
-      if (!info.quota) throw err;
+      if (!info.quota && !info.overloaded) throw err;
       if (info.daily) throw new QuotaExhausted("daily quota exhausted", true);
-      if (attempt >= opts.maxRetries)
-        throw new QuotaExhausted("rate limited; retries used up", false);
+      const giveUp = (why: string) =>
+        info.overloaded
+          ? new ModelOverloaded(`model overloaded; ${why}`)
+          : new QuotaExhausted(`rate limited; ${why}`, false);
+      if (attempt >= opts.maxRetries) throw giveUp("retries used up");
       const wait = info.retryAfterMs ?? 30_000 * 2 ** attempt;
-      if (clock.now() + wait > opts.deadlineMs)
-        throw new QuotaExhausted("rate limited; no time left to wait", false);
+      if (clock.now() + wait > opts.deadlineMs) throw giveUp("no time left to wait");
       await clock.sleep(wait);
     }
   }
@@ -271,22 +293,31 @@ export async function runExtractStep(
     rejected: 0,
     invalid: 0,
     quotaHit: 0,
+    overloaded: 0,
     dailyUsed: used,
     dailyLimit: cfg.dailyLimit,
   };
   const warnings: string[] = [];
   if (budget === 0)
     warnings.push(`daily request budget used (${used}/${cfg.dailyLimit}); nothing sent`);
+  // Every attempt counts against the caps (stats.requests feeds the daily total), retries included.
+  const generate: Generate = (system, prompt) => {
+    stats.requests++;
+    return deps.generate(system, prompt);
+  };
 
   for (const t of targets) {
+    if (stats.requests >= budget) {
+      warnings.push("request budget used by retries; the rest is read in later runs");
+      break;
+    }
     if (clock.now() + cfg.minIntervalMs + 20_000 > deadlineMs) {
       warnings.push("time budget reached; the rest is read in later runs");
       break;
     }
     try {
       await pacer.wait();
-      stats.requests++;
-      const { verified } = await withBackoff(() => extractOne(deps.generate, t), {
+      const { verified } = await withBackoff(() => extractOne(generate, t), {
         maxRetries: cfg.maxRetries,
         deadlineMs,
         clock,
@@ -306,6 +337,11 @@ export async function runExtractStep(
         warnings.push(
           `stopped: ${err.message}${err.daily ? " (resumes after the daily reset)" : ""}`,
         );
+        break;
+      }
+      if (err instanceof ModelOverloaded) {
+        stats.overloaded = 1;
+        warnings.push(`stopped: ${err.message} (pages left unread are tried in a later run)`);
         break;
       }
       stats.invalid++;

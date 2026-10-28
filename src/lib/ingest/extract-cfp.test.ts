@@ -8,6 +8,7 @@ import {
   classifyApiError,
   extractConfig,
   extractionEnabled,
+  ModelOverloaded,
   QuotaExhausted,
   RequestPacer,
   runExtractStep,
@@ -135,6 +136,7 @@ describe("pacing, backoff and error classes", () => {
     ).toEqual({
       quota: true,
       daily: false,
+      overloaded: false,
       retryAfterMs: 21_500,
     });
     expect(
@@ -188,6 +190,49 @@ describe("pacing, backoff and error classes", () => {
       }),
     ).rejects.toThrow("bad request");
     expect(calls).toBe(1);
+  });
+
+  // Gemini answers 503 "This model is currently experiencing high demand" during demand spikes.
+  const OVERLOADED = {
+    statusCode: 503,
+    message:
+      "This model is currently experiencing high demand. Spikes in demand are usually temporary.",
+    responseBody: '{"error":{"code":503,"status":"UNAVAILABLE"}}',
+  };
+
+  it("recognises an overloaded model as temporary, also when wrapped in a retry error", () => {
+    expect(classifyApiError(OVERLOADED)).toMatchObject({ quota: false, overloaded: true });
+    expect(
+      classifyApiError({ message: "Failed after 3 attempts.", lastError: OVERLOADED }),
+    ).toMatchObject({ overloaded: true });
+    expect(classifyApiError(new Error("boom"))).toMatchObject({ quota: false, overloaded: false });
+  });
+
+  it("waits out an overloaded model, then succeeds", async () => {
+    const clock = new FakeClock();
+    let calls = 0;
+    const out = await withBackoff(
+      async () => {
+        if (++calls < 3) throw OVERLOADED;
+        return "ok";
+      },
+      { maxRetries: 3, deadlineMs: FAR, clock },
+    );
+    expect(out).toBe("ok");
+    expect(clock.sleeps).toEqual([30_000, 60_000]);
+  });
+
+  it("gives up on a model that stays overloaded with ModelOverloaded", async () => {
+    const clock = new FakeClock();
+    let calls = 0;
+    await expect(
+      withBackoff(async () => (calls++, Promise.reject(OVERLOADED)), {
+        maxRetries: 2,
+        deadlineMs: FAR,
+        clock,
+      }),
+    ).rejects.toBeInstanceOf(ModelOverloaded);
+    expect(calls).toBe(3);
   });
 
   it("is OFF unless explicitly enabled: an API key alone must not start it", () => {
@@ -341,6 +386,44 @@ describe("runExtractStep", () => {
     expect(out.warnings.join(" ")).toMatch(/daily quota/);
     expect(await db.select().from(extractions)).not.toHaveLength(0);
     expect(calls).toBe(2); // did not hammer the API after the quota error
+  });
+
+  it("stops the run when the model stays overloaded instead of trying every page", async () => {
+    await seed();
+    await seed();
+    await seed();
+    let calls = 0;
+    const out = await run(async () => {
+      calls++;
+      throw {
+        statusCode: 503,
+        message: "This model is currently experiencing high demand.",
+      };
+    });
+    expect(calls).toBe(1 + CFG.maxRetries); // one page, its retries, then stop
+    expect(out.stats).toMatchObject({ processed: 0, overloaded: 1, requests: calls });
+    expect(out.warnings.join(" ")).toMatch(/overloaded/);
+    // nothing was marked as read: the pages are tried again in a later run
+    const rows = await db.select({ at: events.aiExtractedAt }).from(events);
+    expect(rows.every((r) => r.at === null)).toBe(true);
+  });
+
+  it("counts every attempt, retries included, against the request budget", async () => {
+    await seed();
+    await seed();
+    await seed();
+    let calls = 0;
+    const out = await run(
+      async () => {
+        calls++;
+        if (calls === 1) throw { statusCode: 429, message: "rate limit, retry in 1s" };
+        return GOOD_REPLY;
+      },
+      { perRun: 2 },
+    );
+    // page 1 took two attempts, which spends the whole run budget of 2
+    expect(out.stats).toMatchObject({ requests: 2, processed: 1 });
+    expect(calls).toBe(2);
   });
 
   it("survives an unreadable reply and keeps going", async () => {
