@@ -35,6 +35,9 @@ export function makeGenerate(): {
         prompt,
         temperature: 0,
         maxOutputTokens: 3000,
+        // The extract step's withBackoff is the only retry layer. The SDK's own retries would
+        // stack under it and spend up to 3 requests of the daily quota on every failed page.
+        maxRetries: 0,
         providerOptions: providerOptions as never,
       });
       return text;

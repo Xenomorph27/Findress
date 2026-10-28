@@ -184,8 +184,19 @@ To restore, never write straight over production. Create a Neon branch first
 `pg_restore --dbname=<branch direct URL> --single-transaction --exit-on-error --no-owner --no-privileges <file>`
 (run inside the same `postgres:18` image), check it, and only then decide what to copy back.
 
-**CI.** `.github/workflows/ci.yml` runs typecheck, lint and the unit tests on every push to `main` and
-on every pull request. It needs no secrets or database.
+**CI.** `.github/workflows/ci.yml` runs on every push to `main`, on every pull request and every
+Monday: a production-dependency audit (`pnpm audit --prod --audit-level=high`), typecheck, lint, the
+unit tests and `pnpm build`. It needs no secrets or database. The weekly run matters because Next.js
+refuses to build a version with a known critical advisory: a new advisory against an unchanged
+lockfile would otherwise surface only as a failed Vercel deploy.
+
+**Dependencies.** `.github/dependabot.yml` opens weekly update PRs (npm, grouped minor/patch, and
+GitHub Actions), skipping releases younger than 3 days; pnpm itself refuses releases younger than
+its minimum release age. Merge them only when CI is green. Vulnerable transitive packages whose
+parents still allow a bad version are pinned in `overrides` in `pnpm-workspace.yaml`, each with the
+reason; drop an entry once the parent requires a fixed release. `pnpm audit` (without `--prod`)
+also lists dev-only tools; the one left there is `deepmerge` inside the shadcn CLI, which has no
+fixed release.
 
 ## Install on Vercel (pnpm build scripts)
 

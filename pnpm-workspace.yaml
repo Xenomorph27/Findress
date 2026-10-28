@@ -11,3 +11,20 @@ allowBuilds:
   esbuild: true
   unrs-resolver: false
   sharp: false
+
+# Security overrides for transitive dependencies whose parents still allow a vulnerable version
+# (checked with `pnpm audit`, 2026-10-28). Remove an entry once its parent requires a fixed release.
+overrides:
+  # cheerio and @ai-sdk/provider-utils: several high/moderate advisories, fixed in 7.30.1
+  "undici@<7.30.1": ^7.30.1
+  # @vercel/functions > @vercel/oidc > @vercel/cli-config pins zod 4.1 (memory exhaustion, fixed in 4.6.6)
+  "@vercel/cli-config>zod": ^4.6.7
+  # rehype-katex / micromark-extension-math ask for katex 0.16 (prototype pollution, fixed in 0.18.2);
+  # one version also keeps the renderer in step with the katex CSS the app loads
+  katex: ^0.19.1
+  # drizzle-kit's legacy @esbuild-kit loader pins esbuild 0.18 (dev server issue, fixed in 0.25)
+  "@esbuild-kit/core-utils>esbuild": ^0.25.4
+  # Dev-only tools (never shipped): eslint-plugin-react-hooks and the shadcn CLI
+  "zod-validation-error>zod": ^4.6.7
+  "fast-uri@<3.1.9": ^3.1.9
+  "ip-address@<10.7.4": ^10.7.4
