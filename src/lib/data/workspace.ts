@@ -251,6 +251,32 @@ export async function upsertBookmark(
     });
 }
 
+export interface BookmarkMove extends Target {
+  status: BookmarkStatus;
+  position: number;
+}
+
+/**
+ * Apply a whole Kanban drop (every card of the target column) in one transaction, so the board
+ * is never left half-reordered. Only existing bookmarks move: one removed meanwhile (another
+ * tab) is reported as missing, not recreated.
+ */
+export async function moveBookmarks(db: Db, moves: BookmarkMove[]) {
+  const now = new Date();
+  return db.transaction(async (tx) => {
+    let updated = 0;
+    for (const m of moves) {
+      const rows = await tx
+        .update(bookmarks)
+        .set({ status: m.status, position: m.position, updatedAt: now })
+        .where(eq(targetColumn(m.kind), m.id))
+        .returning({ id: bookmarks.id });
+      updated += rows.length;
+    }
+    return { updated, missing: moves.length - updated };
+  });
+}
+
 export async function removeBookmark(db: Db, target: Target) {
   await db.delete(bookmarks).where(eq(targetColumn(target.kind), target.id));
 }

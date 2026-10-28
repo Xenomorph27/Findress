@@ -26,6 +26,7 @@ import { CountdownChip } from "@/components/event/countdown-chip";
 import { LocationLabel, TypeBadge } from "@/components/event/chips";
 import type { WorkspaceItem } from "@/lib/data/workspace";
 import { bookmarkStatuses, STATUS_LABEL, type BookmarkStatus } from "@/lib/taxonomy";
+import { refreshBookmarks } from "@/lib/hooks/use-bookmarks";
 import { cn } from "@/lib/utils";
 import { parseTargetKey } from "@/lib/workspace/targets";
 
@@ -193,6 +194,7 @@ function Column({
 export function Kanban({ initial, now }: { initial: WorkspaceItem[]; now: number }) {
   const [items, setItems] = useState(initial);
   const [active, setActive] = useState<WorkspaceItem | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -203,12 +205,24 @@ export function Kanban({ initial, now }: { initial: WorkspaceItem[]; now: number
     return m;
   }, [items]);
 
-  const persist = (key: string, status: BookmarkStatus, position: number) =>
-    fetch("/api/workspace/bookmarks", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...parseTargetKey(key), status, position }),
-    });
+  /**
+   * Send a change; on failure put the board back as it was and say so. On success the shared
+   * bookmark state (stars elsewhere on the page) is refreshed.
+   */
+  const commit = async (
+    snapshot: WorkspaceItem[],
+    request: () => Promise<Response>,
+    what: string,
+  ) => {
+    setError(null);
+    const res = await request().catch(() => null);
+    if (!res?.ok) {
+      setItems(snapshot);
+      setError(`Could not ${what}. Nothing was changed; please try again.`);
+      return;
+    }
+    void refreshBookmarks();
+  };
 
   const onStart = (e: DragStartEvent) =>
     setActive(items.find((i) => i.key === e.active.id) ?? null);
@@ -232,20 +246,39 @@ export function Kanban({ initial, now }: { initial: WorkspaceItem[]; now: number
       { ...moved, status: overStatus },
       ...column.slice(insertAt),
     ].map((it, idx) => ({ ...it, position: idx * 10 }));
-    setItems((prev) => [
-      ...prev.filter((i) => i.status !== overStatus && i.key !== id),
-      ...reordered,
-    ]);
-    void Promise.all(reordered.map((it) => persist(it.key, it.status, it.position)));
+    const snapshot = items;
+    setItems([...items.filter((i) => i.status !== overStatus && i.key !== id), ...reordered]);
+    void commit(
+      snapshot,
+      () =>
+        fetch("/api/workspace/bookmarks", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            items: reordered.map((it) => ({
+              ...parseTargetKey(it.key),
+              status: it.status,
+              position: it.position,
+            })),
+          }),
+        }),
+      "move the card",
+    );
   };
 
   const remove = (key: string) => {
-    setItems((prev) => prev.filter((i) => i.key !== key));
-    void fetch("/api/workspace/bookmarks", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(parseTargetKey(key)),
-    });
+    const snapshot = items;
+    setItems(items.filter((i) => i.key !== key));
+    void commit(
+      snapshot,
+      () =>
+        fetch("/api/workspace/bookmarks", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(parseTargetKey(key)),
+        }),
+      "remove the card",
+    );
   };
 
   return (
@@ -255,6 +288,11 @@ export function Kanban({ initial, now }: { initial: WorkspaceItem[]; now: number
       onDragStart={onStart}
       onDragEnd={onEnd}
     >
+      {error && (
+        <p role="alert" className="text-heat-hot mb-3 text-sm">
+          {error}
+        </p>
+      )}
       <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-4 md:mx-0 md:px-0">
         {bookmarkStatuses.map((s) => (
           <Column key={s} status={s} items={byStatus.get(s) ?? []} now={now} onRemove={remove} />
