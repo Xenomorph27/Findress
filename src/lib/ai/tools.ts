@@ -286,6 +286,8 @@ export function buildTools({ tz, allowedHosts }: { tz: string; allowedHosts: str
             robots: true,
             timeoutMs: 15_000,
             maxBytes: 2_000_000,
+            // Re-checked on every redirect hop, so a redirect cannot leave the allow-list.
+            allowHost: (host) => isAllowedUrl(`https://${host}/`, allowedHosts),
           });
           if (!res.ok) return { ok: false, error: `HTTP ${res.status}` };
           const page = extractCfp(res.text, res.url);
