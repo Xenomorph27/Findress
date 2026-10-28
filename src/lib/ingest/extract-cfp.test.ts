@@ -2,7 +2,7 @@ import type { PGlite } from "@electric-sql/pglite";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { Db } from "@/lib/db";
-import { deadlines, events, extractions, sourceRuns } from "@/lib/db/schema";
+import { chatUsage, deadlines, events, extractions, sourceRuns } from "@/lib/db/schema";
 import { applyExtractions } from "./apply-extractions";
 import {
   classifyApiError,
@@ -68,7 +68,7 @@ beforeAll(async () => {
 afterAll(async () => pg.close());
 beforeEach(async () => {
   await pg.exec(
-    "truncate extractions, source_runs, deadlines, event_sources, events restart identity cascade",
+    "truncate extractions, source_runs, chat_usage, deadlines, event_sources, events restart identity cascade",
   );
 });
 
@@ -503,5 +503,51 @@ describe("AI deadlines and the merge", () => {
     expect((await db.select().from(deadlines).where(eq(deadlines.eventId, e.id))).length).toBe(
       before,
     );
+  });
+});
+
+// feedback F17: the request budget is a hard cap and every attempt is in a durable ledger.
+describe("request budget is enforced before sending", () => {
+  it("perRun 1 with an overloaded model sends exactly one request", async () => {
+    await seed();
+    let calls = 0;
+    const out = await run(
+      async () => {
+        calls++;
+        throw { statusCode: 503, message: "This model is currently experiencing high demand." };
+      },
+      { perRun: 1, dailyLimit: 1, minIntervalMs: 0, maxRetries: 3 },
+    );
+    expect(calls).toBe(1);
+    expect(out.stats.requests).toBe(1);
+    expect(out.warnings.join(" ")).toMatch(/request budget used/);
+  });
+
+  it("records each attempt before it is sent, so a killed run still counts today", async () => {
+    await seed();
+    await seed();
+    let calls = 0;
+    await expect(
+      run(
+        async () => {
+          calls++;
+          throw new Error("connection reset"); // the request was sent, then failed
+        },
+        { perRun: 1 },
+      ),
+    ).resolves.toBeDefined();
+    expect(await db.select().from(chatUsage)).toHaveLength(calls);
+    // No source_runs row was written (the runner never got to record it), yet the next run
+    // sees the request: with a daily limit of 1 it sends nothing.
+    let later = 0;
+    const next = await run(
+      async () => {
+        later++;
+        return GOOD_REPLY;
+      },
+      { perRun: 5, dailyLimit: 1 },
+    );
+    expect(later).toBe(0);
+    expect(next.warnings[0]).toMatch(/daily request budget used/);
   });
 });

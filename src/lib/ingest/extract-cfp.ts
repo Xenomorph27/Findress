@@ -1,6 +1,6 @@
 import { eq, sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
-import { events, extractions } from "@/lib/db/schema";
+import { chatUsage, events, extractions } from "@/lib/db/schema";
 import {
   buildUserPrompt,
   EXTRACTOR_VERSION,
@@ -120,6 +120,12 @@ export class QuotaExhausted extends Error {
 /** The model stayed overloaded through every retry: stop the run, try again in a later one. */
 export class ModelOverloaded extends Error {}
 
+/** This run's request budget is spent: raised before sending, never retried. */
+export class BudgetExhausted extends Error {}
+
+/** chat_usage scope of extraction requests (the assistant's hourly limit leaves them out). */
+export const EXTRACT_USAGE_SCOPE = "extract";
+
 /**
  * Call `fn`, retrying quota errors and an overloaded model with the server's suggested delay
  * (else 30 s, 60 s, 120 s). Throws QuotaExhausted for a spent daily quota, and QuotaExhausted /
@@ -134,6 +140,7 @@ export async function withBackoff<T>(
     try {
       return await fn();
     } catch (err) {
+      if (err instanceof BudgetExhausted) throw err;
       const info = classifyApiError(err);
       if (!info.quota && !info.overloaded) throw err;
       if (info.daily) throw new QuotaExhausted("daily quota exhausted", true);
@@ -253,11 +260,19 @@ export async function loadCandidates(db: Db, limit: number): Promise<ExtractTarg
   }));
 }
 
+/**
+ * Requests sent today (UTC). Each attempt is written to chat_usage before it is sent, so a run
+ * that is killed mid-way still counts. Runs recorded before that ledger existed only have their
+ * total in source_runs; the larger of the two is used.
+ */
 async function requestsToday(db: Db): Promise<number> {
   const res = await db.execute(sql`
-    select coalesce(sum((stats ->> 'requests')::int), 0)::int as n
-    from source_runs
-    where source = 'extract' and started_at >= (now() at time zone 'utc')::date`);
+    select greatest(
+      (select count(*) from chat_usage
+        where scope = ${EXTRACT_USAGE_SCOPE} and created_at >= (now() at time zone 'utc')::date),
+      (select coalesce(sum((stats ->> 'requests')::int), 0) from source_runs
+        where source = 'extract' and started_at >= (now() at time zone 'utc')::date)
+    )::int as n`);
   return Number((res.rows[0] as { n?: number } | undefined)?.n ?? 0);
 }
 
@@ -300,8 +315,11 @@ export async function runExtractStep(
   const warnings: string[] = [];
   if (budget === 0)
     warnings.push(`daily request budget used (${used}/${cfg.dailyLimit}); nothing sent`);
-  // Every attempt counts against the caps (stats.requests feeds the daily total), retries included.
-  const generate: Generate = (system, prompt) => {
+  // Every attempt counts against the caps, retries included: it is refused before sending once
+  // the run's budget is spent, and recorded in the daily ledger before it goes out.
+  const generate: Generate = async (system, prompt) => {
+    if (stats.requests >= budget) throw new BudgetExhausted("request budget for this run used");
+    await db.insert(chatUsage).values({ scope: EXTRACT_USAGE_SCOPE });
     stats.requests++;
     return deps.generate(system, prompt);
   };
@@ -332,6 +350,10 @@ export async function runExtractStep(
         `  extract ${t.acronym} ${t.year}: ${verified.deadlines.length} deadlines${verified.mode ? ", mode" : ""}${verified.description ? ", description" : ""}${verified.rejected.length ? `, ${verified.rejected.length} rejected` : ""}`,
       );
     } catch (err) {
+      if (err instanceof BudgetExhausted) {
+        warnings.push("request budget used by retries; the rest is read in later runs");
+        break;
+      }
       if (err instanceof QuotaExhausted) {
         stats.quotaHit = 1;
         warnings.push(
