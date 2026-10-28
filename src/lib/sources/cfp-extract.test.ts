@@ -278,3 +278,53 @@ describe("verifyExtraction: mode and description", () => {
     ).toBeNull();
   });
 });
+
+// feedback F12: the kind must be supported by the page's words, not by the model's label.
+describe("verifyExtraction: kind evidence comes from the quote", () => {
+  const T = { acronym: "TEST", name: null, year: 2027 };
+  const one = (page: string, over: Record<string, unknown>) =>
+    verifyExtraction(
+      page,
+      T,
+      raw({
+        deadlines: [
+          dl({
+            date_text: "January 20, 2027",
+            iso_date: "2027-01-20",
+            timezone_text: null,
+            quote: page,
+            ...over,
+          }),
+        ],
+      }),
+    );
+
+  it("a model label cannot turn a registration date into a paper deadline", () => {
+    const out = one("Registration opens January 20, 2027.", { label: "Paper submission deadline" });
+    expect(out.deadlines).toEqual([]);
+    expect(out.rejected).toHaveLength(1);
+  });
+
+  it.each([
+    "Submission site opens January 20, 2027.",
+    "Paper submission begins January 20, 2027.",
+    "Abstract submission starts January 20, 2027.",
+  ])("an opening date is not a deadline: %s", (page) => {
+    const out = one(page, { kind: page.startsWith("Abstract") ? "abstract" : "paper" });
+    expect(out.deadlines).toEqual([]);
+    expect(out.rejected[0].reason).toMatch(/opening date/);
+  });
+
+  it("a sentence that opens and closes keeps the deadline", () => {
+    const page = "Submission site opens January 1, 2027 and closes January 20, 2027.";
+    expect(one(page, {}).deadlines).toHaveLength(1);
+  });
+
+  it("registration opening is still accepted as a registration date", () => {
+    const out = one("Registration opens January 20, 2027.", {
+      kind: "registration",
+      label: "Registration",
+    });
+    expect(out.deadlines).toHaveLength(1);
+  });
+});
