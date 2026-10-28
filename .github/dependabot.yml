@@ -11,6 +11,11 @@ updates:
     cooldown:
       default-days: 3
     open-pull-requests-limit: 5
+    # Major versions (TypeScript 6, @types/node for a Node we don't run …) are upgraded on
+    # purpose, not by a weekly bot PR. Security updates are not affected by this rule.
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     groups:
       minor-and-patch:
         update-types: [minor, patch]

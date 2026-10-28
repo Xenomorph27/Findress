@@ -19,6 +19,7 @@ you use preview deploys).
 | `DATABASE_URL`                 | Postgres connection string                                                                | Created automatically when you add **Storage → Neon** to the project. Use the pooled URL.    |
 | `APP_PASSWORD`                 | The owner password for `/login`                                                           | Choose one (long and random). Your local one is in `.env.local`.                             |
 | `AUTH_SECRET`                  | Signs the login session cookie and the private calendar-feed token                        | `openssl rand -base64 32`. Changing it signs everyone out and changes the calendar-feed URL. |
+| `ICS_SECRET` (optional)        | Signs the private calendar-feed URL instead of `AUTH_SECRET`                              | `openssl rand -base64 32`. Changing it revokes the feed URL without signing you out.         |
 | `CRON_SECRET`                  | Bearer token for `/api/ingest` and `/api/revalidate`. Vercel Cron sends it automatically. | `openssl rand -base64 32`. Use the same value as the GitHub secret below.                    |
 | `NEXT_PUBLIC_SITE_URL`         | Public URL of the deployment (used for links, the calendar feed and metadata)             | Your Vercel domain, e.g. `https://findress.vercel.app` (no trailing slash).                  |
 | `GOOGLE_GENERATIVE_AI_API_KEY` | Gemini key for the "Ask FIndress" assistant                                               | https://aistudio.google.com/apikey (Google AI Studio → Get API key). Billed per use.         |
@@ -117,9 +118,6 @@ at a time, so each call stays inside Vercel's 300 s function limit. You can also
 
 ## 5. Things to know
 
-- The login screen uses `public/hero.jpg` behind the ripple if the file exists at build time;
-  otherwise it uses the generated `public/hero-placeholder.jpg`. To use your own image, add
-  `public/hero.jpg`, commit it, and push.
 - Everything except `/login`, `/api/auth/*`, `/api/ingest`, `/api/revalidate`, the private
   calendar feed and static files requires the login session.
 - The lockout keys on the first `X-Forwarded-For` hop, which Vercel sets. Behind another proxy,
@@ -130,7 +128,23 @@ at a time, so each call stays inside Vercel's 300 s function limit. You can also
 **Steps** (`/api/ingest?source=<step>`; the GitHub Action calls them one by one every 6 hours, the
 daily Vercel cron calls all of them): `ccfddl`, `huggingface`, `openreview`, `wikicfp`,
 `easychair`, `merge`, `cfp`, `extract`, `topics`, `geocode`, `journals`, `journal-ranks`,
-`journal-pages`, `special-issues`.
+`journal-pages`, `special-issues`, `retention`.
+
+- **One run at a time, honest status.** A run takes the `ingest_lease` row (renewed per step,
+  released at the end, expires after an hour if a run dies), so the cron, the GitHub Action,
+  "Refresh now" and local runs never overlap. `/api/ingest` answers **200** when every step
+  worked, **500** when any step failed (a list source that suddenly returns nothing, a CFP pass
+  that found no usable page, an exception), and **409** when another run was in progress (nothing
+  was done). The Action fails on anything but 200 with `ok: true`, and only warns on 409.
+- **Publishing is atomic.** The merge writes events, deadlines and sources in one transaction, so
+  a failure part-way leaves the previous data in place.
+- **Pruning needs a complete snapshot.** A source's items are removed only after a run that read
+  every file/page of it; an item withheld for malformed data (e.g. a 31 February deadline) keeps
+  its last good copy. Events with bookmarks, notes or chats are never pruned, and a journal with
+  owner work stays listed even if it leaves the seed list.
+- **Retention.** The `retention` step removes `http_cache` entries not refreshed for 60 days,
+  `source_runs` older than 180 days (each step's latest run is kept: it holds the resume cursor)
+  and `login_attempts` with no activity for a day. Owner and catalogue data are never touched.
 
 - **Time-boxed sources resume.** `openreview` sweeps its venue list round-robin and saves a cursor
   (`source_runs.stats.cursor`); `wikicfp` fetches the stalest/nearest event pages first. A partial
@@ -174,7 +188,8 @@ pnpm backup:neon        # needs Docker Desktop running; writes .data/backups/neo
 ```
 
 (a read-only `pg_dump` of production through the official `postgres:18` image, using the direct
-`DATABASE_URL_UNPOOLED` from `.env.neon`; it checks that all 16 tables are in the file). **How often:**
+`DATABASE_URL_UNPOOLED` from `.env.neon`; it checks by name that the file holds the data of every
+table the database has, and lists tables a pending migration will add). **How often:**
 weekly, and always right before a migration or a change to how data is ingested. The event data can be
 rebuilt from its sources; what cannot is your bookmarks, notes and assistant chats, so that is what the
 weekly copy protects. Keep the last four or so; `.data/` is git-ignored.
@@ -186,12 +201,16 @@ To restore, never write straight over production. Create a Neon branch first
 
 **CI.** `.github/workflows/ci.yml` runs on every push to `main`, on every pull request and every
 Monday: a production-dependency audit (`pnpm audit --prod --audit-level=high`), typecheck, lint, the
-unit tests and `pnpm build`. It needs no secrets or database. The weekly run matters because Next.js
+unit tests and `pnpm build`. It needs no secrets or database. A second job, `e2e`, starts a
+throwaway Postgres container, migrates it, loads a small offline fixture (`pnpm db:seed-e2e`, which
+refuses any non-local database), builds, and runs the Playwright smoke suite with throwaway
+credentials. The weekly run matters because Next.js
 refuses to build a version with a known critical advisory: a new advisory against an unchanged
 lockfile would otherwise surface only as a failed Vercel deploy.
 
 **Dependencies.** `.github/dependabot.yml` opens weekly update PRs (npm, grouped minor/patch, and
-GitHub Actions), skipping releases younger than 3 days; pnpm itself refuses releases younger than
+GitHub Actions), skipping releases younger than 3 days and major versions (upgrade those on
+purpose; security updates still come through); pnpm itself refuses releases younger than
 its minimum release age. Merge them only when CI is green. Vulnerable transitive packages whose
 parents still allow a bad version are pinned in `overrides` in `pnpm-workspace.yaml`, each with the
 reason; drop an entry once the parent requires a fixed release. `pnpm audit` (without `--prod`)

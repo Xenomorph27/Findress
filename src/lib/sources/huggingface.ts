@@ -11,8 +11,9 @@ import {
   type DeadlineInput,
   type EventInput,
   type SourceAdapter,
+  type WithheldItem,
 } from "@/lib/ingest/types";
-import { wallClockToUtc } from "@/lib/time/tz";
+import { looksLikeWallClock, wallClockToUtc } from "@/lib/time/tz";
 import type { DeadlineKind } from "@/lib/taxonomy";
 
 /**
@@ -102,10 +103,11 @@ function mk(
   text: string | undefined,
   tz: string | undefined,
   label: string | null,
-): DeadlineInput | null {
+): DeadlineInput | { invalid: string } | null {
   if (!text || typeof text !== "string") return null;
   const r = wallClockToUtc(text, tz);
-  if (!r) return null;
+  // "TBA" is simply no deadline; "2027-02-31" is malformed data and must not become one.
+  if (!r) return looksLikeWallClock(text) ? { invalid: `${text}${tz ? ` (${tz})` : ""}` } : null;
   return {
     kind,
     label: cleanText(label),
@@ -116,7 +118,15 @@ function mk(
   };
 }
 
-export function normalizeHfFile(text: string, path: string): EventInput[] {
+/**
+ * Editions of one upstream file. An edition with a malformed deadline date is not returned but
+ * reported in `withheld`, so its last good copy stays in place (it is not re-dated or pruned).
+ */
+export function normalizeHfFile(
+  text: string,
+  path: string,
+  withheld: WithheldItem[] = [],
+): EventInput[] {
   const data = YAML.parse(text) as HfConf[] | null;
   if (!Array.isArray(data)) return [];
   const out: EventInput[] = [];
@@ -124,27 +134,30 @@ export function normalizeHfFile(text: string, path: string): EventInput[] {
     if (!c?.title || !Number.isInteger(Number(c.year))) continue;
     const year = Number(c.year);
     const title = cleanAcronym(String(c.title));
+    const sourceId = c.id ? String(c.id) : `${title}-${year}`;
     // "EMNLP (Industry Track)" is a track of EMNLP: own event, parent = the main conference.
     const track = /^(.*?)\s*\(([^)]*(?:track|demo)[^)]*)\)\s*$/i.exec(title);
     const parentKey = track ? dedupeKeyFor(track[1], year) : null;
 
-    const deadlines: DeadlineInput[] = [];
-    if (Array.isArray(c.deadlines) && c.deadlines.length > 0) {
-      for (const d of c.deadlines) {
-        const item = mk(mapDeadlineType(d.type), d.date, d.timezone, d.label ?? null);
-        if (item) deadlines.push(item);
-      }
-    } else {
-      for (const item of [
-        mk("abstract", c.abstract_deadline, c.timezone, "Abstract deadline"),
-        mk("paper", c.deadline, c.timezone, "Paper deadline"),
-        mk("other", c.review_release_date, c.timezone, "Reviews released"),
-        mk("rebuttal", c.rebuttal_period_end, c.timezone, "Rebuttal period ends"),
-        mk("notification", c.final_decision_date, c.timezone, "Final decisions"),
-      ]) {
-        if (item) deadlines.push(item);
-      }
+    const made =
+      Array.isArray(c.deadlines) && c.deadlines.length > 0
+        ? c.deadlines.map((d) => mk(mapDeadlineType(d.type), d.date, d.timezone, d.label ?? null))
+        : [
+            mk("abstract", c.abstract_deadline, c.timezone, "Abstract deadline"),
+            mk("paper", c.deadline, c.timezone, "Paper deadline"),
+            mk("other", c.review_release_date, c.timezone, "Reviews released"),
+            mk("rebuttal", c.rebuttal_period_end, c.timezone, "Rebuttal period ends"),
+            mk("notification", c.final_decision_date, c.timezone, "Final decisions"),
+          ];
+    const invalid = made.filter((d): d is { invalid: string } => !!d && "invalid" in d);
+    if (invalid.length > 0) {
+      withheld.push({
+        sourceId,
+        reason: `invalid deadline date ${invalid.map((d) => `"${d.invalid}"`).join(", ")}`,
+      });
+      continue;
     }
+    const deadlines = made.filter((d): d is DeadlineInput => !!d);
 
     // Location: prefer city + a recognised country; fall back to parsing the venue string
     // (upstream occasionally puts a US state in `country`).
@@ -163,7 +176,7 @@ export function normalizeHfFile(text: string, path: string): EventInput[] {
     out.push({
       ...emptyEvent({
         source: "huggingface",
-        sourceId: c.id ? String(c.id) : `${title}-${year}`,
+        sourceId,
         acronym: title,
         year,
       }),
@@ -208,8 +221,13 @@ export const huggingfaceAdapter: SourceAdapter = {
     );
     const files = tree.filter((t) => t.type === "file" && /\.ya?ml$/.test(t.path));
     const events: EventInput[] = [];
+    const withheld: WithheldItem[] = [];
     let ok = 0;
     for (const f of files) {
+      if (Date.now() > ctx.deadlineMs) {
+        warnings.push(`time budget reached after ${ok} of ${files.length} files`);
+        break;
+      }
       const url = `https://huggingface.co/spaces/${SPACE}/resolve/main/${f.path}`;
       try {
         const text = await ctx.fetcher.getText(url, {
@@ -217,18 +235,22 @@ export const huggingfaceAdapter: SourceAdapter = {
           cacheTtlMs: 60 * 24 * 3600_000,
           minIntervalMs: 300,
         });
-        events.push(...normalizeHfFile(text, f.path));
+        events.push(...normalizeHfFile(text, f.path, withheld));
         ok++;
       } catch (err) {
         warnings.push(`${f.path}: ${(err as Error).message}`);
       }
     }
-    const valid = validateEvents(events, warnings);
+    for (const w of withheld) warnings.push(`withheld ${w.sourceId}: ${w.reason}`);
+    const dropped: string[] = [];
+    const valid = validateEvents(events, warnings, dropped);
     return {
       events: valid,
       warnings,
-      pruneStale: ok > 0 && ok >= files.length / 2,
-      stats: { files: ok, editions: valid.length },
+      // Prune only from a complete snapshot: one failed file must not delete its editions.
+      pruneStale: files.length > 0 && ok === files.length,
+      keepSourceIds: [...withheld.map((w) => w.sourceId), ...dropped],
+      stats: { files: ok, editions: valid.length, withheld: withheld.length + dropped.length },
     };
   },
 };

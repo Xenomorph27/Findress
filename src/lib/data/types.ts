@@ -164,9 +164,19 @@ export interface JournalListRow {
   sjrQuartile: string | null;
   subfields: string[];
   topics: string[];
-  /** Earliest open special-issue deadline (epoch ms), if any call is open. */
-  nextCall: { id: number; title: string; at: number } | null;
-  openCalls: number;
+  /**
+   * Special-issue calls with a deadline from shortly before the data was loaded, soonest first.
+   * Which are open depends on the clock, so read them through openCallsAt()/nextCallAt()
+   * (src/lib/explore/journal-calls.ts): a cached list stays right as deadlines pass.
+   */
+  calls: JournalCall[];
+}
+
+export interface JournalCall {
+  id: number;
+  title: string;
+  /** Submission deadline, epoch ms. */
+  at: number;
 }
 
 /** One special-issue call in /explore (Special issues tab and "All"). */

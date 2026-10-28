@@ -1,6 +1,7 @@
 import { icsFeedToken } from "@/lib/auth/owner";
 import { isOwnerRequest } from "@/lib/auth/session";
 import { safeEqual } from "@/lib/auth/cron";
+import { milestoneUids } from "@/lib/data/milestones";
 import { listWorkspace } from "@/lib/data/workspace";
 import { getDb } from "@/lib/db";
 import { buildCalendar, type IcsItem } from "@/lib/ics";
@@ -10,6 +11,10 @@ import { DEADLINE_KIND_LABEL, type DeadlineKind } from "@/lib/taxonomy";
 /**
  * GET /api/workspace/ics — every deadline of every bookmarked event as one subscribable
  * calendar. Owner cookie, or ?token= (shown in the workspace) for calendar apps.
+ *
+ * Each entry's UID is its milestone identity (target + kind + round, see milestones.ts), which
+ * is also the dedupe key: two events with a deadline at the same moment are two entries, while a
+ * special issue bookmarked both directly and through its journal is one.
  */
 export async function GET(request: Request) {
   const token = new URL(request.url).searchParams.get("token");
@@ -26,14 +31,20 @@ export async function GET(request: Request) {
     if (it.status === "rejected") continue;
     const url = it.href.startsWith("/") ? absoluteUrl(it.href) : it.href;
     const label = it.year != null ? `${it.acronym} ${it.year}` : it.acronym;
-    it.deadlines.forEach((d, i) => {
-      // A special issue bookmarked on its own and via its journal is one calendar entry.
-      const dedupe = `${d.dueAtUtc}|${d.label ?? d.kind}`;
-      if (seen.has(dedupe)) return;
-      seen.add(dedupe);
+    const owned = it.deadlines.filter((d) => d.specialIssueId == null);
+    const uids = new Map(
+      milestoneUids(`${it.kind}-${it.targetId}`, owned).map((uid, i) => [owned[i], uid]),
+    );
+    for (const d of it.deadlines) {
+      const uid =
+        d.specialIssueId != null
+          ? milestoneUids(`special-${d.specialIssueId}`, [d])[0]
+          : uids.get(d)!;
+      if (seen.has(uid)) continue;
+      seen.add(uid);
       const kind = DEADLINE_KIND_LABEL[d.kind as DeadlineKind] ?? d.kind;
       items.push({
-        uid: `${it.key.replace(":", "-")}-${d.kind}-${i}@findress`,
+        uid,
         title:
           it.kind === "event"
             ? `${label}: ${kind}${d.label && d.label.toLowerCase() !== kind.toLowerCase() ? ` — ${d.label}` : ""}`
@@ -43,7 +54,7 @@ export async function GET(request: Request) {
         at: new Date(d.dueAtUtc),
         alarmMinutesBefore: ["abstract", "paper"].includes(d.kind) ? 3 * 24 * 60 : undefined,
       });
-    });
+    }
   }
   return new Response(buildCalendar("FIndress — my deadlines", items), {
     headers: {

@@ -16,14 +16,7 @@ import {
 } from "@/lib/ai/context";
 import { aiConfigError, getChatModel, maxOutputTokens } from "@/lib/ai/model";
 import { buildTools } from "@/lib/ai/tools";
-import {
-  checkRateLimit,
-  clearChat,
-  loadChat,
-  recordUsageEnd,
-  recordUsageStart,
-  saveChat,
-} from "@/lib/ai/usage";
+import { clearChat, loadChat, recordUsageEnd, reserveChatUsage, saveChat } from "@/lib/ai/usage";
 import { getEventDetail } from "@/lib/data/events";
 import { getJournalDetail } from "@/lib/data/journals";
 import { getDb } from "@/lib/db";
@@ -35,6 +28,9 @@ import { DEFAULT_TIMEZONE } from "@/lib/site";
  * DELETE /api/chat?scope=…    clear it
  */
 export const maxDuration = 120;
+
+/** Cap on the whole conversation sent with one message (it all goes to the model). */
+const MAX_CONVERSATION_CHARS = 200_000;
 
 const BodySchema = z.object({
   messages: z.array(z.unknown()).min(1).max(60),
@@ -101,17 +97,6 @@ export async function POST(request: Request) {
   if (!parsed.success) return Response.json({ error: "bad request" }, { status: 400 });
   const tz = parsed.data.tz && isValidZone(parsed.data.tz) ? parsed.data.tz : DEFAULT_TIMEZONE;
 
-  const limit = await checkRateLimit(db);
-  if (!limit.ok) {
-    return Response.json(
-      {
-        error: "rate-limited",
-        message: `Hourly limit reached (${limit.limit} messages). Try again later.`,
-      },
-      { status: 429 },
-    );
-  }
-
   const event = parsed.data.eventSlug ? await getEventDetail(parsed.data.eventSlug) : null;
   if (parsed.data.eventSlug && !event)
     return Response.json({ error: "event not found" }, { status: 404 });
@@ -146,6 +131,17 @@ export async function POST(request: Request) {
   } catch {
     return Response.json({ error: "invalid messages" }, { status: 400 });
   }
+  // Only the conversation itself: system instructions come from the server, never the client.
+  if (messages.some((m) => m.role !== "user" && m.role !== "assistant"))
+    return Response.json({ error: "invalid messages" }, { status: 400 });
+  if (JSON.stringify(messages).length > MAX_CONVERSATION_CHARS)
+    return Response.json(
+      {
+        error: "conversation too long",
+        message: "This conversation is too long. Clear it to start a new one.",
+      },
+      { status: 413 },
+    );
   const lastUser = [...messages].reverse().find((m) => m.role === "user");
   const question = lastUser?.parts.map((p) => (p.type === "text" ? p.text : "")).join(" ") ?? "";
   if (question.length > 4000) return Response.json({ error: "message too long" }, { status: 400 });
@@ -157,7 +153,17 @@ export async function POST(request: Request) {
       ? buildJournalSystemPrompt(journal, question, tz, today).system
       : buildGlobalSystemPrompt(tz, today);
   const { model, providerOptions } = getChatModel();
-  const usageId = await recordUsageStart(db, scope);
+  const reserved = await reserveChatUsage(db, scope);
+  if (!reserved.ok) {
+    return Response.json(
+      {
+        error: "rate-limited",
+        message: `Hourly limit reached (${reserved.limit} messages). Try again later.`,
+      },
+      { status: 429 },
+    );
+  }
+  const usageId = reserved.id;
 
   const result = streamText({
     model,

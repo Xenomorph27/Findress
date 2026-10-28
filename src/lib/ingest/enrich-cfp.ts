@@ -3,16 +3,36 @@ import type { Db } from "@/lib/db";
 import { events } from "@/lib/db/schema";
 import { extractCfp, looksLikeCfpPage, type CfpExtraction } from "@/lib/sources/cfp";
 import { extractCfpTopics, tagEvent } from "@/lib/sources/topics";
+import { looksBlocked } from "./blocked-page";
 import { RobotsDisallowedError, type PoliteFetcher } from "./http";
 import { sha256Hex } from "./keys";
 
 const REFRESH_AFTER_MS = 7 * 24 * 3600_000;
 const CONCURRENCY = 4;
+/** Shorter extracted text is not a CFP (navigation shells, error stubs). */
+const MIN_CFP_CHARS = 200;
 
+/** A login wall in place of the page (CFP pages are public; this is checked on CFPs only). */
+const LOGIN_WALL =
+  /(please )?(log|sign)[ -]?in to (continue|view this page|access this (page|site))/i;
+
+/** A bot challenge, login wall or error page served with HTTP 200 (title or body). */
+function isBlockPage(page: CfpExtraction): boolean {
+  return (
+    looksBlocked(page.title) ||
+    looksBlocked(page.text) ||
+    (page.text.length < 2000 && LOGIN_WALL.test(page.text))
+  );
+}
+
+/**
+ * The official CFP page as text, or `{ blocked: true }` when the site answered with a challenge
+ * or login wall instead (never stored), or null when there is nothing usable.
+ */
 async function fetchCfp(
   fetcher: PoliteFetcher,
   url: string,
-): Promise<{ url: string; data: CfpExtraction } | null> {
+): Promise<{ url: string; data: CfpExtraction } | { blocked: true } | null> {
   const res = await fetcher.get(url, {
     robots: true,
     timeoutMs: 15_000,
@@ -21,6 +41,7 @@ async function fetchCfp(
   });
   if (!res.ok || (res.contentType && !/html|xml/i.test(res.contentType))) return null;
   const first = extractCfp(res.text, res.url);
+  if (isBlockPage(first)) return { blocked: true };
   // From a homepage, follow one same-site "Call for Papers" link.
   if (first.cfpLink && !looksLikeCfpPage(res.url, first.title)) {
     try {
@@ -31,7 +52,7 @@ async function fetchCfp(
       });
       if (next.ok && (!next.contentType || /html/i.test(next.contentType))) {
         const second = extractCfp(next.text, next.url);
-        if (second.text.length > 400) {
+        if (second.text.length > 400 && !isBlockPage(second)) {
           return {
             url: next.url,
             data: { ...second, submissionSite: second.submissionSite ?? first.submissionSite },
@@ -47,7 +68,11 @@ async function fetchCfp(
 
 /**
  * Fetch official CFP pages for upcoming events (stale after 7 days), within the time budget.
- * Text is only re-processed when its hash changes.
+ * Text is only re-processed when its hash changes. A block page never replaces stored text.
+ *
+ * Submission facts parsed from the page (submission site, review type, page limit) follow the
+ * page when it changes, including disappearing when the page no longer states them, unless a
+ * list source supplied the value (merge records that in field_provenance, every run): those win.
  */
 export async function enrichCfps(
   db: Db,
@@ -59,6 +84,7 @@ export async function enrichCfps(
   updated: number;
   unchanged: number;
   failed: number;
+  blocked: number;
   pending: number;
 }> {
   const staleBefore = new Date(Date.now() - REFRESH_AFTER_MS);
@@ -74,6 +100,7 @@ export async function enrichCfps(
       submissionSite: events.submissionSite,
       reviewType: events.reviewType,
       pageLimit: events.pageLimit,
+      fieldProvenance: events.fieldProvenance,
     })
     .from(events)
     .where(
@@ -91,6 +118,7 @@ export async function enrichCfps(
   let updated = 0;
   let unchanged = 0;
   let failed = 0;
+  let blocked = 0;
   let cursor = 0;
 
   const worker = async () => {
@@ -99,7 +127,13 @@ export async function enrichCfps(
       attempted++;
       try {
         const got = await fetchCfp(fetcher, r.website!);
-        if (!got || got.data.text.length < 200) {
+        if (got && "blocked" in got) {
+          // Keep the last good text; only note that the page was tried.
+          blocked++;
+          await db.update(events).set({ cfpFetchedAt: new Date() }).where(eq(events.id, r.id));
+          continue;
+        }
+        if (!got || got.data.text.length < MIN_CFP_CHARS) {
           failed++;
           await db.update(events).set({ cfpFetchedAt: new Date() }).where(eq(events.id, r.id));
           continue;
@@ -127,9 +161,12 @@ export async function enrichCfps(
             cfpUrl: got.url,
             cfpFetchedAt: new Date(),
             cfpTopics: extractCfpTopics(got.data.text),
-            submissionSite: r.submissionSite ?? got.data.submissionSite,
-            reviewType: r.reviewType ?? got.data.reviewType,
-            pageLimit: r.pageLimit ?? got.data.pageLimit,
+            // A value a list source supplied stays; otherwise the field follows the page.
+            submissionSite: r.fieldProvenance.submissionSite
+              ? r.submissionSite
+              : got.data.submissionSite,
+            reviewType: r.fieldProvenance.reviewType ? r.reviewType : got.data.reviewType,
+            pageLimit: got.data.pageLimit,
             hasRebuttal: got.data.hasRebuttal,
             ...(tagged.subfields.length
               ? { subfields: tagged.subfields, topics: tagged.topics }
@@ -146,5 +183,5 @@ export async function enrichCfps(
     }
   };
   await Promise.all(Array.from({ length: CONCURRENCY }, worker));
-  return { attempted, updated, unchanged, failed, pending: rows.length - attempted };
+  return { attempted, updated, unchanged, failed, blocked, pending: rows.length - attempted };
 }

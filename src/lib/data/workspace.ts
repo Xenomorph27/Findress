@@ -31,7 +31,16 @@ export interface WorkspaceItem {
   rankCore: string | null;
   rankCcf: string | null;
   hasNote: boolean;
-  deadlines: { kind: string; label: string | null; dueAtUtc: string; originalTz: string | null }[];
+  deadlines: WorkspaceDeadline[];
+}
+
+export interface WorkspaceDeadline {
+  kind: string;
+  label: string | null;
+  dueAtUtc: string;
+  originalTz: string | null;
+  /** Set for a special-issue call (bookmarked directly or via its journal): its identity. */
+  specialIssueId?: number;
 }
 
 const targetColumn = (kind: TargetKind) =>
@@ -100,6 +109,7 @@ export async function listWorkspace(db: Db): Promise<WorkspaceItem[]> {
   const journalCalls = journalIds.length
     ? await db
         .select({
+          id: specialIssues.id,
           journalId: specialIssues.journalId,
           title: specialIssues.title,
           due: specialIssues.submissionDeadlineUtc,
@@ -186,6 +196,7 @@ export async function listWorkspace(db: Db): Promise<WorkspaceItem[]> {
           label: `Special issue: ${c.title}`,
           dueAtUtc: c.due!.toISOString(),
           originalTz: null,
+          specialIssueId: c.id,
         })),
     })),
     ...siRows.map((r) => ({
@@ -215,6 +226,7 @@ export async function listWorkspace(db: Db): Promise<WorkspaceItem[]> {
               label: `Special issue: ${r.title}`,
               dueAtUtc: r.due.toISOString(),
               originalTz: null,
+              specialIssueId: r.id,
             },
           ]
         : [],
@@ -237,6 +249,32 @@ export async function upsertBookmark(
       target: targetColumn(target.kind),
       set: { status, updatedAt: now, ...(position != null ? { position } : {}) },
     });
+}
+
+export interface BookmarkMove extends Target {
+  status: BookmarkStatus;
+  position: number;
+}
+
+/**
+ * Apply a whole Kanban drop (every card of the target column) in one transaction, so the board
+ * is never left half-reordered. Only existing bookmarks move: one removed meanwhile (another
+ * tab) is reported as missing, not recreated.
+ */
+export async function moveBookmarks(db: Db, moves: BookmarkMove[]) {
+  const now = new Date();
+  return db.transaction(async (tx) => {
+    let updated = 0;
+    for (const m of moves) {
+      const rows = await tx
+        .update(bookmarks)
+        .set({ status: m.status, position: m.position, updatedAt: now })
+        .where(eq(targetColumn(m.kind), m.id))
+        .returning({ id: bookmarks.id });
+      updated += rows.length;
+    }
+    return { updated, missing: moves.length - updated };
+  });
 }
 
 export async function removeBookmark(db: Db, target: Target) {

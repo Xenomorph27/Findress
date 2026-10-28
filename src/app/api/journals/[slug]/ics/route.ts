@@ -1,10 +1,13 @@
+import { ownerOnly } from "@/lib/auth/session";
 import { getJournalDetail } from "@/lib/data/journals";
 import { withDbFallback } from "@/lib/data/events";
 import { buildCalendar, icsResponse, type IcsItem } from "@/lib/ics";
 import { absoluteUrl } from "@/lib/site";
 
-/** GET /api/journals/[slug]/ics — every dated special-issue deadline of one journal. */
-export async function GET(_request: Request, ctx: RouteContext<"/api/journals/[slug]/ics">) {
+/** GET /api/journals/[slug]/ics — every dated special-issue deadline of one journal (owner only). */
+export async function GET(request: Request, ctx: RouteContext<"/api/journals/[slug]/ics">) {
+  const denied = await ownerOnly(request);
+  if (denied) return denied;
   const { slug } = await ctx.params;
   const res = await withDbFallback(null, () => getJournalDetail(slug));
   if (!res.data) return Response.json({ error: "not found" }, { status: 404 });

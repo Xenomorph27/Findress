@@ -186,6 +186,13 @@ const KIND_WORDS: Record<ExtractedKind, RegExp> = {
   other: /./,
 };
 
+/** Kinds that are a closing date for something the author sends. */
+const SUBMISSION_KINDS = new Set<ExtractedKind>(["abstract", "paper", "camera_ready", "rebuttal"]);
+/** "Submission site opens …", "registration begins …": the start of a window, not a deadline. */
+const OPENING =
+  /\b(open|opens|opening|begin|begins|beginning|start|starts|starting|launch|launches)\b/i;
+const CLOSING = /\b(deadline|due|close|closes|closing|by|until|no later than|before)\b/i;
+
 const IN_PERSON = /(in[- ]person|on-?site|physical(ly)?|face[- ]to[- ]face)/i;
 const VIRTUAL = /(virtual|online|remote)/i;
 /** "online submission", "submit online" … are about the paperwork, not the attendance. */
@@ -279,8 +286,13 @@ export function verifyExtraction(
       reject("deadline", `year ${year} is not near the ${target.year} edition`, tag);
       continue;
     }
-    if (!KIND_WORDS[d.kind].test(`${d.quote} ${d.label}`)) {
+    // The evidence is the page's own words: the model's label is not proof of the kind.
+    if (!KIND_WORDS[d.kind].test(d.quote)) {
       reject("deadline", `quote does not look like a ${d.kind} deadline`, tag);
+      continue;
+    }
+    if (SUBMISSION_KINDS.has(d.kind) && OPENING.test(d.quote) && !CLOSING.test(d.quote)) {
+      reject("deadline", "quote describes an opening date, not a deadline", tag);
       continue;
     }
     // A clock time or zone is trusted only if the quote really contains it.

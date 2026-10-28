@@ -51,7 +51,8 @@ async function getJournalRowsQuery(): Promise<JournalListRow[]> {
     })
     .from(journals)
     .orderBy(asc(journals.abbreviation));
-  // Open calls (deadline ahead) per journal; the request clock is applied on the client too.
+  // Calls per journal with a deadline from a day back (the list may be served from cache for a
+  // while); which of them are still open is decided at render time with the viewer's clock.
   const calls = await db
     .select({
       id: specialIssues.id,
@@ -70,10 +71,7 @@ async function getJournalRowsQuery(): Promise<JournalListRow[]> {
       ...r,
       openAccess: r.openAccess as JournalListRow["openAccess"],
       topics: r.topics.slice(0, 4),
-      nextCall: mine[0]
-        ? { id: mine[0].id, title: mine[0].title, at: mine[0].due!.getTime() }
-        : null,
-      openCalls: mine.length,
+      calls: mine.map((c) => ({ id: c.id, title: c.title, at: c.due!.getTime() })),
     };
   });
 }

@@ -3,10 +3,11 @@ import {
   attemptsLeft,
   clientIp,
   formatLockRemaining,
+  LOCK_MS,
   lockRemainingMs,
   MAX_ATTEMPTS,
 } from "@/lib/auth/lockout";
-import { clearAttempts, readAttempts, recordFailure } from "@/lib/auth/lockout-store";
+import { clearAttempts, reserveAttempt } from "@/lib/auth/lockout-store";
 import { safeNextPath } from "@/lib/auth/next-path";
 import {
   cookieSecureFor,
@@ -105,12 +106,14 @@ export async function POST(request: Request) {
   const db = getDb();
   const ip = clientIp(request.headers);
   const now = new Date();
-  const record = db ? await readAttempts(db, ip) : null;
-  const remaining = lockRemainingMs(record, now);
-  if (remaining > 0) return locked(remaining);
+  // The attempt is counted before the password is checked (one atomic statement), so parallel
+  // guesses cannot all slip in under the limit.
+  const reserved = db ? await reserveAttempt(db, ip, now) : null;
+  if (reserved && !reserved.admitted)
+    return locked(lockRemainingMs(reserved.record, now) || LOCK_MS);
 
   if (!(await passwordMatches(parsed.data.password, expected))) {
-    const next = db ? await recordFailure(db, ip, record, now) : null;
+    const next = reserved?.record ?? null;
     await sleep(600);
     const lockMs = lockRemainingMs(next, now);
     if (lockMs > 0) return locked(lockMs);

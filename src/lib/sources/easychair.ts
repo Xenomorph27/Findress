@@ -201,11 +201,14 @@ export const easychairAdapter: SourceAdapter = {
         dropped[why.startsWith("only") || why.startsWith("no AI") ? "notAi" : why] =
           (dropped[why.startsWith("only") || why.startsWith("no AI") ? "notAi" : why] ?? 0) + 1;
     }
-    const valid = validateEvents(events, warnings);
+    const invalid: string[] = [];
+    const valid = validateEvents(events, warnings, invalid);
     return {
       events: valid,
       warnings,
+      // One complete page (sanity-checked above); items that failed validation keep their copy.
       pruneStale: true,
+      keepSourceIds: invalid,
       stats: {
         rows: rows.length,
         kept: valid.length,

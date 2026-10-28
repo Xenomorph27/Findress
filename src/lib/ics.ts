@@ -100,7 +100,8 @@ export function icsResponse(body: string, filename: string): Response {
     headers: {
       "Content-Type": "text/calendar; charset=utf-8",
       "Content-Disposition": `attachment; filename="${filename.replace(/[^a-z0-9._-]/gi, "_")}"`,
-      "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+      // Owner-only data (the app sits behind the login): never cached by a CDN.
+      "Cache-Control": "private, no-store",
     },
   });
 }

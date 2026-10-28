@@ -1,18 +1,20 @@
 import { DEADLINE_KIND_LABEL, type DeadlineKind } from "@/lib/taxonomy";
 import { absoluteUrl } from "@/lib/site";
 import type { IcsItem } from "@/lib/ics";
+import { milestoneUids } from "./milestones";
 import type { EventDetail } from "./types";
 
 /** All dated milestones of one event as calendar items (deadlines + the event itself). */
 export function eventToIcsItems(e: EventDetail): IcsItem[] {
   const title = `${e.acronym} ${e.year}`;
   const url = absoluteUrl(`/c/${e.slug}`);
+  const uids = milestoneUids(e.slug, e.deadlines);
   const items: IcsItem[] = e.deadlines.map((d, i) => {
     const kind = DEADLINE_KIND_LABEL[d.kind as DeadlineKind] ?? d.kind;
     const label =
       d.label && d.label.toLowerCase() !== kind.toLowerCase() ? `${kind} — ${d.label}` : kind;
     return {
-      uid: `${e.slug}-${d.kind}-${i}@findress`,
+      uid: uids[i],
       title: `${title}: ${label}`,
       description: [
         d.originalText

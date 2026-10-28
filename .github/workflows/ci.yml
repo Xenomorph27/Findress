@@ -53,3 +53,62 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+  # The Playwright smoke suite against a production build, backed by a throwaway Postgres in
+  # the job with a small offline fixture (scripts/seed-e2e.ts). The password and secret below
+  # exist only inside this job's container; they are not the real ones and protect nothing.
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci-only
+          POSTGRES_DB: findress
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      DATABASE_URL: postgres://postgres:ci-only@localhost:5432/findress
+      APP_PASSWORD: ci-throwaway-password-for-e2e-only
+      AUTH_SECRET: ci-throwaway-auth-secret-for-e2e-only-0123456789abcdef
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Enable pnpm
+        run: corepack enable
+
+      - name: Install (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Migrate and seed the job's database
+        run: |
+          pnpm db:migrate
+          pnpm db:seed-e2e
+
+      - name: Install Playwright browser
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Build
+        run: pnpm build
+
+      - name: Smoke tests
+        run: pnpm test:e2e
+
+      - name: Upload traces on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: test-results/
+          retention-days: 7

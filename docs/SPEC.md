@@ -124,18 +124,24 @@ Scheduling:
 
 ## 7. API routes
 
-- `GET /api/events` — filtered/paginated JSON (public, cached `s-maxage=300`). Also the hook for
-  optional external agents (e.g. OpenCode) — document it in README.
-- `GET /api/events/[slug]`
-- `GET /api/events/[slug]/ics` and `GET /api/workspace/ics` (all bookmarked deadlines)
-- `GET /api/ingest?source=` — cron-protected
+- `GET /api/events` — filtered/paginated JSON (owner session, `private, no-store`). Also the
+  hook for optional external agents (e.g. OpenCode) — document it in README.
+- `GET /api/events/[slug]`, `GET /api/journals`, `GET /api/journals/[slug]` — same rules
+- `GET /api/events/[slug]/ics` and `GET /api/workspace/ics` (all bookmarked deadlines; the
+  workspace feed also accepts its signed `?token=` so calendar apps can subscribe)
+- `GET /api/ingest?source=` — cron-protected; 200 when every step worked, 500 when any step
+  failed, 409 when another run was in progress (nothing done)
 - `POST /api/chat` — owner-protected, streaming
 - `POST/PATCH/DELETE /api/workspace/*` — bookmarks, status, notes (owner-protected)
 
 ## 8. Access
 
-Single owner, no sign-up. `APP_PASSWORD` env; `/unlock` page sets a signed httpOnly cookie
-(`AUTH_SECRET`); middleware protects `/workspace`, chat, notes, refresh. Browsing/explore/insights stay public.
+Single owner, no sign-up, and the whole app is private. `APP_PASSWORD` env; `/login` sets a
+signed httpOnly cookie (`AUTH_SECRET`). The proxy sends every page to `/login` and answers 401
+on API routes without the session, and each data route also checks the session itself. Open
+without a session: `/login`, `/api/auth/*`, the cron-protected `/api/ingest` and
+`/api/revalidate`, the token-signed workspace calendar feed (`ICS_SECRET`, else `AUTH_SECRET`)
+and static files. Login attempts are limited per IP (5, then a lock), admitted atomically.
 
 ## 9. Data model (Drizzle)
 

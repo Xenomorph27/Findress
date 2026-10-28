@@ -26,6 +26,7 @@
 
 | When | What shipped |
 |---|---|
+| **Oct 28, 2026** | Hardening from an external review — atomic login lockout, every API route checks the session, outbound fetches limited to public hosts, atomic and single-run ingestion with honest job status, stable calendar entries, notes that survive navigation, transactional Kanban moves, retention cleanup, and an end-to-end job in CI. |
 | **Oct 22, 2026** | New sources and smarter data — **EasyChair Smart CFP** with an AI/ML relevance filter, **SJR quartiles** matched by ISSN, evidence-bound extraction of deadlines from CFP pages, and a resumable OpenReview sweep. |
 | **Oct 22, 2026** | Moved to **Neon Postgres**, with one-command backups and CI running typecheck, lint and unit tests on every push and pull request. |
 | **Oct 9, 2026** | **Journals & special issues** — 116 AI/ML journals with OpenAlex metrics, CCF/CORE ranks and open calls — plus whole-app sign-in and per-page lighting. |
@@ -132,7 +133,7 @@ source never stops the others.
 | Data | Neon Postgres, Drizzle ORM + drizzle-kit, PGlite (WASM Postgres) for local dev and tests |
 | Ingestion | `yaml`, `rss-parser`, `cheerio`, `@mozilla/readability` + `linkedom`, OpenAlex, OpenReview |
 | Assistant | Vercel AI SDK — Gemini by default, provider-swappable |
-| Quality | Vitest (240+ unit tests), Playwright smoke suite (desktop + mobile), ESLint, Prettier, GitHub Actions CI |
+| Quality | Vitest (470+ unit tests), Playwright smoke suite (desktop + mobile), ESLint, Prettier, GitHub Actions CI |
 | Hosting | Vercel (Git integration + Cron) |
 
 ## Run locally
@@ -144,14 +145,16 @@ pnpm install
 cp .env.example .env.local   # fill in what you need
 pnpm db:local                # PGlite (WASM Postgres) on :54329, foreground — or set DATABASE_URL to Neon
 pnpm db:migrate
-pnpm ingest                  # all sources; or --steps=ccfddl,huggingface,openreview,wikicfp,merge,cfp,
-                             #   topics,geocode,journals,journal-ranks,journal-pages,special-issues
+pnpm ingest                  # all steps; or --steps=ccfddl,huggingface,openreview,wikicfp,easychair,
+                             #   merge,cfp,extract,topics,geocode,journals,journal-ranks,
+                             #   journal-pages,special-issues,retention
 pnpm dev                     # http://localhost:3000 — sign in at /login with APP_PASSWORD
 ```
 
 ```bash
-pnpm test                    # unit tests
+pnpm test                    # unit tests (PGlite in memory, no network)
 pnpm test:e2e                # Playwright, against `pnpm build && pnpm start`
+                             #   (CI seeds a throwaway Postgres with `pnpm db:seed-e2e`)
 pnpm typecheck && pnpm lint
 ```
 

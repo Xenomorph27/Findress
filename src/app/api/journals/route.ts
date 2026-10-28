@@ -1,3 +1,4 @@
+import { ownerOnly, PRIVATE_NO_STORE } from "@/lib/auth/session";
 import { withDbFallback } from "@/lib/data/events";
 import { getJournalRows, getSpecialIssueRows } from "@/lib/data/journals";
 import { DEFAULT_FILTERS, parseFilters } from "@/lib/explore/filters";
@@ -6,8 +7,11 @@ import { applyJournalFilters, applySpecialFilters } from "@/lib/explore/journal-
 /**
  * GET /api/journals — journals (and with ?include=special, open special issues), filtered with
  * the /explore journal params: q, subfield, oa, apcmax, jrank, publisher, jsort, limit, offset.
+ * Owner only.
  */
 export async function GET(request: Request) {
+  const denied = await ownerOnly(request);
+  if (denied) return denied;
   const url = new URL(request.url);
   const f = { ...DEFAULT_FILTERS, ...parseFilters(url.searchParams) };
   const limit = Math.min(Math.max(Number(url.searchParams.get("limit") ?? 50) || 50, 1), 200);
@@ -36,7 +40,5 @@ export async function GET(request: Request) {
       deadline: s.at ? new Date(s.at).toISOString() : null,
     }));
   }
-  return Response.json(body, {
-    headers: { "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600" },
-  });
+  return Response.json(body, { headers: PRIVATE_NO_STORE });
 }

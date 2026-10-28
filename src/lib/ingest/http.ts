@@ -1,4 +1,5 @@
 import { USER_AGENT } from "@/lib/site";
+import { assertFetchableUrl, BlockedDestinationError, publicFetch } from "./outbound";
 
 /**
  * Polite HTTP for ingestion:
@@ -7,7 +8,13 @@ import { USER_AGENT } from "@/lib/site";
  *   robots.txt Crawl-delay when larger; requests to one host are serialized
  * - honours robots.txt Allow/Disallow for HTML scraping
  * - timeouts + one retry on network errors / 5xx; never throws for HTTP status codes
+ * - only public destinations (outbound.ts): every redirect hop is followed here and re-checked,
+ *   and bodies stop at `maxBytes` while streaming
  */
+
+const MAX_REDIRECTS = 5;
+/** Upper bound on any body, even when the caller sets no maxBytes. */
+const HARD_MAX_BYTES = 20_000_000;
 
 export interface RobotsRules {
   allow: string[];
@@ -134,9 +141,38 @@ export interface GetOptions {
   cacheKey?: string;
   /** Per-call minimum spacing for this host (API/CDN hosts); robots Crawl-delay still wins. */
   minIntervalMs?: number;
+  /** Extra host policy checked on the URL and on every redirect hop (e.g. an allow-list). */
+  allowHost?: (host: string) => boolean;
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** Read a body as UTF-8 text, stopping (and cancelling the download) after `maxBytes`. */
+export async function readTextCapped(res: Response, maxBytes: number): Promise<string> {
+  if (!res.body) return (await res.text()).slice(0, maxBytes);
+  const reader = res.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    const room = maxBytes - size;
+    chunks.push(value.byteLength > room ? value.subarray(0, room) : value);
+    size += Math.min(value.byteLength, room);
+    if (size >= maxBytes) {
+      await reader.cancel().catch(() => {});
+      break;
+    }
+  }
+  const all = new Uint8Array(size);
+  let at = 0;
+  for (const c of chunks) {
+    all.set(c, at);
+    at += c.byteLength;
+  }
+  // A multi-byte character cut at the limit decodes to U+FFFD instead of throwing.
+  return new TextDecoder("utf-8").decode(all);
+}
 
 export class PoliteFetcher {
   private nextSlot = new Map<string, number>();
@@ -157,7 +193,7 @@ export class PoliteFetcher {
     return this.opts.userAgent ?? USER_AGENT;
   }
   private get fetchImpl() {
-    return this.opts.fetchImpl ?? fetch;
+    return this.opts.fetchImpl ?? publicFetch;
   }
 
   private async robotsFor(origin: string): Promise<RobotsRules> {
@@ -197,19 +233,39 @@ export class PoliteFetcher {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), o.timeoutMs ?? 20_000);
     try {
-      const res = await this.fetchImpl(url, {
-        headers: {
-          "User-Agent": this.ua,
-          Accept: o.accept ?? "*/*",
-          ...o.headers,
-        },
-        redirect: "follow",
-        signal: controller.signal,
-      });
-      let text = await res.text();
-      if (o.maxBytes && text.length > o.maxBytes) text = text.slice(0, o.maxBytes);
+      // Redirects are followed here, one hop at a time, so each destination is checked.
+      let current = url;
+      let res: Response;
+      for (let hop = 0; ; hop++) {
+        assertFetchableUrl(current, o.allowHost);
+        try {
+          res = await this.fetchImpl(current, {
+            headers: {
+              "User-Agent": this.ua,
+              Accept: o.accept ?? "*/*",
+              ...o.headers,
+            },
+            redirect: "manual",
+            signal: controller.signal,
+          });
+        } catch (err) {
+          // A name that resolved to a private address fails inside fetch ("fetch failed");
+          // surface the real reason (and keep get() from retrying it).
+          const cause = (err as { cause?: unknown }).cause;
+          throw cause instanceof BlockedDestinationError ? cause : err;
+        }
+        const location = res.headers.get("location");
+        if (![301, 302, 303, 307, 308].includes(res.status) || !location) break;
+        await res.body?.cancel().catch(() => {});
+        if (hop >= MAX_REDIRECTS) throw new Error(`too many redirects from ${url}`);
+        current = new URL(location, current).toString();
+      }
+      const text = await readTextCapped(
+        res,
+        Math.min(o.maxBytes ?? HARD_MAX_BYTES, HARD_MAX_BYTES),
+      );
       return {
-        url: res.url || url,
+        url: current,
         status: res.status,
         ok: res.ok,
         text,
@@ -223,7 +279,7 @@ export class PoliteFetcher {
   }
 
   async get(url: string, o: GetOptions = {}): Promise<FetchResult> {
-    const target = new URL(url);
+    const target = assertFetchableUrl(url, o.allowHost);
     const cacheKey = o.cacheKey ?? url;
     if (o.cacheTtlMs && this.opts.cache) {
       const hit = await this.opts.cache.get(cacheKey);
@@ -267,7 +323,11 @@ export class PoliteFetcher {
         }
         return res;
       } catch (err) {
-        if (attempt === 0 && !(err instanceof RobotsDisallowedError)) {
+        if (
+          attempt === 0 &&
+          !(err instanceof RobotsDisallowedError) &&
+          !(err instanceof BlockedDestinationError)
+        ) {
           attempt++;
           continue;
         }

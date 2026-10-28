@@ -99,3 +99,39 @@ describe("describeZone", () => {
     expect(describeZone(null)).toBe("timezone not stated");
   });
 });
+
+// feedback F18: impossible values are rejected, never rolled over into a different valid instant.
+describe("wallClockToUtc rejects impossible dates and offsets", () => {
+  it.each([
+    "2027-02-29", // 2027 is not a leap year
+    "2027-02-30",
+    "2027-02-31 23:59:59",
+    "2027-04-31",
+    "2027-06-31 12:00",
+    "2027-01-01 23:59:60",
+    "2027-01-01 23:59:99",
+  ])("%s", (text) => {
+    expect(wallClockToUtc(text, "UTC")).toBeNull();
+  });
+
+  it("accepts real edge dates", () => {
+    expect(wallClockToUtc("2028-02-29", "UTC")?.utc.toISOString()).toBe("2028-02-29T23:59:59.000Z");
+    expect(wallClockToUtc("2027-04-30 23:59:59", "UTC")?.utc.toISOString()).toBe(
+      "2027-04-30T23:59:59.000Z",
+    );
+  });
+
+  it.each(["UTC+05:60", "UTC+05:99", "GMT-03:75", "UTC+15"])(
+    "a malformed numeric offset %s rejects the deadline (not an AoE guess)",
+    (tz) => {
+      expect(parseZone(tz)).toBeNull();
+      expect(wallClockToUtc("2027-01-01 12:00", tz)).toBeNull();
+    },
+  );
+
+  it("an unknown zone name still falls back to AoE, flagged", () => {
+    expect(wallClockToUtc("2027-01-01 12:00", "Somewhere Time")).toMatchObject({
+      zoneAssumed: true,
+    });
+  });
+});

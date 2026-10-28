@@ -472,6 +472,16 @@ export const loginAttempts = pgTable("login_attempts", {
   lockedUntil: timestamp("locked_until", { withTimezone: true }),
 });
 
+/**
+ * One row per coordinated job ("ingest"): whoever holds an unexpired lease runs, everyone else
+ * skips. A row, not a session advisory lock, because Neon's pooler does not keep sessions.
+ */
+export const ingestLease = pgTable("ingest_lease", {
+  name: text("name").primaryKey(),
+  holder: text("holder").notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+});
+
 export type EventRow = typeof events.$inferSelect;
 export type DeadlineRow = typeof deadlines.$inferSelect;
 export type EventSourceRow = typeof eventSources.$inferSelect;

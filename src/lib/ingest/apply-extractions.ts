@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import type { Db } from "@/lib/db";
+import type { DbOrTx } from "@/lib/db";
 
 /** deadlines.source for rows that come from the AI extraction (shown as "AI-extracted"). */
 export const AI_DEADLINE_SOURCE = "ai-cfp";
@@ -10,11 +10,13 @@ export const AI_PROVENANCE = "ai-cfp";
  * Make the events table reflect the `extractions` audit table, without ever overriding a source:
  *   - deadlines: an extracted deadline is added only when no real source gives a deadline of the
  *     same kind for that event; stale or superseded AI rows are removed;
- *   - mode / description: filled only while the event has none; cleared again if the extraction
- *     is gone (the CFP page changed and was re-read).
+ *   - mode / description: filled while the event has none, and kept in step with the latest
+ *     extraction while the value is still the AI's own (a newer extraction replaces it); cleared
+ *     again if the extraction is gone (the CFP page changed and was re-read). A value from a real
+ *     source is never touched.
  * Safe to run any number of times, and after every merge (the merge rewrites these columns).
  */
-export async function applyExtractions(db: Db): Promise<void> {
+export async function applyExtractions(db: DbOrTx): Promise<void> {
   // 1) deadlines: drop AI rows that are no longer extracted or that a source now covers
   await db.execute(sql`
     delete from deadlines d
@@ -63,6 +65,7 @@ export async function applyExtractions(db: Db): Promise<void> {
           field_provenance = e.field_provenance || jsonb_build_object(${field}::text, ${AI_PROVENANCE}::text)
       from extractions x
       where x.event_id = e.id and x.field = ${field} and x.value is not null
-        and (e.${col} is null or e.${col} = '')`);
+        and (e.${col} is null or e.${col} = ''
+             or (e.field_provenance ->> ${field} = ${AI_PROVENANCE} and e.${col} is distinct from x.value))`);
   }
 }

@@ -1,5 +1,5 @@
 import { and, eq, inArray, lt, ne, notInArray, sql } from "drizzle-orm";
-import type { Db } from "@/lib/db";
+import type { Db, DbOrTx } from "@/lib/db";
 import {
   acceptanceStats,
   bookmarks,
@@ -81,13 +81,17 @@ export async function loadAllSourceItems(db: Db): Promise<EventInput[]> {
   return out;
 }
 
-/** Upsert a source's items; optionally prune items the source no longer lists. */
+/**
+ * Upsert a source's items; optionally prune items the source no longer lists. `keep` names items
+ * the source still lists but this run withheld (malformed data): their last good copy survives.
+ */
 export async function saveSourceItems(
   db: Db,
   source: SourceName,
   items: EventInput[],
   runStartedAt: Date,
   prune: boolean,
+  keep: string[] = [],
 ): Promise<{ saved: number; pruned: number }> {
   const now = new Date();
   const unique = new Map(items.map((i) => [i.sourceId, i]));
@@ -116,7 +120,13 @@ export async function saveSourceItems(
   if (prune && unique.size > 0) {
     const res = await db
       .delete(sourceItems)
-      .where(and(eq(sourceItems.source, source), lt(sourceItems.lastSeenAt, runStartedAt)))
+      .where(
+        and(
+          eq(sourceItems.source, source),
+          lt(sourceItems.lastSeenAt, runStartedAt),
+          keep.length > 0 ? notInArray(sourceItems.sourceId, keep) : undefined,
+        ),
+      )
       .returning({ id: sourceItems.sourceId });
     pruned = res.length;
   }
@@ -160,7 +170,7 @@ const ex = (column: string) => sql.raw(`excluded."${column}"`);
  * same source records still back it, rename the existing row in place: its id, bookmarks, notes,
  * chats and CFP text all stay attached. Returns how many rows were re-keyed.
  */
-export async function rekeyMovedEvents(db: Db, merged: MergedEvent[]): Promise<number> {
+export async function rekeyMovedEvents(db: DbOrTx, merged: MergedEvent[]): Promise<number> {
   const existing = await db.select({ id: events.id, dedupeKey: events.dedupeKey }).from(events);
   if (existing.length === 0) return 0;
   const keyById = new Map(existing.map((e) => [e.id, e.dedupeKey]));
@@ -217,21 +227,35 @@ export async function rekeyMovedEvents(db: Db, merged: MergedEvent[]): Promise<n
   return safe.length;
 }
 
-/**
- * Write merged events: upsert rows (preserving CFP text and geocodes unless the location
- * changed), resolve parents, replace deadlines + provenance, delete events no source lists
- * any more (unless the owner bookmarked or annotated them).
- */
-export async function writeMergedEvents(
-  db: Db,
-  merged: MergedEvent[],
-): Promise<{
+/** pg_advisory_xact_lock key for publishing a merge (any constant unique to this job). */
+const MERGE_LOCK_KEY = 726_001;
+
+export type MergeWriteResult = {
   upserted: number;
   deleted: number;
   deadlines: number;
   workshops: number;
   rekeyed: number;
-}> {
+};
+
+/**
+ * Write merged events: upsert rows (preserving CFP text and geocodes unless the location
+ * changed), resolve parents, replace deadlines + provenance, delete events no source lists
+ * any more (unless the owner bookmarked or annotated them).
+ *
+ * One transaction: readers see the old state or the new one, never an event whose deadlines
+ * were deleted but not yet re-inserted, and a failure part-way changes nothing. A
+ * transaction-scoped advisory lock serializes concurrent merges (it works through Neon's
+ * transaction pooler, unlike a session lock).
+ */
+export async function writeMergedEvents(db: Db, merged: MergedEvent[]): Promise<MergeWriteResult> {
+  return db.transaction(async (tx) => {
+    await tx.execute(sql`select pg_advisory_xact_lock(${MERGE_LOCK_KEY})`);
+    return publishMerge(tx, merged);
+  });
+}
+
+async function publishMerge(db: DbOrTx, merged: MergedEvent[]): Promise<MergeWriteResult> {
   const rekeyed = await rekeyMovedEvents(db, merged);
   const existing = await db
     .select({ dedupeKey: events.dedupeKey, cfpText: events.cfpText })
@@ -374,23 +398,22 @@ export async function writeMergedEvents(
   ];
   for (const batch of chunk(uniqueSourceRows, 500)) await db.insert(eventSources).values(batch);
 
-  // Events no source lists any more — keep the ones the owner bookmarked, annotated or chatted about.
+  // Events no source lists any more — keep the ones the owner bookmarked, annotated or chatted
+  // about. NOT EXISTS, not NOT IN: journal and special-issue rows have a NULL event_id, and
+  // `id NOT IN (…, NULL)` is never true, which would stop all pruning.
   const keep = merged.map((m) => m.dedupeKey);
-  const protectedIds = db
-    .select({ id: bookmarks.eventId })
-    .from(bookmarks)
-    .union(db.select({ id: notes.eventId }).from(notes))
-    .union(
-      db
-        .select({ id: sql<number>`${chats.eventId}` })
-        .from(chats)
-        .where(sql`${chats.eventId} is not null`),
-    );
   const deleted =
     keep.length > 0
       ? await db
           .delete(events)
-          .where(and(notInArray(events.dedupeKey, keep), notInArray(events.id, protectedIds)))
+          .where(
+            and(
+              notInArray(events.dedupeKey, keep),
+              sql`not exists (select 1 from ${bookmarks} b where b.event_id = ${events.id})`,
+              sql`not exists (select 1 from ${notes} n where n.event_id = ${events.id})`,
+              sql`not exists (select 1 from ${chats} c where c.event_id = ${events.id})`,
+            ),
+          )
           .returning({ id: events.id })
       : [];
 
@@ -406,7 +429,7 @@ export async function writeMergedEvents(
 }
 
 /** next_deadline_at (earliest upcoming abstract/paper deadline, else the latest past one) + search vector. */
-export async function refreshDerivedColumns(db: Db): Promise<void> {
+export async function refreshDerivedColumns(db: DbOrTx): Promise<void> {
   await db.execute(sql`
     update ${events} e set next_deadline_at = d.due, next_deadline_kind = d.kind
     from (

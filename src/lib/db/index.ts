@@ -5,6 +5,9 @@ import { Pool } from "pg";
 import * as schema from "./schema";
 
 export type Db = NodePgDatabase<typeof schema>;
+/** A transaction handle from db.transaction(); query helpers accept either. */
+export type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
+export type DbOrTx = Db | Tx;
 
 export class DbUnavailableError extends Error {
   constructor(message = "DATABASE_URL is not configured") {

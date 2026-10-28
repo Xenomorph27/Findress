@@ -50,15 +50,39 @@ export function parseZone(tz: string | null | undefined): ParsedZone | null {
     return { kind: "offset", minutes: -720 };
   }
   if (upper in ABBREVIATIONS) return { kind: "offset", minutes: ABBREVIATIONS[upper] };
-  const m = /^(?:UTC|GMT)?([+\-−])(\d{1,2})(?::?(\d{2}))?$/.exec(upper);
+  const m = NUMERIC_OFFSET.exec(upper);
   if (m) {
+    if (Number(m[3] ?? 0) > 59) return null;
     const sign = m[1] === "+" ? 1 : -1;
     // `|| 0` normalizes "UTC-0" (-0) to 0.
     const minutes = sign * (Number(m[2]) * 60 + Number(m[3] ?? 0)) || 0;
     if (Math.abs(minutes) <= 14 * 60) return { kind: "offset", minutes };
+    return null;
   }
   if (isIanaZone(raw)) return { kind: "iana", zone: raw };
   return null;
+}
+
+const NUMERIC_OFFSET = /^(?:UTC|GMT)?([+\-−])(\d{1,2})(?::?(\d{2}))?$/;
+
+/**
+ * A numeric offset that cannot be right ("UTC+05:99", "GMT+18"). Unlike an unknown zone name
+ * (which falls back to AoE, flagged), this is malformed data: the deadline is rejected.
+ */
+function isMalformedOffset(tz: string | null | undefined): boolean {
+  if (!tz) return false;
+  const upper = tz.trim().toUpperCase().replace(/\s+/g, "");
+  return NUMERIC_OFFSET.test(upper) && parseZone(tz) === null;
+}
+
+/** Days in a month (1-12), leap years included. */
+function daysInMonth(year: number, month: number): number {
+  return new Date(Date.UTC(year, month, 0)).getUTCDate();
+}
+
+/** Text shaped like a wall-clock date ("2027-02-31 23:59"), whether or not it is a valid one. */
+export function looksLikeWallClock(text: string | null | undefined): boolean {
+  return typeof text === "string" && /^\s*\d{4}-\d{1,2}-\d{1,2}\b/.test(text);
 }
 
 const WALL_CLOCK = /^(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/;
@@ -93,16 +117,20 @@ export function wallClockToUtc(
     mi: timeAssumed ? 59 : Number(mi),
     s: timeAssumed ? 59 : Number(s ?? 0),
   };
+  // Reject impossible calendar values instead of letting Date.UTC roll them over
+  // (February 31 must not quietly become March 3; second 99 must not become the next minute).
   if (
     parts.mo < 1 ||
     parts.mo > 12 ||
     parts.d < 1 ||
-    parts.d > 31 ||
+    parts.d > daysInMonth(parts.y, parts.mo) ||
     parts.h > 23 ||
-    parts.mi > 59
+    parts.mi > 59 ||
+    parts.s > 59
   ) {
     return null;
   }
+  if (isMalformedOffset(tz)) return null;
   const zone = parseZone(tz);
   const zoneAssumed = zone === null;
   const effective: ParsedZone = zone ?? { kind: "offset", minutes: -720 };

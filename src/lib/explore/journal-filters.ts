@@ -1,4 +1,5 @@
 import type { JournalListRow, SpecialIssueListRow } from "@/lib/data/types";
+import { nextCallAt } from "./journal-calls";
 import type { Filters } from "./filters";
 
 /**
@@ -49,9 +50,6 @@ export function applyJournalFilters(rows: JournalListRow[], f: Filters, now: num
   return sortJournals(out, f.jsort, now);
 }
 
-const nextCallAt = (r: JournalListRow, now: number) =>
-  r.nextCall && r.nextCall.at >= now ? r.nextCall.at : null;
-
 export function sortJournals(rows: JournalListRow[], sort: Filters["jsort"], now: number) {
   const byName = (a: JournalListRow, b: JournalListRow) =>
     a.abbreviation.localeCompare(b.abbreviation);
@@ -71,8 +69,8 @@ export function sortJournals(rows: JournalListRow[], sort: Filters["jsort"], now
         return byName(a, b);
       default: {
         // Open special-issue calls first (soonest), then by h-index.
-        const ca = nextCallAt(a, now);
-        const cb = nextCallAt(b, now);
+        const ca = nextCallAt(a, now)?.at ?? null;
+        const cb = nextCallAt(b, now)?.at ?? null;
         if (ca != null || cb != null) return (ca ?? Infinity) - (cb ?? Infinity);
         return desc(a.hIndex, b.hIndex) || byName(a, b);
       }

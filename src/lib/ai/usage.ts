@@ -1,5 +1,5 @@
 import "server-only";
-import { and, eq, gte, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { chats, chatUsage } from "@/lib/db/schema";
 
@@ -9,22 +9,32 @@ export function hourlyLimit(): number {
   return Number.isFinite(n) && n > 0 ? n : 30;
 }
 
-export async function checkRateLimit(
-  db: Db,
-): Promise<{ ok: boolean; used: number; limit: number }> {
-  const since = new Date(Date.now() - 3600_000);
-  const [row] = await db
-    .select({ n: sql<number>`count(*)::int` })
-    .from(chatUsage)
-    .where(gte(chatUsage.createdAt, since));
-  const used = Number(row?.n ?? 0);
-  const limit = hourlyLimit();
-  return { ok: used < limit, used, limit };
-}
+/** Serializes reservations, so concurrent messages cannot all pass the same count. */
+const RESERVE_LOCK_KEY = 726_002;
 
-export async function recordUsageStart(db: Db, scope: string): Promise<number> {
-  const [row] = await db.insert(chatUsage).values({ scope }).returning({ id: chatUsage.id });
-  return row.id;
+/**
+ * Check the hourly limit and record the message in one step (one transaction under a
+ * transaction-scoped advisory lock, which works through Neon's pooler). Background extraction
+ * requests (scope "extract") have their own daily cap and do not count here.
+ */
+export async function reserveChatUsage(
+  db: Db,
+  scope: string,
+  limit = hourlyLimit(),
+): Promise<{ ok: true; id: number } | { ok: false; used: number; limit: number }> {
+  return db.transaction(async (tx) => {
+    await tx.execute(sql`select pg_advisory_xact_lock(${RESERVE_LOCK_KEY})`);
+    const [row] = await tx
+      .select({ n: sql<number>`count(*)::int` })
+      .from(chatUsage)
+      .where(
+        sql`${chatUsage.createdAt} >= now() - interval '1 hour' and ${chatUsage.scope} <> 'extract'`,
+      );
+    const used = Number(row?.n ?? 0);
+    if (used >= limit) return { ok: false as const, used, limit };
+    const [ins] = await tx.insert(chatUsage).values({ scope }).returning({ id: chatUsage.id });
+    return { ok: true as const, id: ins.id };
+  });
 }
 
 export async function recordUsageEnd(
