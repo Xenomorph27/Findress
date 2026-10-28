@@ -23,8 +23,7 @@ const j = (p: Partial<JournalListRow> & { slug: string }): JournalListRow => ({
   sjrQuartile: null,
   subfields: ["ml"],
   topics: [],
-  nextCall: null,
-  openCalls: 0,
+  calls: [],
   ...p,
 });
 const si = (id: number, at: number | null, subfields = ["ml"]): SpecialIssueListRow => ({

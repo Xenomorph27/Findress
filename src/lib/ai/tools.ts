@@ -4,6 +4,7 @@ import { z } from "zod";
 import { getEventDetail, getExplorerRows, searchEventIds } from "@/lib/data/events";
 import { getJournalDetail, getJournalRows, getSpecialIssueRows } from "@/lib/data/journals";
 import { applyFilters, DEFAULT_FILTERS, nextDeadline } from "@/lib/explore/filters";
+import { openCallsAt } from "@/lib/explore/journal-calls";
 import { applyJournalFilters, applySpecialFilters } from "@/lib/explore/journal-filters";
 import { PoliteFetcher, RobotsDisallowedError } from "@/lib/ingest/http";
 import { extractCfp } from "@/lib/sources/cfp";
@@ -256,7 +257,7 @@ export function buildTools({ tz, allowedHosts }: { tz: string; allowedHosts: str
               [j.rankCoreJournal && `CORE ${j.rankCoreJournal}`, j.rankCcf && `CCF ${j.rankCcf}`]
                 .filter(Boolean)
                 .join(", ") || "unranked",
-            openCalls: j.openCalls,
+            openCalls: openCallsAt(j, Date.now()).length,
             url: `/j/${j.slug}`,
           })),
           openSpecialIssues: calls.slice(0, 10).map((c) => ({

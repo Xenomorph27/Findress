@@ -7,6 +7,7 @@ import { ChipList, MAX_CHIPS, Ranks, TypeBadge } from "@/components/event/chips"
 import { CountdownChip } from "@/components/event/countdown-chip";
 import { useTimezone } from "@/components/timezone/timezone-provider";
 import type { JournalListRow, SpecialIssueListRow } from "@/lib/data/types";
+import { nextCallAt, openCallsAt } from "@/lib/explore/journal-calls";
 import { specialStatus } from "@/lib/explore/journal-filters";
 import { useMounted } from "@/lib/hooks/use-mounted";
 import { SUBFIELD_LABEL, type SubfieldId } from "@/lib/taxonomy";
@@ -63,7 +64,7 @@ function Metric({
 }
 
 function RollingCell({ row, now }: { row: JournalListRow; now: number }) {
-  const open = row.nextCall && row.nextCall.at >= now ? row.nextCall : null;
+  const open = nextCallAt(row, now);
   return (
     <div className="flex flex-col items-start gap-1">
       {open ? (
@@ -93,6 +94,7 @@ export function JournalResultRow({
   onSelect: () => void;
   onOpen: () => void;
 }) {
+  const openCalls = openCallsAt(row, now).length;
   return (
     <div
       role="listitem"
@@ -122,9 +124,9 @@ export function JournalResultRow({
             </span>
           </Link>
           <TypeBadge type="journal" />
-          {row.openCalls > 0 && (
+          {openCalls > 0 && (
             <span className="text-muted-foreground font-mono text-xs">
-              {row.openCalls} open {row.openCalls === 1 ? "call" : "calls"}
+              {openCalls} open {openCalls === 1 ? "call" : "calls"}
             </span>
           )}
         </div>

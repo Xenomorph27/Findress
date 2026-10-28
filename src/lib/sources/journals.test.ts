@@ -256,8 +256,7 @@ describe("journal and special-issue filters", () => {
     sjrQuartile: null,
     subfields: [],
     topics: [],
-    nextCall: null,
-    openCalls: 0,
+    calls: [],
     ...p,
   });
   const journals = [
@@ -265,7 +264,7 @@ describe("journal and special-issue filters", () => {
     j({ slug: "hybrid", openAccess: "hybrid", apcUsd: 3110, hIndex: 250, publisher: "Elsevier" }),
     j({ slug: "subs", openAccess: "subscription", hIndex: 90, rankCoreJournal: "A*" }),
     j({ slug: "unknown", hIndex: 10 }),
-    j({ slug: "calls", hIndex: 5, nextCall: { id: 1, title: "SI", at: NOW + 86_400_000 } }),
+    j({ slug: "calls", hIndex: 5, calls: [{ id: 1, title: "SI", at: NOW + 86_400_000 }] }),
   ];
   const slugs = (f: Partial<typeof DEFAULT_FILTERS>) =>
     applyJournalFilters(journals, { ...DEFAULT_FILTERS, ...f }, NOW).map((r) => r.slug);
