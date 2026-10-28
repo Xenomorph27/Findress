@@ -29,6 +29,7 @@ import { llmTagUntagged } from "./llm-tagging";
 import { PoliteFetcher } from "./http";
 import type { SourceAdapter } from "./types";
 import { mergeEventInputs } from "./merge";
+import { runRetentionStep } from "./retention";
 import {
   DbHttpCache,
   loadAllSourceItems,
@@ -48,7 +49,7 @@ export const ADAPTERS: Record<ListSourceName, SourceAdapter> = {
   easychair: easychairAdapter,
 };
 
-export type StepName = ListSourceName | EnrichmentStep | JournalStep | "merge";
+export type StepName = ListSourceName | EnrichmentStep | JournalStep | "merge" | "retention";
 export const ALL_STEPS: StepName[] = [
   "ccfddl",
   "huggingface",
@@ -64,6 +65,7 @@ export const ALL_STEPS: StepName[] = [
   "journal-ranks",
   "journal-pages",
   "special-issues",
+  "retention",
 ];
 
 export interface StepReport {
@@ -372,6 +374,11 @@ async function runSteps(
         }
       }),
     );
+  }
+  if (steps.has("retention")) {
+    await renewLease();
+    log("→ retention");
+    reports.push(await recordRun(db, "retention", () => runRetentionStep(db)));
   }
   log(`done in ${Math.round((Date.now() - started) / 1000)}s`);
   return reports;

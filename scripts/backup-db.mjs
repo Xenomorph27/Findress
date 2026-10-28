@@ -1,7 +1,9 @@
 /**
  * Manual backup of the Neon database with the official postgres Docker image (no local Postgres
  * install needed). Writes .data/backups/neon-production-<timestamp>.dump (custom format, restore
- * with pg_restore) and checks that it lists every table.
+ * with pg_restore) and checks it by table name: the dump must hold the data of every table the
+ * database has. Tables the latest migration snapshot defines but the database lacks are reported
+ * as pending migrations (expected for the backup taken just before applying one).
  *
  *   pnpm backup:neon                      # production, from .env.neon (DATABASE_URL_UNPOOLED)
  *   node scripts/backup-db.mjs .env.other # another env file
@@ -11,7 +13,7 @@
  * chats): keep it out of git (.data/ is ignored).
  */
 import { spawnSync } from "node:child_process";
-import { mkdirSync, readFileSync, statSync } from "node:fs";
+import { mkdirSync, readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { parseEnv } from "node:util";
 
@@ -71,10 +73,58 @@ const list = spawnSync(
   ],
   { encoding: "utf8" },
 );
-const tables = (list.stdout ?? "").split("\n").filter((l) => l.includes("TABLE DATA")).length;
-const mb = (statSync(path.join(dir, name)).size / 1e6).toFixed(1);
-console.log(`Backup OK: .data/backups/${name} (${mb} MB, ${tables} tables)`);
-if (tables < 16) {
-  console.error("Warning: fewer tables than expected (16). Check the backup before relying on it.");
+if (list.status !== 0) {
+  console.error("Backup written, but pg_restore could not read it. Do not rely on it.");
   process.exit(1);
 }
+// "1234; 0 16400 TABLE DATA public events owner" → "public.events"
+const dumped = new Set(
+  (list.stdout ?? "")
+    .split("\n")
+    .map((l) => /TABLE DATA (\S+) (\S+)/.exec(l))
+    .filter(Boolean)
+    .map((m) => `${m[1]}.${m[2]}`),
+);
+const live = spawnSync(
+  "docker",
+  [
+    "run",
+    "--rm",
+    "-e",
+    "NEON_DIRECT",
+    "postgres:18",
+    "sh",
+    "-c",
+    `psql "$NEON_DIRECT" -Atc "select schemaname || '.' || tablename from pg_tables where schemaname = 'public' order by 1"`,
+  ],
+  { env, encoding: "utf8" },
+);
+if (live.status !== 0) {
+  console.error(
+    "Backup written, but the table list could not be read to check it. Do not rely on it.",
+  );
+  process.exit(1);
+}
+const inDatabase = (live.stdout ?? "")
+  .split("\n")
+  .map((l) => l.trim())
+  .filter(Boolean);
+const missing = inDatabase.filter((t) => !dumped.has(t));
+const mb = (statSync(path.join(dir, name)).size / 1e6).toFixed(1);
+if (!inDatabase.length || missing.length) {
+  console.error(
+    `Backup INCOMPLETE: .data/backups/${name} has no data for ${missing.join(", ") || "any table"}. Do not rely on it.`,
+  );
+  process.exit(1);
+}
+console.log(`Backup OK: .data/backups/${name} (${mb} MB, all ${inDatabase.length} tables)`);
+
+const snapshot = readdirSync("drizzle/meta")
+  .filter((n) => /^\d+_snapshot\.json$/.test(n))
+  .sort()
+  .at(-1);
+const pending = Object.keys(
+  JSON.parse(readFileSync(`drizzle/meta/${snapshot}`, "utf8")).tables,
+).filter((t) => !inDatabase.includes(t));
+if (pending.length)
+  console.log(`Note: not in the database yet (pending migrations): ${pending.join(", ")}`);

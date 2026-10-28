@@ -43,7 +43,7 @@ jobs:
           if [ -n "${STEPS:-}" ]; then
             SEQUENCE="$STEPS"
           else
-            SEQUENCE="ccfddl huggingface openreview wikicfp easychair cfp,topics extract geocode journals journal-ranks journal-pages special-issues"
+            SEQUENCE="ccfddl huggingface openreview wikicfp easychair cfp,topics extract geocode journals journal-ranks journal-pages special-issues retention"
           fi
           failed=0
           for step in $SEQUENCE; do
