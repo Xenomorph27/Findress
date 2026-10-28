@@ -28,13 +28,6 @@ const tsvector = customType<{ data: string }>({
 /** Which source supplied each merged field, e.g. { startDate: "huggingface", rankCore: "ccfddl" }. */
 export type FieldProvenance = Record<string, string>;
 
-/** Submission facts the CFP parser read from the official page (events.cfp_facts). */
-export interface CfpFacts {
-  submissionSite: string | null;
-  reviewType: string | null;
-  pageLimit: string | null;
-}
-
 export const events = pgTable(
   "events",
   {
@@ -85,11 +78,6 @@ export const events = pgTable(
     cfpHash: text("cfp_hash"),
     cfpUrl: text("cfp_url"),
     cfpFetchedAt: timestamp("cfp_fetched_at", { withTimezone: true }),
-    /**
-     * What the CFP parser last read from the page. A field whose value still equals this is owned
-     * by the CFP and follows the page; a different value came from a source and is kept.
-     */
-    cfpFacts: jsonb("cfp_facts").$type<CfpFacts>(),
     /** cfp_hash the AI extraction last ran on (so unchanged pages are never re-sent). */
     aiExtractedHash: text("ai_extracted_hash"),
     aiExtractedAt: timestamp("ai_extracted_at", { withTimezone: true }),

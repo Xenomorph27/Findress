@@ -53,8 +53,13 @@ jobs:
               "${SITE_URL%/}/api/ingest?source=$step") || code="000"
             cat response.json 2>/dev/null | head -c 4000; echo
             echo "HTTP $code"
-            if [ "$code" != "200" ]; then
-              echo "::warning::step $step returned HTTP $code"
+            # 200 + ok:true is success. 409 means another run (cron or manual) was in progress:
+            # nothing was done, which is not a failure. Anything else fails the job, including a
+            # 2xx whose body says a step did not work.
+            if [ "$code" = "409" ]; then
+              echo "::warning::step $step skipped: another ingestion run was in progress"
+            elif [ "$code" != "200" ] || ! jq -e '.ok == true' response.json >/dev/null 2>&1; then
+              echo "::error::step $step failed (HTTP $code)"
               failed=1
             fi
             echo "::endgroup::"

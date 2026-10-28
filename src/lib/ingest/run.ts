@@ -24,6 +24,7 @@ import {
   runJournalsStep,
   runSpecialIssuesStep,
 } from "./journals";
+import { acquireLease, releaseLease } from "./lease";
 import { llmTagUntagged } from "./llm-tagging";
 import { PoliteFetcher } from "./http";
 import type { SourceAdapter } from "./types";
@@ -113,9 +114,23 @@ async function loadCursor(db: Db, source: StepName): Promise<string | null> {
   return row?.cursor ?? null;
 }
 
-async function recordRun<
-  T extends { items: number; stats: Record<string, number | string>; warnings?: string[] },
->(db: Db, step: StepName, fn: () => Promise<T>): Promise<StepReport> {
+/**
+ * What a step returns. `failed` marks a step that ran to the end but produced nothing usable
+ * (a list source that suddenly lists nothing, every CFP page blocked): it is recorded with its
+ * stats but counts as a failure, so the scheduled job turns red instead of reporting success.
+ */
+interface StepOutcome {
+  items: number;
+  stats: Record<string, number | string>;
+  warnings?: string[];
+  failed?: string | null;
+}
+
+async function recordRun<T extends StepOutcome>(
+  db: Db,
+  step: StepName,
+  fn: () => Promise<T>,
+): Promise<StepReport> {
   const started = Date.now();
   const [row] = await db
     .insert(sourceRuns)
@@ -124,23 +139,25 @@ async function recordRun<
   try {
     const out = await fn();
     const warnings = out.warnings ?? [];
+    const problems = [...(out.failed ? [out.failed] : []), ...warnings];
     await db
       .update(sourceRuns)
       .set({
         finishedAt: new Date(),
-        ok: true,
+        ok: !out.failed,
         items: out.items,
-        error: warnings.length ? warnings.slice(0, 5).join(" | ").slice(0, 2000) : null,
+        error: problems.length ? problems.slice(0, 5).join(" | ").slice(0, 2000) : null,
         stats: { ...out.stats, warnings: warnings.length },
       })
       .where(eq(sourceRuns.id, row.id));
     return {
       step,
-      ok: true,
+      ok: !out.failed,
       items: out.items,
       durationMs: Date.now() - started,
       stats: out.stats,
       warnings,
+      ...(out.failed ? { error: out.failed } : {}),
     };
   } catch (err) {
     const message = (err as Error).message ?? String(err);
@@ -160,11 +177,47 @@ async function recordRun<
   }
 }
 
+/** Another ingestion run holds the lease; this one did nothing. */
+export class IngestionBusyError extends Error {
+  constructor() {
+    super("another ingestion run is in progress; this one was skipped");
+    this.name = "IngestionBusyError";
+  }
+}
+
+const LEASE = "ingest";
+/** How long the lease lasts without renewal; it is renewed before every step. */
+const LEASE_TTL_MS = 60 * 60_000;
+
 /**
  * Run ingestion. Each step is isolated: a failing source is logged to source_runs and the
- * rest continue (fail soft).
+ * rest continue (fail soft). Only one run at a time, from any entry point: if another run
+ * holds the lease this throws IngestionBusyError without touching anything.
  */
 export async function runIngestion(db: Db, opts: RunOptions = {}): Promise<StepReport[]> {
+  const holder = `${process.env.VERCEL_DEPLOYMENT_ID ?? "local"}:${crypto.randomUUID()}`;
+  if (!(await acquireLease(db, LEASE, holder, LEASE_TTL_MS))) throw new IngestionBusyError();
+  // Renewed before each step while this run still holds it: a long run keeps its lease, a
+  // crashed one frees it within LEASE_TTL_MS.
+  const renew = () =>
+    db
+      .execute(
+        sql`update ingest_lease set expires_at = now() + ${`${LEASE_TTL_MS} milliseconds`}::interval
+            where name = ${LEASE} and holder = ${holder}`,
+      )
+      .then(() => {});
+  try {
+    return await runSteps(db, opts, renew);
+  } finally {
+    await releaseLease(db, LEASE, holder).catch(() => {});
+  }
+}
+
+async function runSteps(
+  db: Db,
+  opts: RunOptions,
+  renewLease: () => Promise<void>,
+): Promise<StepReport[]> {
   const log = opts.log ?? (() => {});
   const env = opts.env ?? process.env;
   const steps = new Set(opts.steps ?? ALL_STEPS);
@@ -175,6 +228,7 @@ export async function runIngestion(db: Db, opts: RunOptions = {}): Promise<StepR
 
   const listSteps = LIST_SOURCES.filter((s) => steps.has(s));
   for (const name of listSteps) {
+    await renewLease();
     log(`→ ${name}`);
     const report = await recordRun(db, name, async () => {
       const runStartedAt = new Date();
@@ -190,9 +244,21 @@ export async function runIngestion(db: Db, opts: RunOptions = {}): Promise<StepR
         cursor,
         env,
       });
-      const saved = await saveSourceItems(db, name, result.events, runStartedAt, result.pruneStale);
+      const saved = await saveSourceItems(
+        db,
+        name,
+        result.events,
+        runStartedAt,
+        result.pruneStale,
+        result.keepSourceIds,
+      );
       const acceptance = result.acceptance ? await saveAcceptance(db, result.acceptance) : 0;
       return {
+        // A source that listed items before and now lists none is broken, not empty.
+        failed:
+          result.events.length === 0 && previous.size > 0
+            ? `${name} returned no items (it had ${previous.size}); the previous ones were kept`
+            : null,
         items: saved.saved,
         stats: {
           ...result.stats,
@@ -208,6 +274,7 @@ export async function runIngestion(db: Db, opts: RunOptions = {}): Promise<StepR
   }
 
   if (listSteps.length > 0 || steps.has("merge")) {
+    await renewLease();
     log("→ merge");
     reports.push(
       await recordRun(db, "merge", async () => {
@@ -219,13 +286,21 @@ export async function runIngestion(db: Db, opts: RunOptions = {}): Promise<StepR
   }
 
   for (const step of ENRICHMENT_STEPS.filter((s) => steps.has(s))) {
+    await renewLease();
     log(`→ ${step}`);
     if (step === "cfp") {
       reports.push(
         await recordRun(db, "cfp", async () => {
           const out = await enrichCfps(db, fetcher, deadlineMs, log);
           await refreshDerivedColumns(db);
-          return { items: out.updated + out.unchanged, stats: out };
+          return {
+            items: out.updated + out.unchanged,
+            stats: out,
+            failed:
+              out.attempted >= 5 && out.updated + out.unchanged === 0
+                ? `no usable CFP page in ${out.attempted} attempts (${out.blocked} blocked)`
+                : null,
+          };
         }),
       );
     } else if (step === "extract") {
@@ -277,6 +352,7 @@ export async function runIngestion(db: Db, opts: RunOptions = {}): Promise<StepR
     }
   }
   for (const step of JOURNAL_STEPS.filter((s) => steps.has(s))) {
+    await renewLease();
     log(`→ ${step}`);
     reports.push(
       await recordRun(db, step, () => {
@@ -286,9 +362,13 @@ export async function runIngestion(db: Db, opts: RunOptions = {}): Promise<StepR
           case "journal-ranks":
             return runJournalRanksStep(db, fetcher, deadlineMs, log);
           case "journal-pages":
-            return runJournalPagesStep(db, fetcher, deadlineMs, log);
+            return loadCursor(db, step).then((c) =>
+              runJournalPagesStep(db, fetcher, deadlineMs, log, c),
+            );
           case "special-issues":
-            return runSpecialIssuesStep(db, fetcher, deadlineMs, log);
+            return loadCursor(db, step).then((c) =>
+              runSpecialIssuesStep(db, fetcher, deadlineMs, log, c),
+            );
         }
       }),
     );

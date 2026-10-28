@@ -23,7 +23,7 @@ async function main() {
     process.exit(1);
   }
   const { getDb, closeDb } = await import("../src/lib/db");
-  const { runIngestion, parseSteps } = await import("../src/lib/ingest/run");
+  const { runIngestion, parseSteps, IngestionBusyError } = await import("../src/lib/ingest/run");
   const { summarize } = await import("../src/lib/ingest/summary");
   const db = getDb()!;
 
@@ -34,6 +34,11 @@ async function main() {
     steps,
     budgetMs: budget ? Number(budget) * 1000 : undefined,
     log: (m) => console.log(m),
+  }).catch(async (err) => {
+    if (!(err instanceof IngestionBusyError)) throw err;
+    console.error(`Skipped: ${err.message}. Try again when it has finished.`);
+    await closeDb();
+    process.exit(3);
   });
 
   console.log("\n=== Steps ===");

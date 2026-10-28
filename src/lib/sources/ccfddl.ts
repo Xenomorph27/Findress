@@ -11,8 +11,9 @@ import {
   type DeadlineInput,
   type EventInput,
   type SourceAdapter,
+  type WithheldItem,
 } from "@/lib/ingest/types";
-import { wallClockToUtc } from "@/lib/time/tz";
+import { looksLikeWallClock, wallClockToUtc } from "@/lib/time/tz";
 import type { DeadlineKind } from "@/lib/taxonomy";
 
 /**
@@ -81,10 +82,12 @@ function deadline(
   tz: string | undefined,
   label: string | null,
   comment: string | null,
-): DeadlineInput | null {
+): DeadlineInput | { invalid: string } | null {
   if (typeof text !== "string" || !text.trim()) return null;
   const resolved = wallClockToUtc(text, tz);
-  if (!resolved) return null;
+  // "TBD" is simply no deadline; "2027-02-31" is malformed data and must not become one.
+  if (!resolved)
+    return looksLikeWallClock(text) ? { invalid: `${text}${tz ? ` (${tz})` : ""}` } : null;
   return {
     kind,
     label,
@@ -95,8 +98,15 @@ function deadline(
   };
 }
 
-/** Normalize one conference/<SUB>/<name>.yml file into one EventInput per edition. */
-export function normalizeConferenceFile(text: string, path: string): EventInput[] {
+/**
+ * Normalize one conference/<SUB>/<name>.yml file into one EventInput per edition. An edition
+ * with a malformed deadline date is reported in `withheld` instead (its last good copy stays).
+ */
+export function normalizeConferenceFile(
+  text: string,
+  path: string,
+  withheld: WithheldItem[] = [],
+): EventInput[] {
   const data = YAML.parse(text) as CcfSeries[] | null;
   if (!Array.isArray(data)) return [];
   const out: EventInput[] = [];
@@ -108,25 +118,32 @@ export function normalizeConferenceFile(text: string, path: string): EventInput[
       if (!Number.isInteger(year)) continue;
       const place = parsePlace(conf.place);
       const range = parseDateRange(conf.date, year);
+      const sourceId = conf.id ? String(conf.id) : `${seriesKeyFor(acronym)}${year}`;
       const timeline = conf.timeline ?? [];
-      const deadlines: DeadlineInput[] = [];
-      timeline.forEach((t, i) => {
+      const made = timeline.flatMap((t, i) => {
         const label = timeline.length > 1 ? `Cycle ${i + 1}` : null;
         const comment = cleanText(t.comment);
-        for (const d of [
+        return [
           deadline("abstract", t.abstract_deadline, conf.timezone, label, null),
           deadline("paper", t.deadline, conf.timezone, label, comment),
           deadline("rebuttal", t.rebuttal_deadline, conf.timezone, label, null),
           deadline("notification", t.decision_deadline, conf.timezone, label, null),
-        ]) {
-          if (d) deadlines.push(d);
-        }
+        ];
       });
+      const invalid = made.filter((d): d is { invalid: string } => !!d && "invalid" in d);
+      if (invalid.length > 0) {
+        withheld.push({
+          sourceId,
+          reason: `invalid deadline date ${invalid.map((d) => `"${d.invalid}"`).join(", ")}`,
+        });
+        continue;
+      }
+      const deadlines = made.filter((d): d is DeadlineInput => !!d);
 
       out.push({
         ...emptyEvent({
           source: "ccfddl",
-          sourceId: conf.id ? String(conf.id) : `${seriesKeyFor(acronym)}${year}`,
+          sourceId,
           acronym,
           year,
         }),
@@ -222,10 +239,16 @@ export const ccfddlAdapter: SourceAdapter = {
 
     const events: EventInput[] = [];
     const acceptance: AcceptanceInput[] = [];
+    const withheld: WithheldItem[] = [];
+    if (tree.truncated) warnings.push("GitHub tree listing truncated: not pruning this run");
     let files = 0;
     for (const path of conferences) {
+      if (Date.now() > ctx.deadlineMs) {
+        warnings.push(`time budget reached after ${files} of ${conferences.length} files`);
+        break;
+      }
       try {
-        events.push(...normalizeConferenceFile(await load(path), path));
+        events.push(...normalizeConferenceFile(await load(path), path, withheld));
         files++;
       } catch (err) {
         warnings.push(`${path}: ${(err as Error).message}`);
@@ -238,13 +261,22 @@ export const ccfddlAdapter: SourceAdapter = {
         warnings.push(`${path}: ${(err as Error).message}`);
       }
     }
-    const valid = validateEvents(events, warnings);
+    for (const w of withheld) warnings.push(`withheld ${w.sourceId}: ${w.reason}`);
+    const dropped: string[] = [];
+    const valid = validateEvents(events, warnings, dropped);
     return {
       events: valid,
       acceptance,
       warnings,
-      pruneStale: files > 0 && warnings.length < conferences.length / 2,
-      stats: { files, editions: valid.length, acceptanceRows: acceptance.length },
+      // Prune only from a complete snapshot: one failed file must not delete its editions.
+      pruneStale: !tree.truncated && conferences.length > 0 && files === conferences.length,
+      keepSourceIds: [...withheld.map((w) => w.sourceId), ...dropped],
+      stats: {
+        files,
+        editions: valid.length,
+        acceptanceRows: acceptance.length,
+        withheld: withheld.length + dropped.length,
+      },
     };
   },
 };

@@ -113,8 +113,16 @@ export interface AdapterResult {
   acceptance?: AcceptanceInput[];
   warnings: string[];
   stats: Record<string, number>;
-  /** When false, the source is a rolling window and stale items must not be pruned. */
+  /**
+   * May items missing from this run be pruned? Only when the run saw the COMPLETE upstream
+   * snapshot (every file fetched and parsed); a rolling window or a partial run says false.
+   */
   pruneStale: boolean;
+  /**
+   * Items upstream still lists but this run withheld (malformed data, failed validation):
+   * pruning keeps their last good copy instead of deleting them.
+   */
+  keepSourceIds?: string[];
   /** Where the next run should resume when this one stopped early (saved in source_runs.stats). */
   nextCursor?: string | null;
 }
@@ -124,13 +132,27 @@ export interface SourceAdapter {
   run(ctx: AdapterContext): Promise<AdapterResult>;
 }
 
-/** Validate a batch, dropping (and reporting) invalid items instead of failing the source. */
-export function validateEvents(items: EventInput[], warnings: string[]): EventInput[] {
+/** An item a normalizer held back because some of its data is malformed. */
+export interface WithheldItem {
+  sourceId: string;
+  reason: string;
+}
+
+/**
+ * Validate a batch, dropping (and reporting) invalid items instead of failing the source.
+ * The sourceIds of dropped items go to `dropped`, so pruning can keep their last good copy.
+ */
+export function validateEvents(
+  items: EventInput[],
+  warnings: string[],
+  dropped?: string[],
+): EventInput[] {
   const ok: EventInput[] = [];
   for (const item of items) {
     const parsed = EventInputSchema.safeParse(item);
     if (parsed.success) ok.push(parsed.data);
     else {
+      dropped?.push(item.sourceId);
       const issue = parsed.error.issues[0];
       warnings.push(
         `invalid ${item.source}:${item.sourceId} — ${issue?.path.join(".")}: ${issue?.message}`,

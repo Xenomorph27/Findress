@@ -1,5 +1,5 @@
 {
-  "id": "e0ea24da-6f64-4b29-b0ec-d73ccdc07b60",
+  "id": "bacf7ca7-2486-446e-96f7-36db0ca9ae82",
   "prevId": "aeba999b-6203-4e21-ac25-d684170b5396",
   "version": "7",
   "dialect": "postgresql",
@@ -823,12 +823,6 @@
         "cfp_fetched_at": {
           "name": "cfp_fetched_at",
           "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "cfp_facts": {
-          "name": "cfp_facts",
-          "type": "jsonb",
           "primaryKey": false,
           "notNull": false
         },
