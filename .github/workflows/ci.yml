@@ -1,12 +1,19 @@
 name: CI
 
-# Typecheck, lint and unit tests on every push to main and on every pull request.
-# No secrets or database needed: the tests use fixtures and an in-memory Postgres (PGlite).
+# Typecheck, lint, unit tests, a production build and a dependency audit on every push to main
+# and on every pull request, plus a weekly run so a new advisory against an unchanged lockfile
+# still shows up (Next.js refuses to build a version with a known critical vulnerability, so an
+# advisory alone can break the next deploy).
+# No secrets or database needed: the tests use fixtures and an in-memory Postgres (PGlite), and
+# the build renders empty states without DATABASE_URL.
 
 on:
   push:
     branches: [main]
   pull_request:
+  schedule:
+    - cron: "23 4 * * 1"
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -15,7 +22,7 @@ concurrency:
 jobs:
   checks:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
@@ -30,6 +37,11 @@ jobs:
       - name: Install (frozen lockfile)
         run: pnpm install --frozen-lockfile
 
+      # Production dependencies only, high and critical. Dev tools (shadcn CLI, drizzle-kit, ESLint
+      # plugins) never ship; `pnpm audit` without --prod lists them too.
+      - name: Audit production dependencies
+        run: pnpm audit --prod --audit-level=high
+
       - name: Typecheck
         run: pnpm typecheck
 
@@ -38,3 +50,6 @@ jobs:
 
       - name: Unit tests
         run: pnpm test
+
+      - name: Build
+        run: pnpm build
