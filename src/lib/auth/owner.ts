@@ -8,9 +8,13 @@ export async function isOwner(): Promise<boolean> {
   return verifySessionToken(store.get(SESSION_COOKIE)?.value, process.env.AUTH_SECRET);
 }
 
-/** Token for the private calendar feed URL (calendar apps can't send cookies). */
+/**
+ * Token for the private calendar feed URL (calendar apps can't send cookies). Derived from
+ * ICS_SECRET when set, so a leaked feed URL can be revoked by changing it without signing the
+ * owner out; otherwise from AUTH_SECRET (the same token as before ICS_SECRET existed).
+ */
 export async function icsFeedToken(): Promise<string | null> {
-  const secret = process.env.AUTH_SECRET;
+  const secret = process.env.ICS_SECRET || process.env.AUTH_SECRET;
   if (!secret) return null;
   const key = await crypto.subtle.importKey(
     "raw",

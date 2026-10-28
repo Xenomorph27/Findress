@@ -119,6 +119,18 @@ export async function isOwnerRequest(request: Request): Promise<boolean> {
   );
 }
 
+/** Owner-only route handlers: a 401 unless the request carries the owner cookie, else null. */
+export async function ownerOnly(request: Request): Promise<Response | null> {
+  if (await isOwnerRequest(request)) return null;
+  return Response.json(
+    { error: "unauthorized", message: "Log in to FIndress first.", login: "/login" },
+    { status: 401, headers: { "Cache-Control": "no-store" } },
+  );
+}
+
+/** Responses carrying owner-only data: never kept by a shared (CDN) cache. */
+export const PRIVATE_NO_STORE = { "Cache-Control": "private, no-store" } as const;
+
 /** Constant-time password check. */
 export async function passwordMatches(
   input: string,

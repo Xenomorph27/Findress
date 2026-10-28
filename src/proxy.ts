@@ -4,8 +4,9 @@ import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth/session";
 
 /**
  * The whole app sits behind the owner login. Pages redirect to /login?next=…; API routes answer
- * 401 JSON (a redirect to an HTML page would break fetch callers). Route handlers re-check the
- * session too. Rules and exceptions live in src/lib/auth/gate.ts.
+ * 401 JSON (a redirect to an HTML page would break fetch callers). Every data route handler
+ * re-checks the session too (ownerOnly / isOwnerRequest, or the cron or calendar token), so the
+ * gate is defense in depth. Rules and exceptions live in src/lib/auth/gate.ts.
  */
 export async function proxy(request: NextRequest) {
   const token = request.cookies.get(SESSION_COOKIE)?.value;

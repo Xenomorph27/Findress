@@ -1,12 +1,15 @@
+import { ownerOnly, PRIVATE_NO_STORE } from "@/lib/auth/session";
 import { getExplorerRows, searchEventIds, withDbFallback } from "@/lib/data/events";
 import { applyFilters, nextDeadline, parseFilters } from "@/lib/explore/filters";
 
 /**
- * GET /api/events — public, filtered + paginated event list (documented in the README for
- * external agents). Accepts every /explore query parameter plus `limit` (≤200) and `offset`.
+ * GET /api/events — owner-only, filtered + paginated event list (documented in the README).
+ * Accepts every /explore query parameter plus `limit` (≤200) and `offset`.
  * `q` uses Postgres full-text search.
  */
 export async function GET(request: Request) {
+  const denied = await ownerOnly(request);
+  if (denied) return denied;
   const url = new URL(request.url);
   const filters = parseFilters(url.searchParams);
   const limit = Math.min(Math.max(Number(url.searchParams.get("limit") ?? 50) || 50, 1), 200);
@@ -64,8 +67,5 @@ function respond(
       url: `/c/${r.slug}`,
     };
   });
-  return Response.json(
-    { total: rows.length, limit, offset, items },
-    { headers: { "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600" } },
-  );
+  return Response.json({ total: rows.length, limit, offset, items }, { headers: PRIVATE_NO_STORE });
 }
