@@ -31,7 +31,16 @@ export interface WorkspaceItem {
   rankCore: string | null;
   rankCcf: string | null;
   hasNote: boolean;
-  deadlines: { kind: string; label: string | null; dueAtUtc: string; originalTz: string | null }[];
+  deadlines: WorkspaceDeadline[];
+}
+
+export interface WorkspaceDeadline {
+  kind: string;
+  label: string | null;
+  dueAtUtc: string;
+  originalTz: string | null;
+  /** Set for a special-issue call (bookmarked directly or via its journal): its identity. */
+  specialIssueId?: number;
 }
 
 const targetColumn = (kind: TargetKind) =>
@@ -100,6 +109,7 @@ export async function listWorkspace(db: Db): Promise<WorkspaceItem[]> {
   const journalCalls = journalIds.length
     ? await db
         .select({
+          id: specialIssues.id,
           journalId: specialIssues.journalId,
           title: specialIssues.title,
           due: specialIssues.submissionDeadlineUtc,
@@ -186,6 +196,7 @@ export async function listWorkspace(db: Db): Promise<WorkspaceItem[]> {
           label: `Special issue: ${c.title}`,
           dueAtUtc: c.due!.toISOString(),
           originalTz: null,
+          specialIssueId: c.id,
         })),
     })),
     ...siRows.map((r) => ({
@@ -215,6 +226,7 @@ export async function listWorkspace(db: Db): Promise<WorkspaceItem[]> {
               label: `Special issue: ${r.title}`,
               dueAtUtc: r.due.toISOString(),
               originalTz: null,
+              specialIssueId: r.id,
             },
           ]
         : [],
