@@ -12,7 +12,8 @@ import { IngestionBusyError, parseSteps, runIngestion } from "@/lib/ingest/run";
  * Each call stays inside the function limit by giving adapters a time budget.
  *
  * Status: 200 when every step is ok; 500 when any step failed (the JSON still has every report,
- * and later steps still ran); 409 when another ingestion run holds the lease (nothing was done).
+ * and later steps still ran) or the run could not start (the JSON says why, e.g. a missing
+ * table); 409 when another ingestion run holds the lease (nothing was done).
  */
 export const maxDuration = 300;
 const BUDGET_MS = 270_000;
@@ -47,7 +48,14 @@ async function handle(request: Request): Promise<Response> {
         { status: 409, headers: { "Cache-Control": "no-store" } },
       );
     }
-    throw err;
+    // Report why instead of an empty 500, so the Action log shows the cause.
+    const message = err instanceof Error ? err.message : String(err);
+    const cause = err instanceof Error && err.cause instanceof Error ? err.cause.message : null;
+    console.error("[ingest] run could not start:", cause ?? message);
+    return Response.json(
+      { ok: false, error: cause ? `${message}: ${cause}` : message },
+      { status: 500, headers: { "Cache-Control": "no-store" } },
+    );
   }
   revalidateTag("events", "max");
   revalidateTag("journals", "max");
