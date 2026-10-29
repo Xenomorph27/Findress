@@ -6,6 +6,7 @@
     "dev": "next dev",
     "dev:neon": "node scripts/with-env.mjs .env.neon next dev",
     "build": "next build",
+    "vercel-build": "tsx scripts/migrate-on-deploy.ts && next build",
     "start": "next start",
     "build:neon": "node scripts/with-env.mjs .env.neon next build",
     "start:neon": "node scripts/with-env.mjs .env.neon next start",
